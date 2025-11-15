@@ -1,5 +1,5 @@
 """Constants for the SolaX Cloud integration."""
-DOMAIN = "solax_cloud"
+DOMAIN = "solax_developer_api"
 
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
