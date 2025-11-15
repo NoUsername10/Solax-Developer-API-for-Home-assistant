@@ -1,0 +1,12 @@
+{
+  "domain": "solax_cloud",
+  "name": "SolaX Cloud",
+  "codeowners": ["@your_github_handle"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your_repo/ha-solax-cloud",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "requirements": ["aiohttp"],
+  "version": "1.0.0"
+}
