@@ -7,6 +7,6 @@
   "issue_tracker": "https://github.com/NoUsername10/Solax_Developer_API",
   "iot_class": "cloud_polling",
   "requirements": ["aiohttp>=3.8.0"],
-  "version": "0.0.1"
+  "version": "0.0.1",
   "translations": ["en"]
 }
