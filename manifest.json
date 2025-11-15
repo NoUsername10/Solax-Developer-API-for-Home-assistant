@@ -1,6 +1,6 @@
 {
-  "domain": "solax_cloud",
-  "name": "SolaX Cloud",
+  "domain": "solax_developer_api",
+  "name": "SolaX Cloud Developer API",
   "codeowners": ["@your_github_handle"],
   "config_flow": true,
   "dependencies": [],
