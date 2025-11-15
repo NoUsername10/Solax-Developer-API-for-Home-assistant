@@ -1,12 +1,12 @@
 {
   "domain": "solax_developer_api",
   "name": "SolaX Cloud Developer API",
-  "codeowners": ["@your_github_handle"],
+  "codeowners": ["@NoUsername10"],
   "config_flow": true,
-  "dependencies": [],
-  "documentation": "https://github.com/your_repo/ha-solax-cloud",
-  "integration_type": "device",
+  "documentation": "https://github.com/NoUsername10/Solax_Developer_API",
+  "issue_tracker": "https://github.com/NoUsername10/Solax_Developer_API",
   "iot_class": "cloud_polling",
-  "requirements": ["aiohttp"],
+  "requirements": ["aiohttp>=3.8.0"],
   "version": "0.0.1"
+  "translations": ["en"]
 }
