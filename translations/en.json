@@ -1,0 +1,114 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret"
+        }
+      },
+      "plant_selection": {
+        "data": {
+          "plant_id": "Select Plant"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to SolaX Cloud",
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unknown error occurred"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  },
+  "sensor": {
+    "dailyYield": {
+      "name": "Daily Yield"
+    },
+    "totalYield": {
+      "name": "Total Yield"
+    },
+    "dailyCharged": {
+      "name": "Daily Battery Charge"
+    },
+    "totalCharged": {
+      "name": "Total Battery Charge"
+    },
+    "dailyDischarged": {
+      "name": "Daily Battery Discharge"
+    },
+    "totalDischarged": {
+      "name": "Total Battery Discharge"
+    },
+    "gridPower": {
+      "name": "Grid Power"
+    },
+    "onlineStatus": {
+      "name": "Online Status"
+    },
+    "deviceStatus": {
+      "name": "Status"
+    },
+    "acVoltage1": {
+      "name": "AC Voltage L1"
+    },
+    "acCurrent1": {
+      "name": "AC Current L1"
+    },
+    "batterySOC": {
+      "name": "Battery Level"
+    },
+    "inverterTemperature": {
+      "name": "Inverter Temperature"
+    },
+    "gridFrequency": {
+      "name": "Grid Frequency"
+    },
+    "batterySOH": {
+      "name": "Battery Health"
+    },
+    "chargeDischargePower": {
+      "name": "Battery Power"
+    },
+    "batteryVoltage": {
+      "name": "Battery Voltage"
+    },
+    "plantState": {
+      "name": "Plant Status"
+    },
+    "totalActivePower": {
+      "name": "Total Active Power"
+    },
+    "acPower1": {
+      "name": "AC Power L1"
+    },
+    "totalReactivePower": {
+      "name": "Total Reactive Power"
+    },
+    "totalPowerFactor": {
+      "name": "Total Power Factor"
+    },
+    "dailyACOutput": {
+      "name": "Daily AC Output"
+    },
+    "totalACOutput": {
+      "name": "Total AC Output"
+    },
+    "batteryCurrent": {
+      "name": "Battery Current"
+    },
+    "batteryTemperature": {
+      "name": "Battery Temperature"
+    },
+    "batteryCycleTimes": {
+      "name": "Battery Cycle Count"
+    },
+    "totalDeviceCharge": {
+      "name": "Total Device Charge"
+    },
+    "totalDeviceDischarge": {
+      "name": "Total Device Discharge"
+    }
+  }
+}

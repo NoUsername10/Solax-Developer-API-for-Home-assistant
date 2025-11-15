@@ -1,0 +1,1 @@
+"""Device sensors package for SolaX Cloud integration."""
