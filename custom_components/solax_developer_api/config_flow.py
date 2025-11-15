@@ -14,6 +14,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     _client_id = None
     _client_secret = None
     _plants = None
+    _access_token = None
 
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
@@ -25,8 +26,9 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             try:
                 api = SolaxCloudAPI(self._client_id, self._client_secret, "", "")
                 token_data = await self.hass.async_add_executor_job(api.get_token)
+                self._access_token = token_data["result"]["access"]
                 plants_data = await self.hass.async_add_executor_job(
-                    api.get_plants, token_data["result"]["access"]
+                    api.get_plants, self._access_token
                 )
                 
                 self._plants = plants_data["result"]["records"]
@@ -37,7 +39,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         data={
                             CONF_CLIENT_ID: self._client_id,
                             CONF_CLIENT_SECRET: self._client_secret,
-                            CONF_ACCESS_TOKEN: token_data["result"]["access"],
+                            CONF_ACCESS_TOKEN: self._access_token,
                             CONF_PLANT_ID: self._plants[0]["plantId"],
                             CONF_BUSINESS_TYPE: self._plants[0].get("businessType", 1)
                         }
@@ -69,7 +71,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 data={
                     CONF_CLIENT_ID: self._client_id,
                     CONF_CLIENT_SECRET: self._client_secret,
-                    CONF_ACCESS_TOKEN: "",  # Will be filled by API
+                    CONF_ACCESS_TOKEN: self._access_token,
                     CONF_PLANT_ID: plant_id,
                     CONF_BUSINESS_TYPE: selected_plant.get("businessType", 1)
                 }
