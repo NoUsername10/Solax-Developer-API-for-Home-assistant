@@ -2,24 +2,35 @@
   "config": {
     "step": {
       "user": {
+        "title": "SolaX Cloud Authentication",
+        "description": "Please enter your SolaX Access Token and Plant ID. If you do not have these, leave the fields blank and click Submit to authenticate with your Client ID and Secret.",
+        "data": {
+          "access_token": "Access Token (Optional)",
+          "plant_id": "Plant ID (Optional)"
+        }
+      },
+      "client_auth": {
+        "title": "Authenticate with Client ID and Secret",
+        "description": "Please enter your Client ID and Client Secret to generate a new token.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret"
         }
       },
       "plant_selection": {
+        "title": "Select Plant",
         "data": {
-          "plant_id": "Select Plant"
+          "plant_id": "Plant"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to SolaX Cloud",
-      "invalid_auth": "Invalid authentication",
-      "unknown": "Unknown error occurred"
+      "cannot_connect": "Failed to connect to SolaX Cloud. Please check your network.",
+      "invalid_auth": "The credentials provided are invalid. Please check them and try again.",
+      "unknown": "An unknown error occurred."
     },
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "This plant is already configured."
     }
   },
   "sensor": {
