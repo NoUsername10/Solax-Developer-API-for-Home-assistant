@@ -1,35 +1,23 @@
-"""Battery sensor definitions for SolaX Cloud."""
+"""Battery-level sensor definitions for SolaX Cloud."""
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import (
-    UnitOfPower,
-    UnitOfElectricPotential,
-    UnitOfElectricCurrent,
-    UnitOfTemperature,
-    PERCENTAGE,
-)
+from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import UnitOfPower, UnitOfEnergy, UnitOfElectricCurrent, UnitOfElectricPotential, UnitOfFrequency, PERCENTAGE, UnitOfTemperature
 
-from ..models.sensor_models import SensorConfig, online_status_converter
+from ..models.sensor_models import SensorConfig
 
 BATTERY_SENSORS = {
-    "onlineStatus": SensorConfig(
-        device_class=None,
-        state_class=SensorStateClass.MEASUREMENT,
-        enabled_by_default=True,
-        value_converter=online_status_converter
-    ),
     "batterySOC": SensorConfig(
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
-        suggested_display_precision=0,
         enabled_by_default=True
     ),
     "batterySOH": SensorConfig(
-        device_class=SensorDeviceClass.BATTERY,
+        device_class=None,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=PERCENTAGE,
-        suggested_display_precision=0,
-        enabled_by_default=False
+        entity_category=EntityCategory.DIAGNOSTIC,
+        enabled_by_default=True
     ),
     "chargeDischargePower": SensorConfig(
         device_class=SensorDeviceClass.POWER,
@@ -43,43 +31,41 @@ BATTERY_SENSORS = {
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         suggested_display_precision=1,
-        enabled_by_default=False,
-        entity_category="diagnostic"
+        enabled_by_default=False
     ),
     "batteryCurrent": SensorConfig(
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         suggested_display_precision=1,
-        enabled_by_default=False,
-        entity_category="diagnostic"
+        enabled_by_default=False
     ),
     "batteryTemperature": SensorConfig(
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         suggested_display_precision=1,
-        enabled_by_default=False,
-        entity_category="diagnostic"
+        entity_category=EntityCategory.DIAGNOSTIC,
+        enabled_by_default=True
     ),
     "batteryCycleTimes": SensorConfig(
         device_class=None,
-        state_class=SensorStateClass.MEASUREMENT,
-        enabled_by_default=False,
-        entity_category="diagnostic"
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        enabled_by_default=False
     ),
     "totalDeviceCharge": SensorConfig(
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=1,
-        enabled_by_default=False
+        enabled_by_default=True
     ),
     "totalDeviceDischarge": SensorConfig(
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         suggested_display_precision=1,
-        enabled_by_default=False
+        enabled_by_default=True
     )
 }
