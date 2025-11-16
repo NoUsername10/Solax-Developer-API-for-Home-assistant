@@ -9,6 +9,24 @@ from homeassistant.const import (
 from ..models.sensor_models import SensorConfig, online_status_converter
 
 EV_CHARGER_SENSORS = {
+    "evChargePower": SensorConfig(
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        enabled_by_default=True
+    ),
+    "evDailyCharge": SensorConfig(
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        enabled_by_default=True
+    ),
+    "evTotalCharge": SensorConfig(
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        enabled_by_default=True
+    ),
     "onlineStatus": SensorConfig(
         device_class=None,
         state_class=SensorStateClass.MEASUREMENT,
