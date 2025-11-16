@@ -20,3 +20,11 @@ SCAN_INTERVAL = 60
 
 BUSINESS_TYPE_RESIDENTIAL = 1
 BUSINESS_TYPE_COMMERCIAL = 4
+
+# Device types mapping
+DEVICE_TYPES = {
+    1: "Inverter",
+    2: "Battery",
+    3: "Meter",
+    4: "EV Charger"
+}
