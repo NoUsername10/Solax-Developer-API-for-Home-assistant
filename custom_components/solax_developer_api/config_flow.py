@@ -1,128 +1,100 @@
-"""Config flow for SolaX Cloud."""
-import voluptuous as vol
-from homeassistant import config_entries
-from homeassistant.core import HomeAssistant
-import homeassistant.helpers.config_validation as cv
+"""API client for SolaX Cloud."""
+import requests
+import logging
+from typing import Dict, Any
 
-from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_PLANT_ID, CONF_ACCESS_TOKEN, CONF_BUSINESS_TYPE
-from .api import SolaxCloudAPI
+from .const import BASE_URL_EU, TOKEN_URL_PATH, PLANT_LIST_URL_PATH, REALTIME_DATA_URL_PATH, DEVICE_LIST_URL_PATH, DEVICE_TYPES
 
-class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for SolaX Cloud."""
+_LOGGER = logging.getLogger(__name__)
+
+class SolaxCloudAPI:
+    """Solax Cloud API client."""
     
-    VERSION = 1
-    # Class variables to store data between steps
-    _client_id = None
-    _client_secret = None
-    _access_token = None
-    _plants = None
+    def __init__(self, client_id: str, client_secret: str, access_token: str, plant_id: str, business_type: int = 1):
+        """Initialize the API client."""
+        self.client_id = client_id
+        self.client_secret = client_secret
+        self.access_token = access_token
+        self.plant_id = plant_id
+        self.business_type = business_type
+        self.base_url = BASE_URL_EU
 
-    async def async_step_user(self, user_input=None):
-        """Handle the first step: Ask for Access Token, with Client ID/Secret as a fallback."""
-        errors = {}
+    def get_token(self) -> Dict[str, Any]:
+        """Get access token. This is a POST request."""
+        return self._api_call("POST", TOKEN_URL_PATH, {
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "grant_type": "CICS"
+        })
+
+    def get_plants(self, token: str) -> Dict[str, Any]:
+        """Get plant list. This is a GET request but requires a JSON body."""
+        self.access_token = token
+        return self._api_call("GET", PLANT_LIST_URL_PATH, {
+            "pageNo": 1,
+            "businessType": self.business_type
+        })
+
+    def get_all_data(self) -> Dict[str, Any]:
+        """Get all plant and device data."""
+        data = {}
         
-        if user_input is not None:
-            token = user_input.get(CONF_ACCESS_TOKEN)
-            plant_id = user_input.get(CONF_PLANT_ID)
-
-            # If the user provided a token and plant_id, try to validate them.
-            if token and plant_id:
-                try:
-                    # Use a dummy client_id and client_secret as they are not needed.
-                    api = SolaxCloudAPI("", "", token, plant_id)
-                    plant_data = await self.hass.async_add_executor_job(api.get_all_data)
-                    plant_name = plant_data.get("plant", {}).get("plantName", f"Plant {plant_id}")
-                    
-                    # If the API call is successful, create the entry and we're done.
-                    return self.async_create_entry(
-                        title=plant_name,
-                        data={
-                            CONF_ACCESS_TOKEN: token,
-                            CONF_PLANT_ID: plant_id,
-                            CONF_CLIENT_ID: "",
-                            CONF_CLIENT_SECRET: "",
-                            CONF_BUSINESS_TYPE: plant_data.get("plant", {}).get("businessType", 1),
-                        }
-                    )
-                except Exception:
-                    # If the token/plant_id are invalid, show an error on the same page.
-                    errors["base"] = "invalid_auth"
-            else:
-                # If the user submitted the form with blank fields, proceed to the Client ID/Secret step.
-                return await self.async_step_client_auth()
-
-        # Show the initial form. Fields are optional to allow submitting it blank.
-        data_schema = vol.Schema({
-            vol.Optional(CONF_ACCESS_TOKEN, description={"suggested_value": user_input.get(CONF_ACCESS_TOKEN) if user_input else ""}): str,
-            vol.Optional(CONF_PLANT_ID, description={"suggested_value": user_input.get(CONF_PLANT_ID) if user_input else ""}): str,
-        })
-
-        return self.async_show_form(
-            step_id="user",
-            data_schema=data_schema,
-            errors=errors
-        )
-
-    async def async_step_client_auth(self, user_input=None):
-        """Handle authentication using Client ID and Client Secret."""
-        errors = {}
-        if user_input is not None:
-            self._client_id = user_input[CONF_CLIENT_ID]
-            self._client_secret = user_input[CONF_CLIENT_SECRET]
-
-            try:
-                api = SolaxCloudAPI(self._client_id, self._client_secret, "", "")
-                token_data = await self.hass.async_add_executor_job(api.get_token)
-                self._access_token = token_data["result"]["access"]
-                
-                plants_data = await self.hass.async_add_executor_job(api.get_plants, self._access_token)
-                self._plants = plants_data["result"]["records"]
-                
-                if len(self._plants) == 1:
-                    plant = self._plants[0]
-                    return self.async_create_entry(
-                        title=plant['plantName'],
-                        data={
-                            CONF_CLIENT_ID: self._client_id,
-                            CONF_CLIENT_SECRET: self._client_secret,
-                            CONF_ACCESS_TOKEN: self._access_token,
-                            CONF_PLANT_ID: plant["plantId"],
-                            CONF_BUSINESS_TYPE: plant.get("businessType", 1)
-                        }
-                    )
-                else:
-                    return await self.async_step_plant_selection()
-                    
-            except Exception:
-                errors["base"] = "invalid_auth"
-
-        data_schema = vol.Schema({
-            vol.Required(CONF_CLIENT_ID): str,
-            vol.Required(CONF_CLIENT_SECRET): str,
-        })
-
-        return self.async_show_form(
-            step_id="client_auth", data_schema=data_schema, errors=errors
-        )
-
-    async def async_step_plant_selection(self, user_input=None):
-        """Handle plant selection for accounts with multiple plants."""
-        if user_input is not None:
-            plant_id = user_input[CONF_PLANT_ID]
-            selected_plant = next(p for p in self._plants if p["plantId"] == plant_id)
+        try:
+            # 1. Get Plant real-time data. This is a GET request.
+            plant_data = self._api_call("GET", REALTIME_DATA_URL_PATH, {
+                "plantId": self.plant_id,
+                "businessType": self.business_type
+            })
+            data["plant"] = plant_data.get("result", {})
             
-            return self.async_create_entry(
-                title=f"Solax Plant {selected_plant['plantName']}",
-                data={
-                    CONF_CLIENT_ID: self._client_id,
-                    CONF_CLIENT_SECRET: self._client_secret,
-                    CONF_ACCESS_TOKEN: self._access_token,
-                    CONF_PLANT_ID: plant_id,
-                    CONF_BUSINESS_TYPE: selected_plant.get("businessType", 1)
-                }
-            )
+            # 2. Get all devices by looping through device types. This is a GET request.
+            all_devices = []
+            for device_type_code, _ in DEVICE_TYPES.items():
+                device_list_data = self._api_call("GET", DEVICE_LIST_URL_PATH, {
+                    "plantId": self.plant_id,
+                    "businessType": self.business_type,
+                    "deviceType": device_type_code,
+                    "pageNo": 1
+                })
+                devices_on_page = device_list_data.get("result", {}).get("records", [])
+                if devices_on_page:
+                    all_devices.extend(devices_on_page)
 
-        plant_options = {p["plantId"]: p["plantName"] for p in self._plants}
-        data_schema = vol.Schema({vol.Required(CONF_PLANT_ID): vol.In(plant_options)})
+            # 3. Filter devices into categories
+            data["inverters"] = [d for d in all_devices if d.get("deviceType") == 1]
+            data["batteries"] = [d for d in all_devices if d.get("deviceType") == 2]
+            data["meters"] = [d for d in all_devices if d.get("deviceType") == 3]
+            data["ev_chargers"] = [d for d in all_devices if d.get("deviceType") == 4]
+            
+        except Exception as err:
+            _LOGGER.error("Error fetching data: %s", err)
+            raise
+        
+        return data
 
-        return self.async_show_form(step_id="plant_selection", data_schema=data_schema)
+    def _api_call(self, method: str, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Make API call with error handling, sending a JSON body for both GET and POST."""
+        url = f"{self.base_url}{endpoint}"
+        headers = {"Content-Type": "application/json"}
+        
+        # Add Authorization header for all endpoints except token generation
+        if endpoint != TOKEN_URL_PATH:
+            headers["Authorization"] = f"Bearer {self.access_token}"
+        
+        try:
+            # Use requests.request to flexibly handle methods.
+            # CRITICAL: Pass the payload to the 'json' parameter for BOTH GET and POST requests
+            # to accommodate the SolaX API's non-standard requirement for a body on GET requests.
+            response = requests.request(method.upper(), url, json=params, headers=headers, timeout=30)
+            
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get("code") != 10000:
+                raise Exception(f"API Error {data.get('code')}: {data.get('message')}")
+            
+            return data
+            
+        except requests.exceptions.RequestException as err:
+            _LOGGER.error("Request error: %s", err)
+            raise Exception(f"Cannot connect to SolaX Cloud: {err}")
