@@ -10,7 +10,37 @@ from homeassistant.const import (
 
 from ..models.sensor_models import SensorConfig, online_status_converter
 
+"""Meter-level sensor definitions for SolaX Cloud."""
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+from homeassistant.const import UnitOfPower
+
+from ..models.sensor_models import SensorConfig
+
 METER_SENSORS = {
+    "totalActivePower": SensorConfig(
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        enabled_by_default=True
+    ),
+    "acPower1": SensorConfig(
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        enabled_by_default=False
+    ),
+    "acPower2": SensorConfig(
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        enabled_by_default=False
+    ),
+    "acPower3": SensorConfig(
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        enabled_by_default=False
+    ),
     "onlineStatus": SensorConfig(
         device_class=None,
         state_class=SensorStateClass.MEASUREMENT,
