@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(
+              Path("custom_components/solax_developer_api/manifest.json").read_text()
+          )
+          if manifest["version"] != os.environ["RELEASE_TAG"]:
+              raise SystemExit(
+                  f"Manifest version {manifest['version']} does not match "
+                  f"tag {os.environ['RELEASE_TAG']}"
+              )
+          PY
+      - name: Build HACS archive
+        working-directory: custom_components/solax_developer_api
+        run: |
+          zip -r ../../../solax_developer_api.zip . \
+            -x "*.pyc" "__pycache__/*" ".DS_Store"
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: solax_developer_api.zip
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
