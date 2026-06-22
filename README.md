@@ -1,6 +1,6 @@
 # SolaX Developer API for Home Assistant
 
-<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="40%" height="40%" alt="SolaX Developer API icon">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="100%" height="100%" alt="SolaX Developer API icon">
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-donate-orange.svg)](https://www.buymeacoffee.com/DefaultLogin)
 
