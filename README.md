@@ -1,6 +1,6 @@
 # SolaX Developer API for Home Assistant
 
-<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="20%" height="20%" alt="SolaX Developer API icon">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="70%" height="70%" alt="SolaX Developer API icon">
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-donate-orange.svg)](https://www.buymeacoffee.com/DefaultLogin)
 [![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
@@ -18,15 +18,13 @@ The integration supports residential and commercial/industrial systems, includin
 
 ## 🥇 Quality and Validation
 
-This custom integration is built and validated to the requirements of the Home Assistant **Gold Integration Quality Scale**:
+This custom integration is built and validated to the requirements of the Home Assistant ** 🥇 Gold Integration Quality Scale**:
 
 - **Gold-standard compliant:** All applicable Bronze, Silver, and Gold rules are implemented or factually exempt in the included [`quality_scale.yaml`](custom_components/solax_developer_api/quality_scale.yaml).
 - **Test coverage:** `95.85%`, enforced by CI with a minimum threshold of `95%`.
 - **Automated tests:** `130` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
-- **Official validation:** Hassfest reports zero invalid integrations.
-- **Additional validation:** Ruff, translation parity, JSON, workflow, and compilation checks.
 
 > [!NOTE]
 > This is a HACS custom integration and is not included in Home Assistant Core. 
