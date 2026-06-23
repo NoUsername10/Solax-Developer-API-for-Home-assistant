@@ -1,0 +1,39 @@
+name: Tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Home Assistant ${{ matrix.homeassistant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        homeassistant:
+          - "2025.1.0"
+          - stable
+    container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install test tools
+        run: pip install --quiet pytest pytest-asyncio pytest-cov ruff
+      - name: Compile
+        run: python -m compileall -q custom_components tests scripts
+      - name: Translation validation
+        run: python scripts/check_translation_keys.py
+      - name: Ruff
+        run: ruff check custom_components tests scripts
+      - name: Tests and coverage
+        run: >-
+          pytest -q
+          --cov=custom_components/solax_developer_api
+          --cov-report=term-missing
+          --cov-report=xml
+          --cov-fail-under=95
