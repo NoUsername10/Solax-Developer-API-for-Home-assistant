@@ -1,6 +1,21 @@
-# Python
+# Local API probes require private Developer API access.
+local_test_suite/
+
+# Account-specific runtime probe output.
+docs/runtime_probe_data.json
+
+# Generated documentation artifacts and render checks.
+output/
+tmp/
+
+# Python and test caches.
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Operating-system metadata.
+.DS_Store
