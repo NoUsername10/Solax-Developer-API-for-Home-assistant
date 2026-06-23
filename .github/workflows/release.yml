@@ -31,14 +31,8 @@ jobs:
                   f"tag {os.environ['RELEASE_TAG']}"
               )
           PY
-      - name: Build HACS archive
-        working-directory: custom_components/solax_developer_api
-        run: |
-          zip -r ../../../solax_developer_api.zip . \
-            -x "*.pyc" "__pycache__/*" ".DS_Store"
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          files: solax_developer_api.zip
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}
