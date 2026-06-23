@@ -132,9 +132,9 @@ This repository is installed as a **HACS custom repository**:
 ### Manual Installation
 
 1. Download the [latest release](https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant/releases/latest).
-2. Extract `solax_developer_api.zip`.
+2. Download and extract the GitHub **Source code (zip)** archive.
 3. Create `/config/custom_components/solax_developer_api` if it does not exist.
-4. Copy the extracted archive contents directly into that directory so `manifest.json` is located at `/config/custom_components/solax_developer_api/manifest.json`.
+4. Copy the extracted `custom_components/solax_developer_api` folder contents directly into that directory so `manifest.json` is located at `/config/custom_components/solax_developer_api/manifest.json`.
 5. Restart Home Assistant.
 6. Add **SolaX Developer API** from **Settings → Devices & services**.
 

@@ -1,7 +1,5 @@
 {
   "name": "Solax Developer API for Home Assistant",
   "render_readme": true,
-  "homeassistant": "2025.1.0",
-  "zip_release": true,
-  "filename": "solax_developer_api.zip"
+  "homeassistant": "2025.1.0"
 }

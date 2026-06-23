@@ -43,6 +43,8 @@ All notable changes to this project will be documented in this file.
 - SolaX API-native camelCase is generated internally only when constructing
   validated API payloads.
 - Minimum supported Home Assistant version is `2025.1.0`.
+- HACS packaging uses the normal GitHub release/source archive; no custom
+  `solax_developer_api.zip` release asset is required.
 
 ### Safety
 - All write/control paths are hard-blocked dry-runs.
@@ -53,5 +55,10 @@ All notable changes to this project will be documented in this file.
 - Measured integration coverage is `95.85%`.
 - Live Home Assistant runtime smoke test passed against the SolaX Developer API
   in the current stable Home Assistant container.
+- Live read-only SolaX Developer API probe completed with `23` calls:
+  `20` successful read responses, `1` plant, and `3` auto-discovered devices.
+- `get_master_control_device` returned `10200` for three devices in the tested
+  account, matching the no-capability/no-master-control case and not blocking
+  setup or normal reads.
 - Official Home Assistant Hassfest validation reports zero invalid
   integrations.
