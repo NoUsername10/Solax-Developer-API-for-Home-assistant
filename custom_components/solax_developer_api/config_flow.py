@@ -14,6 +14,7 @@ from homeassistant.components import persistent_notification
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import selector
 
 from .api import SolaxApiError, SolaxDeveloperApiClient
 from .i18n import async_ensure_catalog_loaded, translate
@@ -36,6 +37,7 @@ from .const import (
     CONF_RATE_LIMIT_NOTIFICATIONS,
     CONF_SCAN_INTERVAL,
     CONF_SYSTEM_NAME,
+    CONFIG_ENTRY_VERSION,
     DEFAULT_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
     DEFAULT_LIVE_VIEW_DEFAULT_DURATION,
     DEFAULT_LIVE_VIEW_INTERVAL,
@@ -90,6 +92,54 @@ def _region_options(hass) -> dict[str, str]:
     }
 
 
+def _text_selector(*, password: bool = False, multiline: bool = False):
+    return selector.TextSelector(
+        selector.TextSelectorConfig(
+            type=(
+                selector.TextSelectorType.PASSWORD
+                if password
+                else selector.TextSelectorType.TEXT
+            ),
+            multiline=multiline,
+        )
+    )
+
+
+def _number_selector(minimum: int, maximum: int):
+    return selector.NumberSelector(
+        selector.NumberSelectorConfig(
+            min=minimum,
+            max=maximum,
+            step=1,
+            mode=selector.NumberSelectorMode.BOX,
+        )
+    )
+
+
+def _region_selector(hass):
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(value=value, label=label)
+                for value, label in _region_options(hass).items()
+            ],
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
+def _mapped_select_selector(options: Mapping[str, str]):
+    return selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=[
+                selector.SelectOptionDict(value=value, label=label)
+                for value, label in options.items()
+            ],
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+
+
 def _manual_meter_notification_id(entry_id: str) -> str:
     return f"{DOMAIN}_manual_meter_options_{entry_id}"
 
@@ -102,8 +152,6 @@ def _manual_meter_entries_to_text(raw_entries: Any) -> str:
     lines: list[str] = []
     for item in _coerce_manual_meter_entries(raw_entries):
         serial = str(item.get("serial") or "").strip()
-        if not serial:
-            continue
         business_type = int(item.get("business_type") or 1)
         if business_type in (1, 4) and business_type != 1:
             lines.append(f"{serial}|{business_type}")
@@ -304,14 +352,7 @@ def _merge_manual_meter_entry_sources(*sources: Any) -> list[dict[str, Any]]:
     for source in sources:
         for item in _coerce_manual_meter_entries(source):
             serial = str(item.get("serial") or "").strip()
-            if not serial:
-                continue
-            try:
-                business_type = int(item.get("business_type") or 1)
-            except (TypeError, ValueError):
-                business_type = 1
-            if business_type not in (1, 4):
-                business_type = 1
+            business_type = int(item.get("business_type") or 1)
 
             serial_key = serial.casefold()
             if serial_key in seen:
@@ -520,7 +561,7 @@ async def _validate_credentials(
 class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle SolaX Developer API config flow."""
 
-    VERSION = 1
+    VERSION = CONFIG_ENTRY_VERSION
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         await async_ensure_catalog_loaded(self.hass)
@@ -556,17 +597,23 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 data = {
                     CONF_CLIENT_ID: client_id,
                     CONF_CLIENT_SECRET: client_secret,
+                    CONF_API_REGION: region,
+                }
+                options = {
                     CONF_SYSTEM_NAME: system_name,
                     CONF_SCAN_INTERVAL: scan_interval,
-                    CONF_API_REGION: region,
                     CONF_ENTITY_PREFIX: _slugify_name(system_name),
                 }
-                return self.async_create_entry(title=system_name, data=data)
+                return self.async_create_entry(
+                    title=system_name,
+                    data=data,
+                    options=options,
+                )
 
         schema = vol.Schema(
             {
-                vol.Required(CONF_CLIENT_ID): str,
-                vol.Required(CONF_CLIENT_SECRET): str,
+                vol.Required(CONF_CLIENT_ID): _text_selector(),
+                vol.Required(CONF_CLIENT_SECRET): _text_selector(password=True),
                 vol.Required(
                     CONF_SYSTEM_NAME,
                     default=translate(
@@ -574,17 +621,15 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                         "runtime.defaults.system_name",
                         fallback=DEFAULT_SYSTEM_NAME,
                     ),
-                ): str,
-                vol.Required(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
-                    vol.Coerce(int),
-                    vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-                ),
+                ): _text_selector(),
+                vol.Required(
+                    CONF_SCAN_INTERVAL,
+                    default=DEFAULT_SCAN_INTERVAL,
+                ): _number_selector(MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL),
                 vol.Required(
                     CONF_API_REGION,
                     default=API_REGION_DEFAULT,
-                ): vol.In(
-                    _region_options(self.hass)
-                ),
+                ): _region_selector(self.hass),
             }
         )
 
@@ -601,6 +646,83 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Start reauthentication after Home Assistant detects invalid credentials."""
         await async_ensure_catalog_loaded(self.hass)
         return await self.async_step_reauth_confirm()
+
+    async def async_step_reconfigure(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> FlowResult:
+        """Reconfigure credentials, region, and system identity."""
+        await async_ensure_catalog_loaded(self.hass)
+        entry = self._get_reconfigure_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            client_id = str(user_input[CONF_CLIENT_ID]).strip()
+            client_secret = str(user_input[CONF_CLIENT_SECRET]).strip()
+            region = str(user_input[CONF_API_REGION]).strip().lower()
+            system_name = str(user_input[CONF_SYSTEM_NAME]).strip()
+            if not client_id or not client_secret:
+                errors["base"] = "invalid_credentials"
+            elif not system_name:
+                errors["base"] = "invalid_system_name"
+            elif region not in (API_REGION_EU, API_REGION_CN):
+                errors["base"] = "invalid_region"
+            else:
+                valid, err_key = await _validate_credentials(
+                    self.hass,
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    region=region,
+                )
+                if not valid:
+                    errors["base"] = err_key or "cannot_connect"
+
+            if not errors:
+                options = dict(entry.options)
+                options[CONF_SYSTEM_NAME] = system_name
+                options.setdefault(CONF_ENTITY_PREFIX, _slugify_name(system_name))
+                self.hass.config_entries.async_update_entry(
+                    entry,
+                    options=options,
+                    title=system_name,
+                )
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_CLIENT_ID: client_id,
+                        CONF_CLIENT_SECRET: client_secret,
+                        CONF_API_REGION: region,
+                    },
+                    reason="reconfigure_successful",
+                )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_CLIENT_ID,
+                        default=entry.data.get(CONF_CLIENT_ID, ""),
+                    ): _text_selector(),
+                    vol.Required(
+                        CONF_CLIENT_SECRET,
+                        default=entry.data.get(CONF_CLIENT_SECRET, ""),
+                    ): _text_selector(password=True),
+                    vol.Required(
+                        CONF_SYSTEM_NAME,
+                        default=entry.options.get(
+                            CONF_SYSTEM_NAME,
+                            DEFAULT_SYSTEM_NAME,
+                        ),
+                    ): _text_selector(),
+                    vol.Required(
+                        CONF_API_REGION,
+                        default=entry.data.get(CONF_API_REGION, API_REGION_DEFAULT),
+                    ): _region_selector(self.hass),
+                }
+            ),
+            errors=errors,
+        )
 
     async def async_step_reauth_confirm(
         self,
@@ -647,12 +769,12 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required(
                         CONF_CLIENT_ID,
                         default=entry.data.get(CONF_CLIENT_ID, ""),
-                    ): str,
-                    vol.Required(CONF_CLIENT_SECRET): str,
+                    ): _text_selector(),
+                    vol.Required(CONF_CLIENT_SECRET): _text_selector(password=True),
                     vol.Required(
                         CONF_API_REGION,
                         default=entry.data.get(CONF_API_REGION, API_REGION_DEFAULT),
-                    ): vol.In(_region_options(self.hass)),
+                    ): _region_selector(self.hass),
                 }
             ),
             errors=errors,
@@ -685,17 +807,17 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             self._config_entry,
             data=updated_data,
             options=updated_options,
+            title=str(
+                updated_options.get(CONF_SYSTEM_NAME)
+                or self._config_entry.title
+            ),
         )
         await self.hass.config_entries.async_reload(self._config_entry.entry_id)
         return self.async_create_entry(title="", data=updated_options)
 
     def _runtime_coordinator(self):
-        runtime_entry = self.hass.data.get(DOMAIN, {}).get(self._config_entry.entry_id)
-        return (
-            runtime_entry.get("coordinator")
-            if isinstance(runtime_entry, dict)
-            else None
-        )
+        runtime = getattr(self._config_entry, "runtime_data", None)
+        return runtime.coordinator if runtime is not None else None
 
     def _manual_device_context(
         self,
@@ -742,8 +864,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         if not entries:
             return [], [], None
 
-        runtime_entry = self.hass.data.get(DOMAIN, {}).get(self._config_entry.entry_id)
-        coordinator = runtime_entry.get("coordinator") if isinstance(runtime_entry, dict) else None
+        coordinator = self._runtime_coordinator()
         if coordinator is None:
             return [], [], "manual_meter_serial_validation_unavailable"
 
@@ -839,8 +960,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> tuple[list[dict[str, Any]], list[str], str | None]:
         if not entries:
             return [], [], None
-        runtime_entry = self.hass.data.get(DOMAIN, {}).get(self._config_entry.entry_id)
-        coordinator = runtime_entry.get("coordinator") if isinstance(runtime_entry, dict) else None
+        coordinator = self._runtime_coordinator()
         if coordinator is None:
             return [], [], "manual_ems_validation_unavailable"
 
@@ -900,6 +1020,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         """Update account credentials and system identity."""
         await async_ensure_catalog_loaded(self.hass)
         current_data = dict(self._config_entry.data)
+        current_options = dict(self._config_entry.options)
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -935,15 +1056,22 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                     {
                         CONF_CLIENT_ID: client_id,
                         CONF_CLIENT_SECRET: client_secret,
-                        CONF_SYSTEM_NAME: system_name,
                         CONF_API_REGION: region,
                     }
                 )
-                current_data.setdefault(
+                current_options.update(
+                    {
+                        CONF_SYSTEM_NAME: system_name,
+                    }
+                )
+                current_options.setdefault(
                     CONF_ENTITY_PREFIX,
                     _slugify_name(system_name),
                 )
-                return await self._async_finish(data=current_data)
+                return await self._async_finish(
+                    data=current_data,
+                    options=current_options,
+                )
 
         return self.async_show_form(
             step_id="credentials",
@@ -952,14 +1080,14 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_CLIENT_ID,
                         default=current_data.get(CONF_CLIENT_ID, ""),
-                    ): str,
+                    ): _text_selector(),
                     vol.Required(
                         CONF_CLIENT_SECRET,
                         default=current_data.get(CONF_CLIENT_SECRET, ""),
-                    ): str,
+                    ): _text_selector(password=True),
                     vol.Required(
                         CONF_SYSTEM_NAME,
-                        default=current_data.get(
+                        default=current_options.get(
                             CONF_SYSTEM_NAME,
                             translate(
                                 self.hass,
@@ -967,14 +1095,14 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                                 fallback=DEFAULT_SYSTEM_NAME,
                             ),
                         ),
-                    ): str,
+                    ): _text_selector(),
                     vol.Required(
                         CONF_API_REGION,
                         default=current_data.get(
                             CONF_API_REGION,
                             API_REGION_DEFAULT,
                         ),
-                    ): vol.In(_region_options(self.hass)),
+                    ): _region_selector(self.hass),
                 }
             ),
             errors=errors,
@@ -986,13 +1114,12 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Update standard, live-view, and night polling settings."""
         await async_ensure_catalog_loaded(self.hass)
-        current_data = dict(self._config_entry.data)
         current_options = dict(self._config_entry.options)
 
         if user_input is not None:
-            current_data[CONF_SCAN_INTERVAL] = int(user_input[CONF_SCAN_INTERVAL])
             current_options.update(
                 {
+                    CONF_SCAN_INTERVAL: int(user_input[CONF_SCAN_INTERVAL]),
                     CONF_LIVE_VIEW_DEFAULT_DURATION: int(
                         user_input[CONF_LIVE_VIEW_DEFAULT_DURATION]
                     ),
@@ -1007,10 +1134,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_NIGHT_END_HOUR: int(user_input[CONF_NIGHT_END_HOUR]),
                 }
             )
-            return await self._async_finish(
-                data=current_data,
-                options=current_options,
-            )
+            return await self._async_finish(options=current_options)
 
         return self.async_show_form(
             step_id="polling",
@@ -1018,52 +1142,34 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 {
                     vol.Required(
                         CONF_SCAN_INTERVAL,
-                        default=current_data.get(
+                        default=current_options.get(
                             CONF_SCAN_INTERVAL,
                             DEFAULT_SCAN_INTERVAL,
                         ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
-                    ),
+                    ): _number_selector(MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL),
                     vol.Required(
                         CONF_LIVE_VIEW_DEFAULT_DURATION,
                         default=current_options.get(
                             CONF_LIVE_VIEW_DEFAULT_DURATION,
                             DEFAULT_LIVE_VIEW_DEFAULT_DURATION,
                         ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=MIN_LIVE_VIEW_DURATION,
-                            max=MAX_LIVE_VIEW_DURATION,
-                        ),
-                    ),
+                    ): _number_selector(MIN_LIVE_VIEW_DURATION, MAX_LIVE_VIEW_DURATION),
                     vol.Required(
                         CONF_LIVE_VIEW_INTERVAL,
                         default=current_options.get(
                             CONF_LIVE_VIEW_INTERVAL,
                             DEFAULT_LIVE_VIEW_INTERVAL,
                         ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=MIN_LIVE_VIEW_INTERVAL,
-                            max=MAX_LIVE_VIEW_INTERVAL,
-                        ),
-                    ),
+                    ): _number_selector(MIN_LIVE_VIEW_INTERVAL, MAX_LIVE_VIEW_INTERVAL),
                     vol.Required(
                         CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
                         default=current_options.get(
                             CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
                             DEFAULT_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
                         ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=MIN_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
-                            max=MAX_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
-                        ),
+                    ): _number_selector(
+                        MIN_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+                        MAX_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
                     ),
                     vol.Required(
                         CONF_NIGHT_SCAN_INTERVAL,
@@ -1071,27 +1177,21 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                             CONF_NIGHT_SCAN_INTERVAL,
                             DEFAULT_NIGHT_SCAN_INTERVAL,
                         ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=MIN_NIGHT_SCAN_INTERVAL,
-                            max=MAX_NIGHT_SCAN_INTERVAL,
-                        ),
-                    ),
+                    ): _number_selector(MIN_NIGHT_SCAN_INTERVAL, MAX_NIGHT_SCAN_INTERVAL),
                     vol.Required(
                         CONF_NIGHT_START_HOUR,
                         default=current_options.get(
                             CONF_NIGHT_START_HOUR,
                             DEFAULT_NIGHT_START_HOUR,
                         ),
-                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),
+                    ): _number_selector(0, 23),
                     vol.Required(
                         CONF_NIGHT_END_HOUR,
                         default=current_options.get(
                             CONF_NIGHT_END_HOUR,
                             DEFAULT_NIGHT_END_HOUR,
                         ),
-                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),
+                    ): _number_selector(0, 23),
                 }
             ),
         )
@@ -1240,28 +1340,34 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 return await self._async_finish(options=current_options)
 
         schema_fields: dict[Any, Any] = {
-            vol.Optional(CONF_MANUAL_METER_SERIALS_ADD, default=""): str,
+            vol.Optional(
+                CONF_MANUAL_METER_SERIALS_ADD,
+                default="",
+            ): _text_selector(multiline=True),
             vol.Required(
                 CONF_MANUAL_METER_REMOVE_SERIAL,
                 default=MANUAL_METER_REMOVE_NONE,
-            ): vol.In(remove_options),
+            ): _mapped_select_selector(remove_options),
             vol.Required(
                 CONF_MANUAL_METER_REMOVE_CONFIRM,
                 default=False,
-            ): bool,
+            ): selector.BooleanSelector(),
         }
         if show_manual_ems_options:
             schema_fields.update(
                 {
-                    vol.Optional(CONF_MANUAL_EMS_SYSTEMS_ADD, default=""): str,
+                    vol.Optional(
+                        CONF_MANUAL_EMS_SYSTEMS_ADD,
+                        default="",
+                    ): _text_selector(multiline=True),
                     vol.Required(
                         CONF_MANUAL_EMS_REMOVE_SERIAL,
                         default=MANUAL_EMS_REMOVE_NONE,
-                    ): vol.In(ems_remove_options),
+                    ): _mapped_select_selector(ems_remove_options),
                     vol.Required(
                         CONF_MANUAL_EMS_REMOVE_CONFIRM,
                         default=False,
-                    ): bool,
+                    ): selector.BooleanSelector(),
                 }
             )
         return self.async_show_form(
@@ -1363,7 +1469,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                             CONF_RATE_LIMIT_NOTIFICATIONS,
                             True,
                         ),
-                    ): bool,
+                    ): selector.BooleanSelector(),
                 }
             ),
         )

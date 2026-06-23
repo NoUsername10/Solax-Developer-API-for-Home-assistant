@@ -11,6 +11,13 @@
           "system_name": "System Name",
           "scan_interval": "Scan Interval (seconds)",
           "api_region": "API Region"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Name used for the Home Assistant system device and entity ID prefix.",
+          "scan_interval": "Normal polling interval in seconds.",
+          "api_region": "SolaX Developer API region assigned to your application."
         }
       },
       "reauth_confirm": {
@@ -20,6 +27,27 @@
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "api_region": "API Region"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "SolaX Developer API region assigned to the application."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure SolaX Developer API",
+        "description": "Update the connection credentials, API region, or Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "System Name",
+          "api_region": "API Region"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Name used for the Home Assistant system device and entity ID prefix.",
+          "api_region": "SolaX Developer API region assigned to the application."
         }
       }
     },
@@ -28,7 +56,8 @@
       "invalid_credentials": "Invalid credentials",
       "cannot_connect": "Cannot connect to SolaX Developer API",
       "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "reauth_successful": "SolaX Developer API was reconnected successfully"
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
     },
     "error": {
       "invalid_credentials": "Invalid credentials",
@@ -58,6 +87,12 @@
           "client_secret": "Client Secret",
           "system_name": "System Name",
           "api_region": "API Region"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Name used for the Home Assistant system device and entity ID prefix.",
+          "api_region": "SolaX Developer API region assigned to your application."
         }
       },
       "polling": {
@@ -71,6 +106,15 @@
           "night_scan_interval": "Night Scan Interval (seconds)",
           "night_start_hour": "Night Mode Start Hour (0-23)",
           "night_end_hour": "Night Mode End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Normal polling interval in seconds.",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
         }
       },
       "manual_devices": {
@@ -83,6 +127,14 @@
           "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
           "manual_ems_remove_serial": "Manual EMS System to Remove",
           "manual_ems_remove_confirm": "Remove Selected Manual EMS System"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Select a previously added manual meter.",
+          "manual_meter_remove_confirm": "Confirm removal of the selected manual meter.",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Select a previously added manual EMS system.",
+          "manual_ems_remove_confirm": "Confirm removal of the selected manual EMS system."
         }
       },
       "advanced": {
@@ -90,6 +142,9 @@
         "description": "Configure diagnostic notifications and advanced integration behavior.",
         "data": {
           "rate_limit_notifications": "Rate Limit Notifications"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
         }
       }
     },
@@ -135,7 +190,12 @@
         "name": "Start Live View Boost"
       }
     },
-    "select": {}
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
   },
   "services": {
     "manual_refresh": {
@@ -1211,6 +1271,71 @@
           "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
         }
       }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "No configured SolaX Developer API entries"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "System name is required"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
     }
   }
 }

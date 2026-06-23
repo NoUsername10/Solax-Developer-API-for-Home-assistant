@@ -11,6 +11,13 @@
           "system_name": "Systemnamn",
           "scan_interval": "Avsökningsintervall (sekunder)",
           "api_region": "API-region"
+        },
+        "data_description": {
+          "client_id": "Klient-ID från din app i SolaX utvecklarportal.",
+          "client_secret": "Klienthemlighet från samma app i utvecklarportalen.",
+          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
+          "scan_interval": "Normalt avfrågningsintervall i sekunder.",
+          "api_region": "SolaX Developer API-regionen som tilldelats appen."
         }
       },
       "reauth_confirm": {
@@ -20,6 +27,27 @@
           "client_id": "Klient-ID",
           "client_secret": "Klienthemlighet",
           "api_region": "API-region"
+        },
+        "data_description": {
+          "client_id": "Klient-ID för den befintliga SolaX Developer API-appen.",
+          "client_secret": "Appens aktuella klienthemlighet.",
+          "api_region": "SolaX Developer API-regionen som tilldelats appen."
+        }
+      },
+      "reconfigure": {
+        "title": "Konfigurera om SolaX Developer API",
+        "description": "Uppdatera anslutningsuppgifter, API-region eller Home Assistant-systemnamn.",
+        "data": {
+          "client_id": "Klient-ID",
+          "client_secret": "Klienthemlighet",
+          "system_name": "Systemnamn",
+          "api_region": "API-region"
+        },
+        "data_description": {
+          "client_id": "Klient-ID som ska användas efter omkonfigureringen.",
+          "client_secret": "Klienthemlighet som ska användas efter omkonfigureringen.",
+          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
+          "api_region": "SolaX Developer API-regionen som tilldelats appen."
         }
       }
     },
@@ -28,7 +56,8 @@
       "invalid_credentials": "Ogiltiga autentiseringsuppgifter",
       "cannot_connect": "Kan inte ansluta till SolaX Developer API",
       "cannot_read_data": "Autentiseringsuppgifterna är giltiga men inga läsbara anläggningsdata returnerades",
-      "reauth_successful": "SolaX Developer API återanslöts"
+      "reauth_successful": "SolaX Developer API återanslöts",
+      "reconfigure_successful": "SolaX Developer API konfigurerades om"
     },
     "error": {
       "invalid_credentials": "Ogiltiga autentiseringsuppgifter",
@@ -58,6 +87,12 @@
           "client_secret": "Klienthemlighet",
           "system_name": "Systemnamn",
           "api_region": "API-region"
+        },
+        "data_description": {
+          "client_id": "Klient-ID från din app i SolaX utvecklarportal.",
+          "client_secret": "Klienthemlighet från samma app i utvecklarportalen.",
+          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
+          "api_region": "SolaX Developer API-regionen som tilldelats appen."
         }
       },
       "polling": {
@@ -71,6 +106,15 @@
           "night_scan_interval": "Avsökningsintervall nattetid (sekunder)",
           "night_start_hour": "Starttimme för nattläge (0-23)",
           "night_end_hour": "Sluttimme för nattläge (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Normalt avfrågningsintervall i sekunder.",
+          "live_view_default_duration": "Hur länge Live View förblir aktiv när ingen annan varaktighet anges.",
+          "live_view_interval": "Begärt avfrågningsintervall för Live View. Det effektiva intervallet kan ökas för att skydda API-budgeten.",
+          "live_view_call_budget_per_minute": "Maximalt antal API-anrop per minut som reserveras för Live View.",
+          "night_scan_interval": "Avfrågningsintervall som används under den konfigurerade nattperioden.",
+          "night_start_hour": "Lokal timme då nattavfrågningen börjar.",
+          "night_end_hour": "Lokal timme då nattavfrågningen slutar."
         }
       },
       "manual_devices": {
@@ -83,6 +127,14 @@
           "manual_ems_systems_add": "Lägg till manuella EMS-system (EMS-serie|anläggnings-ID, ett per rad)",
           "manual_ems_remove_serial": "Manuellt EMS-system att ta bort",
           "manual_ems_remove_confirm": "Ta bort valt manuellt EMS-system"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Ange ett åtkomligt mätarserienummer per rad. Lägg endast till |1 eller |4 när affärstypen måste anges.",
+          "manual_meter_remove_serial": "Välj en tidigare tillagd manuell mätare.",
+          "manual_meter_remove_confirm": "Bekräfta borttagning av den valda manuella mätaren.",
+          "manual_ems_systems_add": "Ange ett EMS-serienummer och plant-ID per rad som SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Välj ett tidigare tillagt manuellt EMS-system.",
+          "manual_ems_remove_confirm": "Bekräfta borttagning av det valda manuella EMS-systemet."
         }
       },
       "advanced": {
@@ -90,6 +142,9 @@
         "description": "Konfigurera diagnostikaviseringar och avancerat integrationsbeteende.",
         "data": {
           "rate_limit_notifications": "Aviseringar om hastighetsgräns"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Visa Home Assistant-aviseringar när SolaX rapporterar en frekvens- eller kvotgräns."
         }
       }
     },
@@ -135,7 +190,12 @@
         "name": "Starta förstärkt livevy"
       }
     },
-    "select": {}
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
   },
   "services": {
     "manual_refresh": {
@@ -1211,6 +1271,71 @@
           "description": "Required. List of 1 to 10 EMS objects with registerNo, manualLäge, and conditional power/targetSoc."
         }
       }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "Ingen aktiv post för {domain} för {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Inga konfigurerade poster för SolaX Developer API"
+    },
+    "history_end_before_start": {
+      "message": "end_time måste vara större än start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device stöder endast business_type=4"
+    },
+    "system_name_required": {
+      "message": "Systemnamn krävs"
+    },
+    "control_unknown_service": {
+      "message": "{service}: okänd styrtjänst"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: tjänstefält måste använda snake_case-namn"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: det obligatoriska fältet {field} saknas"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: fältet {field} måste vara ett heltal"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: fältet {field} måste vara av typen {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList måste innehålla minst ett serienummer"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList stöder högst {max} serienummer"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType måste vara 1 eller 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: fältet {field} måste använda formatet HH:MM"
+    },
+    "control_not_available": {
+      "message": "{service}: ingen kompatibel enhetsfunktion är tillgänglig i integrationen"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: fältet {field} måste vara ett ändligt tal"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: fältet {field} har ett värde som inte stöds"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} måste vara senare än {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS-styrning kräver deviceType 100 och businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList måste innehålla 1 till {max} EMS-system"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: objekt {index} i paramList måste vara ett objekt"
     }
   }
 }

@@ -6,6 +6,7 @@ import logging
 
 DOMAIN = "solax_developer_api"
 PLATFORMS = ["sensor", "switch", "button"]
+CONFIG_ENTRY_VERSION = 2
 
 CONF_CLIENT_ID = "client_id"
 CONF_CLIENT_SECRET = "client_secret"
@@ -43,6 +44,13 @@ DEFAULT_NIGHT_START_HOUR = 23
 DEFAULT_NIGHT_END_HOUR = 6
 
 API_RATE_LIMIT_PER_MINUTE = 100
+
+
+def config_value(entry, key: str, default=None):
+    """Return an option value with legacy config-data fallback."""
+    if key in entry.options:
+        return entry.options[key]
+    return entry.data.get(key, default)
 
 API_REGION_EU = "eu"
 API_REGION_CN = "cn"

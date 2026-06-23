@@ -17,8 +17,6 @@ from .const import (
     BATTERY_STATUS_MAP,
     BATTERY_STATUS_MAP_BY_BUSINESS,
     COMMAND_STATUS_MAP,
-    CONF_ENTITY_PREFIX,
-    CONF_SYSTEM_NAME,
     DEVICE_MODEL_MAP,
     DEVICE_MODEL_MAP_BY_CONTEXT,
     DEVICE_TYPE_NAMES,
@@ -27,6 +25,9 @@ from .const import (
     EV_STATUS_MAP,
     INVERTER_STATUS_MAP,
 )
+from .entity import system_device_info, system_identity
+
+PARALLEL_UPDATES = 0
 
 CORE_PLANT_INFO_KEYS = {"plantState", "plantTimeZone", "electricityPriceUnit"}
 CORE_DEVICE_INFO_KEYS = {"onlineStatus", "flag", "deviceModel"}
@@ -69,6 +70,7 @@ def _humanize_key(key: str) -> str:
     text = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", key)
     text = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", text)
     text = re.sub(r"(?i)l([123])l([123])", r"L\1-L\2", text)
+    text = re.sub(r"(?i)\bl([123])\s+l([123])\b", r"L\1-L\2", text)
     text = text.replace("_", " ")
 
     words = []
@@ -79,6 +81,8 @@ def _humanize_key(key: str) -> str:
         lowered = word.casefold()
         if lowered in {"ac", "dc", "eps", "soc", "mppt", "pv", "utc", "rfid"}:
             words.append(word.upper())
+        elif re.fullmatch(r"l[123]-l[123]", lowered):
+            words.append(f"L{lowered[1]}-L{lowered[-1]}")
         elif re.fullmatch(r"l[123]", lowered):
             words.append(word.upper())
         elif re.fullmatch(r"epsl[123]", lowered):
@@ -446,23 +450,8 @@ def _extract_stat_metrics(stat_payload: dict[str, Any] | None) -> dict[str, floa
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Set up sensors for a config entry."""
-    data = hass.data[DOMAIN][entry.entry_id]
-    coordinator = data["coordinator"]
-
-    system_name = entry.data.get(CONF_SYSTEM_NAME)
-    if not system_name:
-        raise ValueError(
-            _t(
-                hass,
-                "runtime.errors.system_name_required",
-                fallback="System name is required",
-            )
-        )
-
-    system_slug = entry.data.get(
-        CONF_ENTITY_PREFIX,
-        system_name.lower().replace(" ", "_").replace("-", "_"),
-    )
+    coordinator = entry.runtime_data.coordinator
+    system_name, system_slug = system_identity(hass, entry)
 
     entities: list[SensorEntity] = []
     created: set[tuple[str, str, str]] = set()
@@ -715,14 +704,15 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class SolaxBaseSensor(CoordinatorEntity, SensorEntity):
     """Common base for all SolaX sensors."""
 
-    _attr_has_entity_name = False
+    _attr_has_entity_name = True
 
     def __init__(self, coordinator, system_slug: str, unique_suffix: str, name: str) -> None:
         super().__init__(coordinator)
         self._system_slug = system_slug
         self._attr_unique_id = f"{system_slug}_{unique_suffix}".lower()
         self.entity_id = f"sensor.{self._attr_unique_id}"
-        self._attr_name = name
+        self._attr_translation_key = "dynamic_field"
+        self._attr_translation_placeholders = {"field_name": name}
 
 
 class SolaxSystemSensor(SolaxBaseSensor):
@@ -782,32 +772,12 @@ class SolaxSystemSensor(SolaxBaseSensor):
 
     @property
     def device_info(self):
-        data = self.coordinator.data or {}
-        inverter_count = len(
-            [
-                sn
-                for sn, dev in (data.get("devices") or {}).items()
-                if int((dev or {}).get("deviceType") or 0) == 1
-            ]
-        )
-        model = _t(
+        return system_device_info(
             self.coordinator.hass,
-            "runtime.device_model.system.single_inverter"
-            if inverter_count == 1
-            else "runtime.device_model.system.multi_inverter",
-            fallback="Single Inverter System" if inverter_count == 1 else "Multi-Inverter System",
+            self.coordinator,
+            self._system_name,
+            self._system_slug,
         )
-        return {
-            "identifiers": {(DOMAIN, f"system_{self._system_slug}")},
-            "name": _t(
-                self.coordinator.hass,
-                "runtime.entity_templates.system_totals_name",
-                placeholders={"system_name": self._system_name},
-                fallback="{system_name} System Totals",
-            ),
-            "manufacturer": "SolaX",
-            "model": model,
-        }
 
     @staticmethod
     def _sort_strings(values: list[str]) -> list[str]:

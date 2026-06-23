@@ -10,10 +10,11 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.components import persistent_notification
 from homeassistant.components.http import StaticPathConfig
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -22,9 +23,14 @@ from .const import (
     CONF_API_REGION,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
+    CONF_ENTITY_PREFIX,
     CONF_SCAN_INTERVAL,
     CONF_RATE_LIMIT_NOTIFICATIONS,
+    CONF_SYSTEM_NAME,
+    CONFIG_ENTRY_VERSION,
     CONTROL_SERVICE_DEFINITIONS,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SYSTEM_NAME,
     DOMAIN,
     EVENT_DRY_RUN_CONTROL,
     MAX_LIVE_VIEW_DURATION,
@@ -39,9 +45,11 @@ from .const import (
     SERVICE_STOP_LIVE_VIEW,
     SERVICE_QUERY_MASTER_CONTROL_DEVICE,
     SERVICE_QUERY_REQUEST_RESULT,
+    config_value,
 )
 from .coordinator import SolaxDeveloperCoordinator
 from .i18n import async_ensure_catalog_loaded, translate
+from .runtime import SolaxConfigEntry, SolaxRuntimeData
 from .validation import ControlValidationError, validate_control_payload
 
 _LOGGER = logging.getLogger(__name__)
@@ -235,40 +243,60 @@ def _update_repairs(
         ir.async_delete_issue(hass, DOMAIN, permission_issue_id)
 
 
+def _loaded_runtime_for_entry(
+    hass: HomeAssistant,
+    entry_id: str,
+) -> SolaxRuntimeData | None:
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if entry is None or entry.state is not ConfigEntryState.LOADED:
+        return None
+    return getattr(entry, "runtime_data", None)
+
+
+def _translated_service_error(
+    translation_key: str,
+    *,
+    placeholders: Mapping[str, Any] | None = None,
+) -> ServiceValidationError:
+    """Build a frontend-translatable service validation error."""
+    return ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key=translation_key.rsplit(".", 1)[-1],
+        translation_placeholders={
+            key: str(value) for key, value in (placeholders or {}).items()
+        },
+    )
+
+
 def _coordinator_for_entry(hass: HomeAssistant, entry_id: str) -> SolaxDeveloperCoordinator:
-    entry_data = hass.data.get(DOMAIN, {}).get(entry_id)
-    if not entry_data:
-        raise HomeAssistantError(
-            translate(
-                hass,
-                "runtime.errors.no_active_entry",
-                placeholders={"domain": DOMAIN, "entry_id": entry_id},
-                fallback="No active {domain} entry for {entry_id}",
-            )
+    runtime = _loaded_runtime_for_entry(hass, entry_id)
+    if runtime is None:
+        raise _translated_service_error(
+            "no_active_entry",
+            placeholders={"domain": DOMAIN, "entry_id": entry_id},
         )
-    return entry_data["coordinator"]
+    return runtime.coordinator
 
 
 def _resolve_coordinator_for_service(
     hass: HomeAssistant,
     call: ServiceCall,
 ) -> tuple[str, SolaxDeveloperCoordinator]:
-    domain_data = hass.data.get(DOMAIN, {})
-    if not domain_data:
-        raise HomeAssistantError(
-            translate(
-                hass,
-                "runtime.errors.no_configured_entries",
-                fallback="No configured SolaX Developer API entries",
-            )
-        )
+    loaded_entries = [
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.state is ConfigEntryState.LOADED
+        and getattr(entry, "runtime_data", None) is not None
+    ]
+    if not loaded_entries:
+        raise _translated_service_error("no_configured_entries")
 
     explicit_entry_id = str(call.data.get("entry_id", "")).strip()
     if explicit_entry_id:
         return explicit_entry_id, _coordinator_for_entry(hass, explicit_entry_id)
 
-    entry_id = next(iter(domain_data.keys()))
-    return entry_id, domain_data[entry_id]["coordinator"]
+    entry = loaded_entries[0]
+    return entry.entry_id, entry.runtime_data.coordinator
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -277,13 +305,16 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     await _async_register_frontend_assets(hass)
 
     async def _handle_manual_refresh(call: ServiceCall):
-        domain_data = hass.data.get(DOMAIN, {})
         explicit_entry_id = str(call.data.get("entry_id", "")).strip()
         refreshed_entries = []
-        for entry_id, entry_data in domain_data.items():
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            entry_id = config_entry.entry_id
             if explicit_entry_id and entry_id != explicit_entry_id:
                 continue
-            coordinator: SolaxDeveloperCoordinator = entry_data["coordinator"]
+            runtime = _loaded_runtime_for_entry(hass, entry_id)
+            if runtime is None:
+                continue
+            coordinator = runtime.coordinator
             await coordinator.async_request_refresh()
             refreshed_entries.append(entry_id)
         return {
@@ -297,13 +328,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         start_time = int(call.data["start_time"])
         end_time = int(call.data["end_time"])
         if end_time <= start_time:
-            raise HomeAssistantError(
-                translate(
-                    hass,
-                    "runtime.errors.history_end_before_start",
-                    fallback="end_time must be greater than start_time",
-                )
-            )
+            raise _translated_service_error("history_end_before_start")
         response = await coordinator.async_fetch_device_history(
             sn_list=call.data["sn_list"],
             device_type=int(call.data["device_type"]),
@@ -330,13 +355,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
         business_type = int(call.data["business_type"])
         if business_type != 4:
-            raise HomeAssistantError(
-                translate(
-                    hass,
-                    "runtime.errors.master_control_requires_ci",
-                    fallback="query_master_control_device supports business_type=4 only",
-                )
-            )
+            raise _translated_service_error("master_control_requires_ci")
         payload = await coordinator.async_query_master_control_device(
             device_sn=str(call.data["device_sn"]).strip(),
             device_type=int(call.data["device_type"]),
@@ -495,25 +514,14 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             try:
                 validated_payload = validate_control_payload(_service_name, raw_payload)
             except ControlValidationError as err:
-                raise HomeAssistantError(
-                    translate(
-                        hass,
-                        err.key,
-                        placeholders=err.placeholders,
-                        fallback=err.key,
-                    )
+                raise _translated_service_error(
+                    err.key,
+                    placeholders=err.placeholders,
                 ) from err
             if _service_name not in coordinator.available_control_services:
-                raise HomeAssistantError(
-                    translate(
-                        hass,
-                        "runtime.errors.control_not_available",
-                        placeholders={"service": _service_name},
-                        fallback=(
-                            "{service}: no compatible device capability is "
-                            "available in this integration"
-                        ),
-                    )
+                raise _translated_service_error(
+                    "control_not_available",
+                    placeholders={"service": _service_name},
                 )
             event = coordinator.record_control_dry_run(
                 service=_service_name,
@@ -546,11 +554,11 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
     def _sync_capability_services() -> None:
         coordinators = [
-            entry_data.get("coordinator")
-            for entry_data in hass.data.get(DOMAIN, {}).values()
-            if isinstance(entry_data, Mapping)
+            entry.runtime_data.coordinator
+            for entry in hass.config_entries.async_entries(DOMAIN)
+            if entry.state is ConfigEntryState.LOADED
+            and getattr(entry, "runtime_data", None) is not None
         ]
-        coordinators = [item for item in coordinators if item is not None]
         desired: set[str] = set()
         if any(coordinator.has_history_capable_devices for coordinator in coordinators):
             desired.add(SERVICE_FETCH_DEVICE_HISTORY)
@@ -602,9 +610,8 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> bool:
     """Set up SolaX Developer API from config entry."""
-    hass.data.setdefault(DOMAIN, {})
     await async_ensure_catalog_loaded(hass)
 
     session = async_get_clientsession(hass)
@@ -618,9 +625,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = SolaxDeveloperCoordinator(
         hass,
         client=client,
+        config_entry=entry,
         entry_id=entry.entry_id,
-        scan_interval=int(entry.data[CONF_SCAN_INTERVAL]),
+        scan_interval=int(config_value(entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
         options=dict(entry.options or {}),
+    )
+    entry.runtime_data = SolaxRuntimeData(
+        client=client,
+        coordinator=coordinator,
     )
 
     await coordinator.async_load_capability_cache()
@@ -646,12 +658,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unsub = coordinator.async_add_listener(_handle_coordinator_update)
 
-    hass.data[DOMAIN][entry.entry_id] = {
-        "entry": entry,
-        "coordinator": coordinator,
-        "client": client,
-        "rate_limit_unsub": unsub,
-    }
+    entry.runtime_data.rate_limit_unsub = unsub
     sync_services = hass.data.get(RUNTIME_RELOAD_STATE, {}).get(
         "sync_capability_services"
     )
@@ -662,17 +669,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate legacy connection data into the correct config-entry stores."""
+    if entry.version > CONFIG_ENTRY_VERSION:
+        return False
+    if entry.version == CONFIG_ENTRY_VERSION:
+        return True
+
+    data = dict(entry.data)
+    options = dict(entry.options)
+    for key, default in (
+        (CONF_SYSTEM_NAME, DEFAULT_SYSTEM_NAME),
+        (CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+        (CONF_ENTITY_PREFIX, None),
+    ):
+        value = data.pop(key, default)
+        if value is not None:
+            options.setdefault(key, value)
+
+    system_name = str(options.get(CONF_SYSTEM_NAME) or DEFAULT_SYSTEM_NAME).strip()
+    options[CONF_SYSTEM_NAME] = system_name
+    options.setdefault(
+        CONF_ENTITY_PREFIX,
+        system_name.lower().replace(" ", "_").replace("-", "_"),
+    )
+
+    hass.config_entries.async_update_entry(
+        entry,
+        data=data,
+        options=options,
+        version=CONFIG_ENTRY_VERSION,
+    )
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> bool:
     """Unload config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if not unload_ok:
         return False
 
-    entry_data = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
-    if entry_data:
-        unsub = entry_data.get("rate_limit_unsub")
-        if unsub:
-            unsub()
+    if unsub := entry.runtime_data.rate_limit_unsub:
+        unsub()
 
     persistent_notification.async_dismiss(hass, _rate_limit_notification_id(entry.entry_id))
     ir.async_delete_issue(
@@ -692,7 +730,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         sync_services()
 
     # Remove services when no entries remain.
-    if not hass.data.get(DOMAIN):
+    if not any(
+        config_entry.state is ConfigEntryState.LOADED
+        for config_entry in hass.config_entries.async_entries(DOMAIN)
+        if config_entry.entry_id != entry.entry_id
+    ):
         for service_name in [
             SERVICE_MANUAL_REFRESH,
             SERVICE_FETCH_DEVICE_HISTORY,
@@ -706,3 +748,39 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 hass.services.async_remove(DOMAIN, service_name)
 
     return True
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Allow removal only when a device is absent from current SolaX inventory."""
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is None:
+        return False
+
+    state = runtime.coordinator.data or {}
+    current_identifiers = {
+        f"plant_{plant_id}" for plant_id in (state.get("plants") or {})
+    }
+    current_identifiers.update(str(serial) for serial in (state.get("devices") or {}))
+
+    system_name = str(config_value(entry, CONF_SYSTEM_NAME, DEFAULT_SYSTEM_NAME))
+    system_slug = str(
+        config_value(
+            entry,
+            CONF_ENTITY_PREFIX,
+            system_name.lower().replace(" ", "_").replace("-", "_"),
+        )
+    )
+    current_identifiers.add(f"system_{system_slug}")
+
+    integration_identifiers = {
+        identifier
+        for domain, identifier in device_entry.identifiers
+        if domain == DOMAIN
+    }
+    return bool(integration_identifiers) and integration_identifiers.isdisjoint(
+        current_identifiers
+    )

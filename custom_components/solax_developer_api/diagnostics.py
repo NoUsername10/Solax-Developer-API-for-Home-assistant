@@ -7,7 +7,7 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
@@ -22,7 +22,6 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SYSTEM_NAME,
     DEFAULT_SCAN_INTERVAL,
-    DOMAIN,
 )
 
 MASK_META_SUFFIXES = ("_masked", "_length", "_present")
@@ -668,6 +667,7 @@ async def _build_unloaded_entry_diagnostics(
     coordinator = SolaxDeveloperCoordinator(
         hass,
         client=client,
+        config_entry=entry,
         entry_id=entry.entry_id,
         scan_interval=int(entry.data.get(CONF_SCAN_INTERVAL) or DEFAULT_SCAN_INTERVAL),
         options=dict(entry.options or {}),
@@ -711,14 +711,14 @@ async def async_get_config_entry_diagnostics(
 ) -> dict[str, Any]:
     """Return diagnostics data for a config entry."""
     issues: list[dict[str, Any]] = []
-    domain_data = hass.data.get(DOMAIN, {})
-    entry_data = domain_data.get(entry.entry_id)
-
-    if not entry_data:
+    if (
+        entry.state is not ConfigEntryState.LOADED
+        or getattr(entry, "runtime_data", None) is None
+    ):
         return await _build_unloaded_entry_diagnostics(hass, entry)
 
-    coordinator = entry_data.get("coordinator")
-    client = entry_data.get("client")
+    coordinator = entry.runtime_data.coordinator
+    client = entry.runtime_data.client
     state = deepcopy(getattr(coordinator, "data", {}) or {})
     raw_api_responses = deepcopy(getattr(coordinator, "raw_api_responses", {}) or {})
 

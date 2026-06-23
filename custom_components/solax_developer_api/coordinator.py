@@ -103,16 +103,22 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         hass,
         *,
         client: SolaxDeveloperApiClient,
+        config_entry=None,
         entry_id: str,
         scan_interval: int,
         options: dict[str, Any] | None = None,
     ) -> None:
         base_scan_interval = max(int(scan_interval), MIN_SCAN_INTERVAL)
+        coordinator_kwargs: dict[str, Any] = {
+            "logger": __import__("logging").getLogger(__name__),
+            "name": "Solax Developer API",
+            "update_interval": timedelta(seconds=base_scan_interval),
+        }
+        if config_entry is not None:
+            coordinator_kwargs["config_entry"] = config_entry
         super().__init__(
             hass,
-            logger=__import__("logging").getLogger(__name__),
-            name="Solax Developer API",
-            update_interval=timedelta(seconds=base_scan_interval),
+            **coordinator_kwargs,
         )
         options = options or {}
 

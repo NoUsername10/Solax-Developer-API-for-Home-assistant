@@ -11,6 +11,13 @@
           "system_name": "Nombre del sistema",
           "scan_interval": "Intervalo de sondeo (segundos)",
           "api_region": "Región de la API"
+        },
+        "data_description": {
+          "client_id": "ID de cliente de la aplicación del Portal de Desarrolladores de SolaX.",
+          "client_secret": "Secreto de cliente de la misma aplicación del Portal de Desarrolladores.",
+          "system_name": "Nombre utilizado para el dispositivo del sistema de Home Assistant y el prefijo de los ID de entidad.",
+          "scan_interval": "Intervalo normal de consulta en segundos.",
+          "api_region": "Región de la API para desarrolladores de SolaX asignada a la aplicación."
         }
       },
       "reauth_confirm": {
@@ -20,6 +27,27 @@
           "client_id": "ID de cliente",
           "client_secret": "Secreto de cliente",
           "api_region": "Región de la API"
+        },
+        "data_description": {
+          "client_id": "ID de cliente de la aplicación existente de la API para desarrolladores de SolaX.",
+          "client_secret": "Secreto de cliente actual de la aplicación.",
+          "api_region": "Región de la API para desarrolladores de SolaX asignada a la aplicación."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigurar la API para desarrolladores de SolaX",
+        "description": "Actualice las credenciales de conexión, la región de la API o el nombre del sistema de Home Assistant.",
+        "data": {
+          "client_id": "ID de cliente",
+          "client_secret": "Secreto de cliente",
+          "system_name": "Nombre del sistema",
+          "api_region": "Región de la API"
+        },
+        "data_description": {
+          "client_id": "ID de cliente que se utilizará después de la reconfiguración.",
+          "client_secret": "Secreto de cliente que se utilizará después de la reconfiguración.",
+          "system_name": "Nombre utilizado para el dispositivo del sistema de Home Assistant y el prefijo de los ID de entidad.",
+          "api_region": "Región de la API para desarrolladores de SolaX asignada a la aplicación."
         }
       }
     },
@@ -28,7 +56,8 @@
       "invalid_credentials": "Credenciales no válidas",
       "cannot_connect": "No se puede conectar con la API de desarrollador de SolaX",
       "cannot_read_data": "Las credenciales son válidas, pero no se devolvieron datos de planta legibles",
-      "reauth_successful": "La API de desarrollador de SolaX se volvió a conectar correctamente"
+      "reauth_successful": "La API de desarrollador de SolaX se volvió a conectar correctamente",
+      "reconfigure_successful": "La API para desarrolladores de SolaX se reconfiguró correctamente"
     },
     "error": {
       "invalid_credentials": "Credenciales no válidas",
@@ -58,6 +87,12 @@
           "client_secret": "Secreto de cliente",
           "system_name": "Nombre del sistema",
           "api_region": "Región de la API"
+        },
+        "data_description": {
+          "client_id": "ID de cliente de la aplicación del Portal de Desarrolladores de SolaX.",
+          "client_secret": "Secreto de cliente de la misma aplicación del Portal de Desarrolladores.",
+          "system_name": "Nombre utilizado para el dispositivo del sistema de Home Assistant y el prefijo de los ID de entidad.",
+          "api_region": "Región de la API para desarrolladores de SolaX asignada a la aplicación."
         }
       },
       "polling": {
@@ -71,6 +106,15 @@
           "night_scan_interval": "Intervalo de sondeo nocturno (segundos)",
           "night_start_hour": "Hora de inicio del modo nocturno (0-23)",
           "night_end_hour": "Hora de fin del modo nocturno (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Intervalo normal de consulta en segundos.",
+          "live_view_default_duration": "Tiempo que permanece activa la Vista en directo cuando no se indica otra duración.",
+          "live_view_interval": "Intervalo solicitado para la Vista en directo. El intervalo efectivo puede aumentarse para proteger el presupuesto de la API.",
+          "live_view_call_budget_per_minute": "Máximo de llamadas a la API por minuto reservado para la Vista en directo.",
+          "night_scan_interval": "Intervalo de consulta utilizado durante el periodo nocturno configurado.",
+          "night_start_hour": "Hora local en la que comienza la consulta nocturna.",
+          "night_end_hour": "Hora local en la que termina la consulta nocturna."
         }
       },
       "manual_devices": {
@@ -83,6 +127,14 @@
           "manual_ems_systems_add": "Añadir sistemas EMS manuales (serie EMS|ID de planta, uno por línea)",
           "manual_ems_remove_serial": "Sistema EMS manual que se eliminará",
           "manual_ems_remove_confirm": "Eliminar el sistema EMS manual seleccionado"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Introduzca un número de serie de contador accesible por línea. Añada |1 o |4 solo cuando sea necesario forzar el tipo de negocio.",
+          "manual_meter_remove_serial": "Seleccione un contador manual añadido anteriormente.",
+          "manual_meter_remove_confirm": "Confirme la eliminación del contador manual seleccionado.",
+          "manual_ems_systems_add": "Introduzca un número de serie EMS y un ID de planta por línea con el formato SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Seleccione un sistema EMS manual añadido anteriormente.",
+          "manual_ems_remove_confirm": "Confirme la eliminación del sistema EMS manual seleccionado."
         }
       },
       "advanced": {
@@ -90,6 +142,9 @@
         "description": "Configura las notificaciones de diagnóstico y el comportamiento avanzado de la integración.",
         "data": {
           "rate_limit_notifications": "Notificaciones de límite de frecuencia"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Mostrar notificaciones de Home Assistant cuando SolaX indique un límite de frecuencia o cuota."
         }
       }
     },
@@ -135,7 +190,12 @@
         "name": "Iniciar refuerzo de vista en directo"
       }
     },
-    "select": {}
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
   },
   "services": {
     "manual_refresh": {
@@ -1211,6 +1271,71 @@
           "description": "Required. List of 1 to 10 EMS objects with registerNo, manualModo, and conditional power/targetSoc."
         }
       }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No hay ninguna entrada activa de {domain} para {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "No hay entradas configuradas de la API de desarrollador de SolaX"
+    },
+    "history_end_before_start": {
+      "message": "end_time debe ser mayor que start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device solo admite business_type=4"
+    },
+    "system_name_required": {
+      "message": "El nombre del sistema es obligatorio"
+    },
+    "control_unknown_service": {
+      "message": "{service}: servicio de control desconocido"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: los campos del servicio deben usar nombres snake_case"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: falta el campo obligatorio {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: el campo {field} debe ser un entero"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: el campo {field} debe ser de tipo {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList debe contener al menos una serie"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList admite como máximo {max} series"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType debe ser 1 o 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: el campo {field} debe usar el formato HH:MM"
+    },
+    "control_not_available": {
+      "message": "{service}: no hay ninguna capacidad de dispositivo compatible disponible en esta integración"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: el campo {field} debe ser un número finito"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: el campo {field} tiene un valor no compatible"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} debe ser posterior a {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: los controles EMS requieren deviceType 100 y businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList debe contener de 1 a {max} sistemas EMS"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: el elemento {index} de paramList debe ser un objeto"
     }
   }
 }

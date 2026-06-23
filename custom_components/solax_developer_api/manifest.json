@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant/issues",
   "requirements": ["aiohttp>=3.8.0", "async-timeout>=4.0.0"],
   "single_config_entry": true,
-  "version": "v0.1.0-beta.1"
+  "version": "v0.2.0"
 }
