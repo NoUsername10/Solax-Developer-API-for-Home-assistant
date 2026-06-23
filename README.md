@@ -1,8 +1,10 @@
 # SolaX Developer API for Home Assistant
 
-<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="70%" height="70%" alt="SolaX Developer API icon">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="20%" height="20%" alt="SolaX Developer API icon">
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-donate-orange.svg)](https://www.buymeacoffee.com/DefaultLogin)
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+[![Test Coverage](https://img.shields.io/badge/test%20coverage-95.85%25-brightgreen.svg)](#quality-and-validation)
 
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
@@ -13,6 +15,21 @@ The integration supports residential and commercial/industrial systems, includin
 
 > [!IMPORTANT]
 > All control services are currently **hard-blocked dry-runs**. Payloads are validated and audited, but no write request is sent to SolaX.
+
+## 🥇 Quality and Validation
+
+This custom integration is built and validated to the requirements of the Home Assistant **Gold Integration Quality Scale**:
+
+- **Gold-standard compliant:** All applicable Bronze, Silver, and Gold rules are implemented or factually exempt in the included [`quality_scale.yaml`](custom_components/solax_developer_api/quality_scale.yaml).
+- **Test coverage:** `95.85%`, enforced by CI with a minimum threshold of `95%`.
+- **Automated tests:** `130` credential-free tests.
+- **Home Assistant versions tested:** `2025.1.0` and current stable.
+- **Config-flow coverage:** `100%`.
+- **Official validation:** Hassfest reports zero invalid integrations.
+- **Additional validation:** Ruff, translation parity, JSON, workflow, and compilation checks.
+
+> [!NOTE]
+> This is a HACS custom integration and is not included in Home Assistant Core. 
 
 ## ✨ Features in short
 
@@ -29,6 +46,8 @@ The integration supports residential and commercial/industrial systems, includin
 - **English, Spanish, and Swedish**
   - 🇬🇧 🇪🇸 🇸🇪
 - **No dependency on another integration**
+- **Home Assistant Gold-standard quality compliance**
+- **95.85% automated test coverage**
 
 This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
 Contributions, issues, and pull requests are welcome.
@@ -117,6 +136,16 @@ This repository is installed as a **HACS custom repository**:
 4. Copy the extracted archive contents directly into that directory so `manifest.json` is located at `/config/custom_components/solax_developer_api/manifest.json`.
 5. Restart Home Assistant.
 6. Add **SolaX Developer API** from **Settings → Devices & services**.
+
+### Removal
+
+1. Go to **Settings → Devices & services**.
+2. Open **SolaX Developer API**.
+3. Open the integration menu (`⋮`) and select **Delete**.
+4. Restart Home Assistant if prompted.
+5. If installed through HACS, remove the repository from HACS after deleting the config entry.
+
+Deleting the config entry unloads all platforms, removes integration services when no loaded entry remains, clears transient notifications and repair issues, and leaves Home Assistant's historical recorder data under Home Assistant's normal retention rules.
 
 ## ⚙️ Configuration (Step 3)
 
@@ -314,6 +343,15 @@ Model names are resolved using the combination of business type, device type, an
 
 </details>
 
+## 🏠 Use Cases
+
+- Monitor one or many authorized SolaX plants from a single Home Assistant integration.
+- Combine inverter production, plant yield, meters, batteries, EV chargers, and confirmed EMS data in dashboards and automations.
+- Add a readable meter or EMS manually when the Developer API supports direct reads but omits the device from inventory discovery.
+- Temporarily increase realtime polling while viewing a dashboard without permanently consuming the same API budget.
+- Download privacy-redacted raw and filtered API diagnostics when a model or account returns an unexpected field set.
+- Prepare and validate control payloads safely while outbound writes remain hard-blocked.
+
 <details>
 <summary><b>Commercial and industrial inverter mappings</b></summary><br>
 
@@ -482,6 +520,51 @@ Required service fields:
 - `time_interval`
 
 All Home Assistant service fields use `snake_case`.
+
+### Automation Examples
+
+Refresh the integration when a dashboard helper is turned on:
+
+```yaml
+alias: Refresh SolaX when energy dashboard opens
+triggers:
+  - trigger: state
+    entity_id: input_boolean.energy_dashboard_active
+    to: "on"
+actions:
+  - action: solax_developer_api.manual_refresh
+    data: {}
+mode: restart
+```
+
+Start a short Live View session during a high-load check:
+
+```yaml
+alias: SolaX live view for appliance test
+triggers:
+  - trigger: state
+    entity_id: input_button.start_solax_appliance_test
+actions:
+  - action: solax_developer_api.start_live_view
+    data:
+      duration_seconds: 300
+      interval_seconds: 5
+mode: restart
+```
+
+Stop Live View explicitly when the test helper is cleared:
+
+```yaml
+alias: Stop SolaX live view
+triggers:
+  - trigger: state
+    entity_id: input_boolean.energy_dashboard_active
+    to: "off"
+actions:
+  - action: solax_developer_api.stop_live_view
+    data: {}
+mode: restart
+```
 
 ## 🛡️ Dry-Run Control Services
 
@@ -674,6 +757,16 @@ Download diagnostics and open an issue:
 
 Never post unredacted credentials or Developer Portal secrets.
 
+## ⚠️ Known Limitations
+
+- SolaX controls endpoint access, field availability, data latency, quotas, and the documented 100-calls-per-minute account limit.
+- The API can return different fields for different models, firmware versions, business types, regions, account permissions, and installed equipment.
+- Some meters and EMS systems are readable by serial but absent from inventory endpoints; these require manual validated onboarding.
+- Device history remains an on-demand read service. It does not write historical API samples into Home Assistant's recorder.
+- Callback URL push processing is not implemented.
+- All control services are schema-validated hard-blocked dry-runs. No outbound write request is sent.
+- A device that is offline can retain its known entities, but current values can remain unavailable until SolaX returns fresh telemetry.
+
 ## 🌍 Translation Support
 
 Included languages:
@@ -718,6 +811,10 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 
 ## 🚧 Project Status
 
+- **Home Assistant Quality Scale:** Gold-standard compliant custom integration
+- **Automated test coverage:** 95.85%
+- **Credential-free automated tests:** 130
+- **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active
 - **Manual meter/EMS validation:** Active
