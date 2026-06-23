@@ -3,24 +3,27 @@
 <img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/icon.png" width="70%" height="70%" alt="SolaX Developer API icon">
 
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-donate-orange.svg)](https://www.buymeacoffee.com/DefaultLogin)
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
-[![Test Coverage](https://img.shields.io/badge/test%20coverage-95.85%25-brightgreen.svg)](#quality-and-validation)
+
 
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
+
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.85%25-brightgreen.svg)](#quality-and-validation)
+
 **SolaX Developer API** integration for Home Assistant using the official **SolaX Developer OpenAPI**.
+
 It authenticates with a Developer Portal `client_id` and `client_secret`, automatically discovers authorized plants and devices, and creates entities dynamically from the data your system actually returns.
 
 The integration supports residential and commercial/industrial systems, including inverters, batteries, meters, EV chargers, and confirmed EMS systems.
 
 > [!IMPORTANT]
-> All control services are currently **hard-blocked dry-runs**. Payloads are validated and audited, but no write request is sent to SolaX.
+> All control services are currently **hard-blocked dry-runs at the moment**. Payloads are validated and audited, but no write request is sent to SolaX.
 
 ## 🥇 Quality and Validation
 
-This custom integration is built and validated to the requirements of the Home Assistant ** 🥇 Gold Integration Quality Scale**:
+This custom integration is built and validated to the requirements of the Home Assistant **🥇 Gold  Integration Quality Scale**:
 
-- **Gold-standard compliant:** All applicable Bronze, Silver, and Gold rules are implemented or factually exempt in the included [`quality_scale.yaml`](custom_components/solax_developer_api/quality_scale.yaml).
+- **Gold-standard compliant:** 
 - **Test coverage:** `95.85%`, enforced by CI with a minimum threshold of `95%`.
 - **Automated tests:** `130` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
