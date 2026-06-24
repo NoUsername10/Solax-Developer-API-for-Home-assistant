@@ -1,0 +1,1341 @@
+{
+  "title": "SolaX Developer API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Налаштувати SolaX Developer API",
+        "description": "Введіть облікові дані Developer API та параметри опитування.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Назва системи",
+          "scan_interval": "Інтервал сканування (секунди)",
+          "api_region": "Регіон API"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Назва системи",
+          "scan_interval": "Інтервал сканування (секунди)",
+          "api_region": "Регіон API"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Повторно підключити SolaX Developer API",
+        "description": "Автентифікація не вдалася. Введіть чинні облікові дані Developer API, щоб повторно підключити інтеграцію.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "api_region": "Регіон API"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "Регіон API"
+        }
+      },
+      "reconfigure": {
+        "title": "Переналаштувати SolaX Developer API",
+        "description": "Оновіть облікові дані підключення, регіон API або назву системи Home Assistant.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Назва системи",
+          "api_region": "Регіон API"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Назва системи",
+          "api_region": "Регіон API"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Інтеграцію вже налаштовано",
+      "invalid_credentials": "Недійсні облікові дані",
+      "cannot_connect": "Не вдалося підключитися до SolaX Developer API",
+      "cannot_read_data": "Облікові дані дійсні, але читабельні дані станції не повернуто",
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+    },
+    "error": {
+      "invalid_credentials": "Недійсні облікові дані",
+      "invalid_system_name": "Назва системи обов’язкова",
+      "invalid_region": "Недійсний регіон",
+      "cannot_connect": "Не вдалося підключитися до SolaX Developer API",
+      "cannot_read_data": "Облікові дані дійсні, але читабельні дані станції не повернуто"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SolaX Developer API Параметри",
+        "description": "Виберіть, яку частину інтеграції налаштувати.",
+        "menu_options": {
+          "credentials": "Credentials and system",
+          "polling": "Опитування і Live View",
+          "manual_devices": "Manual devices",
+          "advanced": "Advanced and diagnostics"
+        }
+      },
+      "credentials": {
+        "title": "Credentials and system",
+        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Назва системи",
+          "api_region": "Регіон API"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Назва системи",
+          "api_region": "Регіон API"
+        }
+      },
+      "polling": {
+        "title": "Опитування і Live View",
+        "description": "Налаштуйте стандартне опитування, тимчасове опитування Live View і нічний профіль.",
+        "data": {
+          "scan_interval": "Інтервал сканування (секунди)",
+          "live_view_default_duration": "Live View Default Duration (seconds)",
+          "live_view_interval": "Live View Target Interval (seconds)",
+          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
+          "night_scan_interval": "Night Scan Interval (seconds)",
+          "night_start_hour": "Ніч Режим Запуск Hour (0-23)",
+          "night_end_hour": "Ніч Режим End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Інтервал сканування (секунди)",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
+        }
+      },
+      "manual_devices": {
+        "title": "Manual devices",
+        "description": "Додайте пристрої, які обліковий запис може читати, але які не повертають inventory endpoint-и. Кожен пристрій перевіряється перед збереженням.",
+        "data": {
+          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_remove_serial": "Ручний лічильник для видалення",
+          "manual_meter_remove_confirm": "Видалити вибраний ручний лічильник",
+          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_remove_serial": "Ручна EMS система для видалення",
+          "manual_ems_remove_confirm": "Видалити вибрану ручну EMS систему"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Ручний лічильник для видалення",
+          "manual_meter_remove_confirm": "Видалити вибраний ручний лічильник",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Ручна EMS система для видалення",
+          "manual_ems_remove_confirm": "Видалити вибрану ручну EMS систему"
+        }
+      },
+      "advanced": {
+        "title": "Advanced and diagnostics",
+        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "data": {
+          "rate_limit_notifications": "Ліміт частоти Сповіщення"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+        }
+      }
+    },
+    "error": {
+      "invalid_credentials": "Недійсні облікові дані",
+      "invalid_system_name": "Назва системи обов’язкова",
+      "invalid_region": "Недійсний регіон",
+      "cannot_connect": "Не вдалося підключитися до SolaX Developer API",
+      "cannot_read_data": "Облікові дані дійсні, але читабельні дані станції не повернуто",
+      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
+      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
+      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
+      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
+      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
+      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
+      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
+      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+    }
+  },
+  "issues": {
+    "api_rate_limit": {
+      "title": "SolaX Developer API rate limit is active",
+      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+    },
+    "api_permission": {
+      "title": "SolaX Developer API access is incomplete",
+      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+    }
+  },
+  "entity": {
+    "switch": {
+      "rate_limit_notifications": {
+        "name": "API Ліміт частоти Сповіщення"
+      },
+      "live_view_mode": {
+        "name": "Live View Режим"
+      }
+    },
+    "button": {
+      "live_view_boost": {
+        "name": "Запуск Live View Boost"
+      }
+    },
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
+  },
+  "services": {
+    "manual_refresh": {
+      "name": "Ручний Оновити",
+      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id; if omitted, all entries are refreshed."
+        }
+      }
+    },
+    "start_live_view": {
+      "name": "Запуск Live View",
+      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "duration_seconds": {
+          "name": "Тривалість (секунди)",
+          "description": "Optional live mode duration override."
+        },
+        "interval_seconds": {
+          "name": "Цільовий інтервал (секунди)",
+          "description": "Optional live mode target interval override."
+        }
+      }
+    },
+    "stop_live_view": {
+      "name": "Зупинка Live View",
+      "description": "Disable live polling and return to standard/night profile timing.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        }
+      }
+    },
+    "fetch_device_history": {
+      "name": "Fetch Пристрій Історія",
+      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+        },
+        "device_type": {
+          "name": "Тип пристрою",
+          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "start_time": {
+          "name": "Час початку",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "end_time": {
+          "name": "Час завершення",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "time_interval": {
+          "name": "Часовий інтервал",
+          "description": "5, 10, 15, 30, 60 minutes."
+        },
+        "request_sn_type": {
+          "name": "Тип Request SN",
+          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "query_request_result": {
+      "name": "Query Запит Результат",
+      "description": "Query asynchronous command request status by string requestId.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "request_id": {
+          "name": "Request ID",
+          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+        }
+      }
+    },
+    "query_master_control_device": {
+      "name": "Query Головний Керування Пристрій",
+      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "device_sn": {
+          "name": "SN пристрою"
+        },
+        "device_type": {
+          "name": "Тип пристрою"
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Must be 4 (commercial & industrial)."
+        }
+      }
+    },
+    "set_export_control": {
+      "name": "Set Export Керування (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "device_type": {
+          "name": "Тип пристрою",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Прапорець увімкнення",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "limit_value": {
+          "name": "Граничне значення",
+          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "control_mode": {
+          "name": "Режим керування",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_import_control": {
+      "name": "Set Import Керування (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "device_type": {
+          "name": "Тип пристрою",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Прапорець увімкнення",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "limit_value": {
+          "name": "Граничне значення",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "batch_set_spontaneity_self_use": {
+      "name": "Інвертор Self Використання Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Мережа Увімкнути",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Верхній SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Увімкнути Час Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_on_grid_first": {
+      "name": "Інвертор Feed-in Пріоритет Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Верхній SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Увімкнути Час Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_peace_mode": {
+      "name": "Інвертор Резервний Вгору Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Мережа Увімкнути",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Верхній SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Запуск Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Час Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Увімкнути Час Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Запуск Час Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Час Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_manual_mode": {
+      "name": "Інвертор Ручний Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "manual_mode": {
+          "name": "Ручний Режим",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_use_mode": {
+      "name": "A1-Hybrid-G2 Self Використання (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "feed_in_priority": {
+      "name": "A1-Hybrid-G2 Feed-in Пріоритет (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "back_up_mode": {
+      "name": "A1-Hybrid-G2 Резервний Вгору (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "back_up_grid_enable": {
+          "name": "Резервний Вгору Мережа Увімкнути",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "back_up_charge_start_time": {
+          "name": "Резервний Вгору Charge Запуск Час",
+          "description": "Required. HH:MM time value."
+        },
+        "back_up_charge_end_time": {
+          "name": "Резервний Вгору Charge End Час",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "demand_mode": {
+      "name": "A1-Hybrid-G2 Попит Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "demand_grid_enable": {
+          "name": "Попит Мережа Увімкнути",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "peak_limit_time1": {
+          "name": "Пік Ліміт Час 1",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "peak_limit_time2": {
+          "name": "Пік Ліміт Час 2",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "demand_discharge_start_time1": {
+          "name": "Попит Discharge Запуск Час 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time1": {
+          "name": "Попит Discharge End Час 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_start_time2": {
+          "name": "Попит Discharge Запуск Час 2",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time2": {
+          "name": "Попит Discharge End Час 2",
+          "description": "Required. HH:MM time value."
+        },
+        "charger_power_limit": {
+          "name": "Зарядний пристрій Потужність Ліміт",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "demand_max_soc": {
+          "name": "Попит Max SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "reserve_soc": {
+          "name": "Резерв SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "const_power_mode": {
+      "name": "A1-Hybrid-G2 ConstPower Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "const_power_grid_enable": {
+          "name": "Const Потужність Мережа Увімкнути",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "const_power_discharge_limit": {
+          "name": "Const Потужність Discharge Ліміт",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "const_power_charge_start_time": {
+          "name": "Const Потужність Charge Запуск Час",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_charge_end_time": {
+          "name": "Const Потужність Charge End Час",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_start_time": {
+          "name": "Const Потужність Discharge Запуск Час",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_end_time": {
+          "name": "Const Потужність Discharge End Час",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "exit_vpp_mode": {
+      "name": "Exit VPP Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "power_control_mode": {
+      "name": "VPP Потужність Керування Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "active_power_target": {
+          "name": "Активний Потужність Ціль",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "w_reactive_power_target": {
+          "name": "W Reactive Потужність Ціль",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "electric_quantity_target_control_mode": {
+      "name": "VPP Electric Quantity Ціль Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "target_engergy": {
+          "name": "Ціль Engergy",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Потужність",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "soc_target_control_mode": {
+      "name": "VPP SOC Ціль Керування Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "target_soc": {
+          "name": "Ціль SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Потужність",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "push_power_positive_or_negative_mode": {
+      "name": "VPP Push Потужність +/- Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Батарея Потужність",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "push_power_zero_mode": {
+      "name": "VPP Push Потужність Zero Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_consume_charge_or_discharge_mode": {
+      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_consume_charge_only_mode": {
+      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_duration_mode": {
+      "name": "VPP PV&BAT Тривалість Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Батарея Потужність",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "pv_power_limit": {
+          "name": "PV Потужність Ліміт",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_target_soc_mode": {
+      "name": "VPP PV&BAT Ціль SOC Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Батарея Потужність",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "pv_power_limit": {
+          "name": "PV Потужність Ліміт",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "target_soc": {
+          "name": "Ціль SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Час Of Тривалість",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Наступний Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_charge_scene": {
+      "name": "EV Зарядний пристрій Set Charge Сцена (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "charger_scene": {
+          "name": "Зарядний пристрій Сцена",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "ocpp_url": {
+          "name": "OCPP Url",
+          "description": "Optional. String payload field used by dry-run validation."
+        },
+        "ocpp_charger_id": {
+          "name": "OCPP Зарядний пристрій Id",
+          "description": "Optional. String payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_evc_qr_code": {
+      "name": "EV Зарядний пристрій Set QR Code (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "qr_code": {
+          "name": "QR Code",
+          "description": "Required. String payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_work_mode": {
+      "name": "EV Зарядний пристрій Set Робота Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "work_mode": {
+          "name": "Робота Режим",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "current_gear": {
+          "name": "Струм Gear",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_evc_start_mode": {
+      "name": "EV Зарядний пристрій Set Запуск Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "start_mode": {
+          "name": "Запуск Режим",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_charge_command": {
+      "name": "EV Зарядний пристрій Set Charge Команда (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "work_cmd": {
+          "name": "Робота Cmd",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_reserve_charge": {
+      "name": "EV Зарядний пристрій Резерв Charge (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "charge_start_time": {
+          "name": "Charge Запуск Час",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_end_time": {
+          "name": "Charge End Час",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_current": {
+          "name": "Charge Струм",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_current_limit": {
+      "name": "EV Зарядний пристрій Струм Ліміт (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє payload і блокує виконання запису.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "current_limit": {
+          "name": "Струм Ліміт",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_battery_heating": {
+      "name": "Батарея Підігрів Налаштування (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє налаштування підігріву батареї та блокує запис.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Список серійних номерів пристроїв",
+          "description": "Required. Device SN list, minimum 1 and maximum 10."
+        },
+        "heating_enable": {
+          "name": "Підігрів Увімкнути",
+          "description": "Required. 0 disables battery heating; 1 enables it."
+        },
+        "heating_level": {
+          "name": "Підігрів Рівень",
+          "description": "Required when enabled. Supported values are 0, 1, and 2."
+        },
+        "heating_period1_start_time": {
+          "name": "Підігрів Period 1 Запуск",
+          "description": "Required when enabled. HH:MM time value."
+        },
+        "heating_period1_end_time": {
+          "name": "Підігрів Period 1 End",
+          "description": "Required when enabled and must be later than period 1 start."
+        },
+        "heating_period2_start_time": {
+          "name": "Підігрів Period 2 Запуск",
+          "description": "Optional second heating period start. HH:MM time value."
+        },
+        "heating_period2_end_time": {
+          "name": "Підігрів Period 2 End",
+          "description": "Required when period 2 start is supplied."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_ems_manual_mode": {
+      "name": "EMS Ручний Режим (Dry-Run)",
+      "description": "Лише Dry-Run. Перевіряє налаштування ручного режиму EMS і блокує запис.",
+      "fields": {
+        "entry_id": {
+          "name": "ID запису",
+          "description": "Optional config entry id."
+        },
+        "device_type": {
+          "name": "Тип пристрою",
+          "description": "Required. Fixed value 100 for EMS System."
+        },
+        "business_type": {
+          "name": "Business тип",
+          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+        },
+        "param_list": {
+          "name": "EMS Параметри",
+          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Немає налаштованих записів SolaX Developer API"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "Назва системи обов’язкова"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
+    }
+  }
+}

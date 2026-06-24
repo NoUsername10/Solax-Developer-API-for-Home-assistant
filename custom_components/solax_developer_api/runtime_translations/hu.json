@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - Sebességkorlát",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - Kézi Mérő Sorozatszám",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - Kézi EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "Nincs konfigurált SolaX Developer API bejegyzés",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "A rendszer neve kötelező",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "Ismeretlen",
+      "device": "Eszköz",
+      "none": "(None)",
+      "business_type": {
+        "1": "Lakossági",
+        "4": "Kereskedelmi & Ipari"
+      },
+      "device_type": {
+        "1": "Inverter",
+        "2": "Akkumulátor",
+        "3": "Mérő",
+        "4": "EV Töltő",
+        "100": "EMS Rendszer"
+      },
+      "period": {
+        "year": "Év",
+        "month": "Hónap"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "Rendszernév"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API Sebességkorlát Értesítések",
+        "live_view_mode": "Live View Mód"
+      },
+      "button": {
+        "live_view_boost": "Indítás Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "Rendszer AC teljesítmény",
+        "system_dc_power": "Rendszer DC teljesítmény",
+        "system_yield_today": "Rendszer mai hozama",
+        "system_yield_total": "Rendszer összes hozama",
+        "system_efficiency": "Rendszer teljes hatásfoka",
+        "system_health": "Rendszer állapota",
+        "api_rate_limit_status": "API sebességkorlát állapota",
+        "poll_profile": "Lekérdezési profil",
+        "effective_scan_interval": "Tényleges lekérdezési intervallum",
+        "live_view_active": "Live View állapot",
+        "live_view_remaining_seconds": "Live View hátralévő idő",
+        "last_poll_attempt": "Utolsó lekérdezési próbálkozás",
+        "next_scheduled_poll": "Következő ütemezett lekérdezés",
+        "token_expires_at": "Token lejár ekkor",
+        "dry_run_command_count": "Dry-Run parancsok száma"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} Rendszer Totals",
+      "plant_name": "Plant {plant_id}",
+      "plant_field": "Plant {plant_id} {field_name}",
+      "plant_alarm_count": "Plant {plant_id} Aktív Alarm Darab",
+      "plant_stat": "Plant {plant_id} {period} {metric_name}",
+      "plant_info": "Plant {plant_id} {key_name}",
+      "plant_alarm_preview": "Plant {plant_id} Alarm {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax Eszköz {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Plant {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single Inverter Rendszer",
+        "multi_inverter": "Multi-Inverter Rendszer",
+        "single_device": "Single Eszköz Rendszer",
+        "multi_device": "Multi-Eszköz Rendszer"
+      },
+      "plant": "Plant {business_type}",
+      "plant_simple": "Plant",
+      "plant_stats": "Plant Stats",
+      "plant_alarms": "Plant Alarms",
+      "inventory": "Inventory",
+      "ems_system": "EMS Rendszer"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "Ismeretlen",
+        "ok": "OK",
+        "error": "Error",
+        "degraded": "Degraded"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "Sebességkorláted"
+      },
+      "poll_profile": {
+        "standard": "Normál",
+        "night": "Éjszaka",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "Aktív",
+        "inactive": "Inaktív"
+      },
+      "online": {
+        "0": "Offline",
+        "1": "Online"
+      },
+      "plant_residential": {
+        "0": "Csatlakozás",
+        "1": "Offline",
+        "2": "Online"
+      },
+      "plant_ci": {
+        "0": "Offline",
+        "1": "Normál",
+        "2": "Hiba",
+        "3": "Figyelmeztetés",
+        "4": "Csatlakozás"
+      },
+      "parallel_ci": {
+        "0": "Fő",
+        "1": "Slave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "Fő",
+        "2": "Slave 1",
+        "3": "Slave 2",
+        "4": "Slave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "Eszköz Offline",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "Tétlen",
+        "1": "Működik",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Hiba",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Töltés",
+        "10": "Töltés Hiba",
+        "11": "Teljesítmény Off"
+      },
+      "ev": {
+        "0": "Elérhető",
+        "1": "Előkészítés",
+        "2": "Töltés",
+        "3": "Befejezve",
+        "4": "Hibás",
+        "5": "Nem elérhető",
+        "6": "Foglalt",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Update",
+        "10": "Card Activation",
+        "11": "Indítás Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "Várakozás",
+        "101": "Self-check",
+        "102": "Normál",
+        "103": "Hiba",
+        "104": "Permanent Hiba",
+        "105": "Update Mód",
+        "106": "EPS Check Mód",
+        "107": "EPS Mód",
+        "108": "Self Test",
+        "109": "Tétlen Mód",
+        "110": "Standby Mód",
+        "111": "PV Wake Fel BAT Mód",
+        "112": "GEN Check Mód",
+        "113": "GEN Run Mód",
+        "114": "RSD Standby",
+        "130": "VPP Mód",
+        "131": "TOU Self Használat",
+        "132": "TOU Töltés",
+        "133": "TOU Discharging",
+        "134": "TOU Akkumulátor Off",
+        "135": "TOU Csúcs Shaving",
+        "136": "Normál Mód (GEN)",
+        "137": "Normál Mód (BAT-E)",
+        "138": "Normál Mód (BAT-H)",
+        "139": "EPS Mód (BAT-H)",
+        "140": "Indítás Mód",
+        "150": "Self Használat",
+        "151": "Force Idő Használat",
+        "152": "Tartalék Fel Mód",
+        "153": "Feed-in Prioritás",
+        "154": "Igény Mód",
+        "155": "ConstPower Mód",
+        "160": "OpenADR Mód",
+        "170": "Leállítás Mód",
+        "171": "Debug Mód",
+        "1301": "Teljesítmény Vezérlés Mód",
+        "1302": "Electric Quantity Cél Vezérlés Mód",
+        "1303": "SOC Cél Vezérlés Mód",
+        "1304": "Push Teljesítmény Positive/Negative",
+        "1305": "Push Teljesítmény Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT Időtartam Mód",
+        "1309": "PV&BAT Cél SOC Mód",
+        "141": "Normál Mód (R-1)",
+        "142": "Normál Mód (R-2)",
+        "143": "Normál Mód (R-3)",
+        "144": "Normál Mód (R-4)",
+        "145": "Normál Mód (R-5)",
+        "146": "Normál Mód (R-6)",
+        "147": "Normál Mód (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "Normál (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "Tétlen",
+        "1": "Munka"
+      },
+      "battery_ci": {
+        "0": "Tétlen",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Hiba",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Töltés",
+        "10": "Töltés Hiba",
+        "11": "Teljesítmény Off Állapot"
+      }
+    }
+  }
+}

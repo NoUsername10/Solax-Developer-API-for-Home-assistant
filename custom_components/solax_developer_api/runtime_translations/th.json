@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - ขีดจำกัดอัตรา",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - แมนนวล มิเตอร์ ซีเรียล",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - แมนนวล EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "ไม่มีรายการ SolaX Developer API ที่กำหนดค่าไว้",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "ต้องระบุชื่อระบบ",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "ไม่ทราบ",
+      "device": "อุปกรณ์",
+      "none": "(None)",
+      "business_type": {
+        "1": "ที่พักอาศัย",
+        "4": "เชิงพาณิชย์ & อุตสาหกรรม"
+      },
+      "device_type": {
+        "1": "อินเวอร์เตอร์",
+        "2": "แบตเตอรี่",
+        "3": "มิเตอร์",
+        "4": "EV เครื่องชาร์จ",
+        "100": "EMS ระบบ"
+      },
+      "period": {
+        "year": "ปี",
+        "month": "เดือน"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "ชื่อระบบ"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API ขีดจำกัดอัตรา การแจ้งเตือน",
+        "live_view_mode": "Live View โหมด"
+      },
+      "button": {
+        "live_view_boost": "เริ่ม Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "กำลังไฟ AC ของระบบ",
+        "system_dc_power": "กำลังไฟ DC ของระบบ",
+        "system_yield_today": "ผลผลิตระบบวันนี้",
+        "system_yield_total": "ผลผลิตระบบตลอดอายุ",
+        "system_efficiency": "ประสิทธิภาพรวมของระบบ",
+        "system_health": "สถานะสุขภาพระบบ",
+        "api_rate_limit_status": "สถานะขีดจำกัดอัตรา API",
+        "poll_profile": "โปรไฟล์การโพล",
+        "effective_scan_interval": "ช่วงสแกนที่มีผล",
+        "live_view_active": "สถานะ Live View",
+        "live_view_remaining_seconds": "เวลา Live View คงเหลือ",
+        "last_poll_attempt": "ความพยายามโพลล่าสุด",
+        "next_scheduled_poll": "การโพลตามกำหนดถัดไป",
+        "token_expires_at": "Token หมดอายุเมื่อ",
+        "dry_run_command_count": "จำนวนคำสั่ง Dry-Run"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} ระบบ Totals",
+      "plant_name": "Plant {plant_id}",
+      "plant_field": "Plant {plant_id} {field_name}",
+      "plant_alarm_count": "Plant {plant_id} ทำงาน Alarm จำนวน",
+      "plant_stat": "Plant {plant_id} {period} {metric_name}",
+      "plant_info": "Plant {plant_id} {key_name}",
+      "plant_alarm_preview": "Plant {plant_id} Alarm {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax อุปกรณ์ {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Plant {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single อินเวอร์เตอร์ ระบบ",
+        "multi_inverter": "Multi-อินเวอร์เตอร์ ระบบ",
+        "single_device": "Single อุปกรณ์ ระบบ",
+        "multi_device": "Multi-อุปกรณ์ ระบบ"
+      },
+      "plant": "Plant {business_type}",
+      "plant_simple": "Plant",
+      "plant_stats": "Plant Stats",
+      "plant_alarms": "Plant Alarms",
+      "inventory": "Inventory",
+      "ems_system": "EMS ระบบ"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "ไม่ทราบ",
+        "ok": "OK",
+        "error": "Error",
+        "degraded": "Degraded"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "ขีดจำกัดอัตราed"
+      },
+      "poll_profile": {
+        "standard": "มาตรฐาน",
+        "night": "กลางคืน",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "ทำงาน",
+        "inactive": "ไม่ทำงาน"
+      },
+      "online": {
+        "0": "ออฟไลน์",
+        "1": "ออนไลน์"
+      },
+      "plant_residential": {
+        "0": "กำลังเชื่อมต่อ",
+        "1": "ออฟไลน์",
+        "2": "ออนไลน์"
+      },
+      "plant_ci": {
+        "0": "ออฟไลน์",
+        "1": "ปกติ",
+        "2": "ล้มเหลว",
+        "3": "คำเตือน",
+        "4": "กำลังเชื่อมต่อ"
+      },
+      "parallel_ci": {
+        "0": "หลัก",
+        "1": "Slave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "หลัก",
+        "2": "Slave 1",
+        "3": "Slave 2",
+        "4": "Slave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "อุปกรณ์ ออฟไลน์",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "ว่าง",
+        "1": "ทำงาน",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging ข้อผิดพลาด",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "กำลังชาร์จ",
+        "10": "กำลังชาร์จ ข้อผิดพลาด",
+        "11": "กำลังไฟ Off"
+      },
+      "ev": {
+        "0": "พร้อมใช้งาน",
+        "1": "กำลังเตรียม",
+        "2": "กำลังชาร์จ",
+        "3": "เสร็จสิ้น",
+        "4": "ขัดข้อง",
+        "5": "ไม่พร้อมใช้งาน",
+        "6": "สงวนไว้",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Update",
+        "10": "Card Activation",
+        "11": "เริ่ม Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "รอ",
+        "101": "Self-check",
+        "102": "ปกติ",
+        "103": "ข้อผิดพลาด",
+        "104": "Permanent ข้อผิดพลาด",
+        "105": "Update โหมด",
+        "106": "EPS Check โหมด",
+        "107": "EPS โหมด",
+        "108": "Self Test",
+        "109": "ว่าง โหมด",
+        "110": "Standby โหมด",
+        "111": "PV Wake ขึ้น BAT โหมด",
+        "112": "GEN Check โหมด",
+        "113": "GEN Run โหมด",
+        "114": "RSD Standby",
+        "130": "VPP โหมด",
+        "131": "TOU Self ใช้",
+        "132": "TOU กำลังชาร์จ",
+        "133": "TOU Discharging",
+        "134": "TOU แบตเตอรี่ Off",
+        "135": "TOU พีก Shaving",
+        "136": "ปกติ โหมด (GEN)",
+        "137": "ปกติ โหมด (BAT-E)",
+        "138": "ปกติ โหมด (BAT-H)",
+        "139": "EPS โหมด (BAT-H)",
+        "140": "เริ่ม โหมด",
+        "150": "Self ใช้",
+        "151": "Force เวลา ใช้",
+        "152": "สำรอง ขึ้น โหมด",
+        "153": "Feed-in ลำดับความสำคัญ",
+        "154": "ความต้องการ โหมด",
+        "155": "ConstPower โหมด",
+        "160": "OpenADR โหมด",
+        "170": "หยุด โหมด",
+        "171": "Debug โหมด",
+        "1301": "กำลังไฟ ควบคุม โหมด",
+        "1302": "Electric Quantity เป้าหมาย ควบคุม โหมด",
+        "1303": "SOC เป้าหมาย ควบคุม โหมด",
+        "1304": "Push กำลังไฟ Positive/Negative",
+        "1305": "Push กำลังไฟ Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT ระยะเวลา โหมด",
+        "1309": "PV&BAT เป้าหมาย SOC โหมด",
+        "141": "ปกติ โหมด (R-1)",
+        "142": "ปกติ โหมด (R-2)",
+        "143": "ปกติ โหมด (R-3)",
+        "144": "ปกติ โหมด (R-4)",
+        "145": "ปกติ โหมด (R-5)",
+        "146": "ปกติ โหมด (R-6)",
+        "147": "ปกติ โหมด (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "ปกติ (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "ว่าง",
+        "1": "ทำงาน"
+      },
+      "battery_ci": {
+        "0": "ว่าง",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging ข้อผิดพลาด",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "กำลังชาร์จ",
+        "10": "กำลังชาร์จ ข้อผิดพลาด",
+        "11": "กำลังไฟ Off สถานะ"
+      }
+    }
+  }
+}

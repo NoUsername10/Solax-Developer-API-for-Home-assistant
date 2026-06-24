@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - Užklausų limitas",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - Rankinis Meter Serijos numeris",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - Rankinis EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "No configured SolaX Developer API entries",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "System name is required",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "Nežinoma",
+      "device": "Įrenginys",
+      "none": "(Nėra)",
+      "business_type": {
+        "1": "Gyvenamasis",
+        "4": "Komercinis ir pramoninis"
+      },
+      "device_type": {
+        "1": "Inverteris",
+        "2": "Baterija",
+        "3": "Skaitiklis",
+        "4": "EV įkroviklis",
+        "100": "EMS sistema"
+      },
+      "period": {
+        "year": "Metai",
+        "month": "Mėnuo"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "Sistemos pavadinimas"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API Užklausų limitas Pranešimai",
+        "live_view_mode": "Live View Režimas"
+      },
+      "button": {
+        "live_view_boost": "Pradėti Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "Sistemos AC galia",
+        "system_dc_power": "Sistemos DC galia",
+        "system_yield_today": "Sistemos gamyba šiandien",
+        "system_yield_total": "Bendra sistemos gamyba",
+        "system_efficiency": "Bendras sistemos efektyvumas",
+        "system_health": "Sistemos būsena",
+        "api_rate_limit_status": "API užklausų limito būsena",
+        "poll_profile": "Apklausos profilis",
+        "effective_scan_interval": "Efektyvus apklausos intervalas",
+        "live_view_active": "Live View būsena",
+        "live_view_remaining_seconds": "Live View liko",
+        "last_poll_attempt": "Paskutinis apklausos bandymas",
+        "next_scheduled_poll": "Kita suplanuota apklausa",
+        "token_expires_at": "Tokenas baigia galioti",
+        "dry_run_command_count": "Dry-Run komandų skaičius"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} System Totals",
+      "plant_name": "Elektrinė {plant_id}",
+      "plant_field": "Elektrinė {plant_id} {field_name}",
+      "plant_alarm_count": "Elektrinė {plant_id} Active Aliarmas Skaičius",
+      "plant_stat": "Elektrinė {plant_id} {period} {metric_name}",
+      "plant_info": "Elektrinė {plant_id} {key_name}",
+      "plant_alarm_preview": "Elektrinė {plant_id} Aliarmas {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax Device {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Elektrinė {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single Inverter System",
+        "multi_inverter": "Multi-Inverter System",
+        "single_device": "Single Device System",
+        "multi_device": "Multi-Device System"
+      },
+      "plant": "Elektrinė {business_type}",
+      "plant_simple": "Elektrinė",
+      "plant_stats": "Elektrinė Stats",
+      "plant_alarms": "Elektrinė Alarms",
+      "inventory": "Inventorius",
+      "ems_system": "EMS sistema"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "Nežinoma",
+        "ok": "OK",
+        "error": "Klaida",
+        "degraded": "Pablogėjusi"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "Užklausų limitased"
+      },
+      "poll_profile": {
+        "standard": "Standartinis",
+        "night": "Naktis",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "Aktyvu",
+        "inactive": "Neaktyvu"
+      },
+      "online": {
+        "0": "Offline",
+        "1": "Online"
+      },
+      "plant_residential": {
+        "0": "Jungiama",
+        "1": "Offline",
+        "2": "Online"
+      },
+      "plant_ci": {
+        "0": "Offline",
+        "1": "Normal",
+        "2": "Gedimas",
+        "3": "Įspėjimas",
+        "4": "Jungiama"
+      },
+      "parallel_ci": {
+        "0": "Master",
+        "1": "Slave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "Master",
+        "2": "Slave 1",
+        "3": "Slave 2",
+        "4": "Slave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "Device Offline",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "Budėjimas",
+        "1": "Veikia",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Fault",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Įkraunama",
+        "10": "Charging Fault",
+        "11": "Galia Off"
+      },
+      "ev": {
+        "0": "Pasiekiama",
+        "1": "Preparing",
+        "2": "Įkraunama",
+        "3": "Baigta",
+        "4": "Faulted",
+        "5": "Nepasiekiama",
+        "6": "Reserved",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Atnaujinti",
+        "10": "Card Activation",
+        "11": "Pradėti Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "Laukiama",
+        "101": "Self-check",
+        "102": "Normal",
+        "103": "Fault",
+        "104": "Permanent Fault",
+        "105": "Atnaujinti Režimas",
+        "106": "EPS Check Režimas",
+        "107": "EPS Režimas",
+        "108": "Self Test",
+        "109": "Idle Režimas",
+        "110": "Standby Režimas",
+        "111": "PV Wake Up BAT Režimas",
+        "112": "GEN Check Režimas",
+        "113": "GEN Run Režimas",
+        "114": "RSD Standby",
+        "130": "VPP Režimas",
+        "131": "TOU Self Use",
+        "132": "TOU Charging",
+        "133": "TOU Discharging",
+        "134": "TOU Battery Off",
+        "135": "TOU Peak Shaving",
+        "136": "Normal Režimas (GEN)",
+        "137": "Normal Režimas (BAT-E)",
+        "138": "Normal Režimas (BAT-H)",
+        "139": "EPS Režimas (BAT-H)",
+        "140": "Pradėti Režimas",
+        "150": "Self Use",
+        "151": "Force Laikas Use",
+        "152": "Back Up Režimas",
+        "153": "Feed-in Priority",
+        "154": "Demand Režimas",
+        "155": "ConstPower Režimas",
+        "160": "OpenADR Režimas",
+        "170": "Stabdyti Režimas",
+        "171": "Debug Režimas",
+        "1301": "Galia Valdymas Režimas",
+        "1302": "Electric Quantity Tikslas Valdymas Režimas",
+        "1303": "SOC Tikslas Valdymas Režimas",
+        "1304": "Push Galia Positive/Negative",
+        "1305": "Push Galia Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT Trukmė Režimas",
+        "1309": "PV&BAT Tikslas SOC Režimas",
+        "141": "Normal Režimas (R-1)",
+        "142": "Normal Režimas (R-2)",
+        "143": "Normal Režimas (R-3)",
+        "144": "Normal Režimas (R-4)",
+        "145": "Normal Režimas (R-5)",
+        "146": "Normal Režimas (R-6)",
+        "147": "Normal Režimas (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "Normal (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "Budėjimas",
+        "1": "Work"
+      },
+      "battery_ci": {
+        "0": "Budėjimas",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Fault",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Įkraunama",
+        "10": "Charging Fault",
+        "11": "Galia Off Būsena"
+      }
+    }
+  }
+}

@@ -1,0 +1,1341 @@
+{
+  "title": "SolaX Developer API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nastavit SolaX Developer API",
+        "description": "Zadejte přihlašovací údaje Developer API a možnosti dotazování.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Název systému",
+          "scan_interval": "Interval dotazování (sekundy)",
+          "api_region": "Oblast API"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Název systému",
+          "scan_interval": "Interval dotazování (sekundy)",
+          "api_region": "Oblast API"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Znovu připojit SolaX Developer API",
+        "description": "Ověření se nezdařilo. Zadejte platné údaje Developer API pro opětovné připojení integrace.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "api_region": "Oblast API"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "Oblast API"
+        }
+      },
+      "reconfigure": {
+        "title": "Přenastavit SolaX Developer API",
+        "description": "Aktualizujte přihlašovací údaje, oblast API nebo název systému Home Assistant.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Název systému",
+          "api_region": "Oblast API"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Název systému",
+          "api_region": "Oblast API"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Integrace je již nakonfigurována",
+      "invalid_credentials": "Neplatné přihlašovací údaje",
+      "cannot_connect": "Nelze se připojit k SolaX Developer API",
+      "cannot_read_data": "Přihlašovací údaje jsou platné, ale nebyla vrácena žádná čitelná data elektrárny",
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+    },
+    "error": {
+      "invalid_credentials": "Neplatné přihlašovací údaje",
+      "invalid_system_name": "Název systému je povinný",
+      "invalid_region": "Neplatná oblast",
+      "cannot_connect": "Nelze se připojit k SolaX Developer API",
+      "cannot_read_data": "Přihlašovací údaje jsou platné, ale nebyla vrácena žádná čitelná data elektrárny"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SolaX Developer API Možnosti",
+        "description": "Vyberte část integrace, kterou chcete nastavit.",
+        "menu_options": {
+          "credentials": "Přihlašovací údaje & System",
+          "polling": "Dotazování & Live View",
+          "manual_devices": "Ruční zařízení",
+          "advanced": "Pokročilé & diagnostika"
+        }
+      },
+      "credentials": {
+        "title": "Přihlašovací údaje & System",
+        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Název systému",
+          "api_region": "Oblast API"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Název systému",
+          "api_region": "Oblast API"
+        }
+      },
+      "polling": {
+        "title": "Dotazování & Live View",
+        "description": "Nastavte standardní dotazování, dočasné Live View dotazování a noční profil.",
+        "data": {
+          "scan_interval": "Interval dotazování (sekundy)",
+          "live_view_default_duration": "Live View Default Duration (seconds)",
+          "live_view_interval": "Live View Target Interval (seconds)",
+          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
+          "night_scan_interval": "Night Scan Interval (seconds)",
+          "night_start_hour": "Noc Režim Start Hour (0-23)",
+          "night_end_hour": "Noc Režim End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Interval dotazování (sekundy)",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
+        }
+      },
+      "manual_devices": {
+        "title": "Ruční zařízení",
+        "description": "Přidejte zařízení, která účet umí číst, ale inventární endpointy je nevracejí. Každé zařízení se před uložením ověří.",
+        "data": {
+          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_remove_serial": "Ruční měřič k odebrání",
+          "manual_meter_remove_confirm": "Odebrat vybraný ruční měřič",
+          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_remove_serial": "Ruční EMS systém k odebrání",
+          "manual_ems_remove_confirm": "Odebrat vybraný ruční EMS systém"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Ruční měřič k odebrání",
+          "manual_meter_remove_confirm": "Odebrat vybraný ruční měřič",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Ruční EMS systém k odebrání",
+          "manual_ems_remove_confirm": "Odebrat vybraný ruční EMS systém"
+        }
+      },
+      "advanced": {
+        "title": "Pokročilé & diagnostika",
+        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "data": {
+          "rate_limit_notifications": "Limit požadavků Oznámení"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+        }
+      }
+    },
+    "error": {
+      "invalid_credentials": "Neplatné přihlašovací údaje",
+      "invalid_system_name": "Název systému je povinný",
+      "invalid_region": "Neplatná oblast",
+      "cannot_connect": "Nelze se připojit k SolaX Developer API",
+      "cannot_read_data": "Přihlašovací údaje jsou platné, ale nebyla vrácena žádná čitelná data elektrárny",
+      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
+      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
+      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
+      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
+      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
+      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
+      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
+      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+    }
+  },
+  "issues": {
+    "api_rate_limit": {
+      "title": "SolaX Developer API rate limit is active",
+      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+    },
+    "api_permission": {
+      "title": "SolaX Developer API access is incomplete",
+      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+    }
+  },
+  "entity": {
+    "switch": {
+      "rate_limit_notifications": {
+        "name": "API Limit požadavků Oznámení"
+      },
+      "live_view_mode": {
+        "name": "Live View Režim"
+      }
+    },
+    "button": {
+      "live_view_boost": {
+        "name": "Start Live View Boost"
+      }
+    },
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
+  },
+  "services": {
+    "manual_refresh": {
+      "name": "Ruční Aktualizace",
+      "description": "Spustí okamžitou aktualizaci všech nakonfigurovaných položek SolaX Developer API.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Optional config entry id; if omitted, all entries are refreshed."
+        }
+      }
+    },
+    "start_live_view": {
+      "name": "Start Live View",
+      "description": "Zapne dočasné dotazování zaměřené na realtime s automatickým timeoutem.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "duration_seconds": {
+          "name": "Doba trvání (sekundy)",
+          "description": "Optional live mode duration override."
+        },
+        "interval_seconds": {
+          "name": "Cílový interval (sekundy)",
+          "description": "Optional live mode target interval override."
+        }
+      }
+    },
+    "stop_live_view": {
+      "name": "Stop Live View",
+      "description": "Vypne živé dotazování a vrátí standardní/noční profil.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        }
+      }
+    },
+    "fetch_device_history": {
+      "name": "Načíst Device Historie",
+      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Seznam SN zařízení, min. 1 max. 200. Požadavky se automaticky dělí."
+        },
+        "device_type": {
+          "name": "Typ zařízení",
+          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "start_time": {
+          "name": "Čas začátku",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "end_time": {
+          "name": "Čas konce",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "time_interval": {
+          "name": "Časový interval",
+          "description": "5, 10, 15, 30, 60 minutes."
+        },
+        "request_sn_type": {
+          "name": "Typ request SN",
+          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "query_request_result": {
+      "name": "Dotaz Request Výsledek",
+      "description": "Query asynchronous command request status by string requestId.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "request_id": {
+          "name": "Request ID",
+          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+        }
+      }
+    },
+    "query_master_control_device": {
+      "name": "Dotaz Master Řízení Device",
+      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "device_sn": {
+          "name": "SN zařízení"
+        },
+        "device_type": {
+          "name": "Typ zařízení"
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Must be 4 (commercial & industrial)."
+        }
+      }
+    },
+    "set_export_control": {
+      "name": "Set Export Řízení (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "device_type": {
+          "name": "Typ zařízení",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Příznak povolení",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "limit_value": {
+          "name": "Hodnota limitu",
+          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "control_mode": {
+          "name": "Režim řízení",
+          "description": "Volitelné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        }
+      }
+    },
+    "set_import_control": {
+      "name": "Set Import Řízení (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "device_type": {
+          "name": "Typ zařízení",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Příznak povolení",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "limit_value": {
+          "name": "Hodnota limitu",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "batch_set_spontaneity_self_use": {
+      "name": "Inverter Self Use Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Povolit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Povolit Čas Period 2",
+          "description": "Volitelné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_on_grid_first": {
+      "name": "Inverter Feed-in Priority Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Povolit Čas Period 2",
+          "description": "Volitelné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_peace_mode": {
+      "name": "Inverter Back Up Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Povolit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Čas Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Povolit Čas Period 2",
+          "description": "Volitelné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Čas Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_manual_mode": {
+      "name": "Inverter Ruční Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "manual_mode": {
+          "name": "Ruční Režim",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "self_use_mode": {
+      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "feed_in_priority": {
+      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "back_up_mode": {
+      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "back_up_grid_enable": {
+          "name": "Back Up Grid Povolit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "back_up_charge_start_time": {
+          "name": "Back Up Charge Start Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "back_up_charge_end_time": {
+          "name": "Back Up Charge End Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "demand_mode": {
+      "name": "A1-Hybrid-G2 Demand Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "demand_grid_enable": {
+          "name": "Demand Grid Povolit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "peak_limit_time1": {
+          "name": "Peak Limit Čas 1",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "peak_limit_time2": {
+          "name": "Peak Limit Čas 2",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "demand_discharge_start_time1": {
+          "name": "Demand Discharge Start Čas 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time1": {
+          "name": "Demand Discharge End Čas 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_start_time2": {
+          "name": "Demand Discharge Start Čas 2",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time2": {
+          "name": "Demand Discharge End Čas 2",
+          "description": "Required. HH:MM time value."
+        },
+        "charger_power_limit": {
+          "name": "Charger Výkon Limit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "demand_max_soc": {
+          "name": "Demand Max SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "reserve_soc": {
+          "name": "Reserve SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "const_power_mode": {
+      "name": "A1-Hybrid-G2 ConstPower Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "const_power_grid_enable": {
+          "name": "Const Výkon Grid Povolit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "const_power_discharge_limit": {
+          "name": "Const Výkon Discharge Limit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "const_power_charge_start_time": {
+          "name": "Const Výkon Charge Start Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_charge_end_time": {
+          "name": "Const Výkon Charge End Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_start_time": {
+          "name": "Const Výkon Discharge Start Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_end_time": {
+          "name": "Const Výkon Discharge End Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "exit_vpp_mode": {
+      "name": "Exit VPP Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "power_control_mode": {
+      "name": "VPP Výkon Řízení Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "active_power_target": {
+          "name": "Active Výkon Cíl",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "w_reactive_power_target": {
+          "name": "W Reactive Výkon Cíl",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "electric_quantity_target_control_mode": {
+      "name": "VPP Electric Quantity Cíl Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "target_engergy": {
+          "name": "Cíl Engergy",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Výkon",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "soc_target_control_mode": {
+      "name": "VPP SOC Cíl Řízení Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "target_soc": {
+          "name": "Cíl SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Výkon",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "push_power_positive_or_negative_mode": {
+      "name": "VPP Push Výkon +/- Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "battery_power": {
+          "name": "Battery Výkon",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "push_power_zero_mode": {
+      "name": "VPP Push Výkon Zero Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "self_consume_charge_or_discharge_mode": {
+      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "self_consume_charge_only_mode": {
+      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_duration_mode": {
+      "name": "VPP PV&BAT Doba Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "battery_power": {
+          "name": "Battery Výkon",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "pv_power_limit": {
+          "name": "PV Výkon Limit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_target_soc_mode": {
+      "name": "VPP PV&BAT Cíl SOC Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "battery_power": {
+          "name": "Battery Výkon",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "pv_power_limit": {
+          "name": "PV Výkon Limit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "target_soc": {
+          "name": "Cíl SOC",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "time_of_duration": {
+          "name": "Čas Of Doba",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_charge_scene": {
+      "name": "EV Charger Set Charge Scene (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "charger_scene": {
+          "name": "Charger Scene",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "ocpp_url": {
+          "name": "OCPP Url",
+          "description": "Volitelné. Textové pole payloadu používané pro Dry-Run ověření."
+        },
+        "ocpp_charger_id": {
+          "name": "OCPP Charger Id",
+          "description": "Volitelné. Textové pole payloadu používané pro Dry-Run ověření."
+        }
+      }
+    },
+    "set_evc_qr_code": {
+      "name": "EV Charger Set QR Code (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "qr_code": {
+          "name": "QR Code",
+          "description": "Povinné. Textové pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_evc_work_mode": {
+      "name": "EV Charger Set Work Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "work_mode": {
+          "name": "Work Režim",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        },
+        "current_gear": {
+          "name": "Proud Gear",
+          "description": "Volitelné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        }
+      }
+    },
+    "set_evc_start_mode": {
+      "name": "EV Charger Set Start Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "start_mode": {
+          "name": "Start Režim",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_evc_charge_command": {
+      "name": "EV Charger Set Charge Příkaz (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "work_cmd": {
+          "name": "Work Cmd",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_evc_reserve_charge": {
+      "name": "EV Charger Reserve Charge (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "charge_start_time": {
+          "name": "Charge Start Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_end_time": {
+          "name": "Charge End Čas",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_current": {
+          "name": "Charge Proud",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_evc_current_limit": {
+      "name": "EV Charger Proud Limit (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří payload a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Povinné. Seznam SN zařízení. Runtime ověření povoluje 1 až 10 sériových čísel."
+        },
+        "current_limit": {
+          "name": "Proud Limit",
+          "description": "Povinné. Celočíselné pole payloadu používané pro Dry-Run ověření."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_battery_heating": {
+      "name": "Battery Heating Settings (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří nastavení ohřevu baterie a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "sn_list": {
+          "name": "Seznam sériových čísel zařízení",
+          "description": "Required. Device SN list, minimum 1 and maximum 10."
+        },
+        "heating_enable": {
+          "name": "Heating Povolit",
+          "description": "Required. 0 disables battery heating; 1 enables it."
+        },
+        "heating_level": {
+          "name": "Heating Level",
+          "description": "Required when enabled. Supported values are 0, 1, and 2."
+        },
+        "heating_period1_start_time": {
+          "name": "Heating Period 1 Start",
+          "description": "Required when enabled. HH:MM time value."
+        },
+        "heating_period1_end_time": {
+          "name": "Heating Period 1 End",
+          "description": "Required when enabled and must be later than period 1 start."
+        },
+        "heating_period2_start_time": {
+          "name": "Heating Period 2 Start",
+          "description": "Optional second heating period start. HH:MM time value."
+        },
+        "heating_period2_end_time": {
+          "name": "Heating Period 2 End",
+          "description": "Required when period 2 start is supplied."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Povinné. 1 domácnost nebo 4 komerční & průmyslové."
+        }
+      }
+    },
+    "set_ems_manual_mode": {
+      "name": "EMS Ruční Režim (Dry-Run)",
+      "description": "Pouze Dry-Run. Ověří nastavení ručního režimu EMS a zablokuje zápis.",
+      "fields": {
+        "entry_id": {
+          "name": "ID položky",
+          "description": "Volitelné ID konfigurační položky."
+        },
+        "device_type": {
+          "name": "Typ zařízení",
+          "description": "Required. Fixed value 100 for EMS System."
+        },
+        "business_type": {
+          "name": "Typ provozu",
+          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+        },
+        "param_list": {
+          "name": "EMS Parameters",
+          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Nejsou nakonfigurovány žádné položky SolaX Developer API"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "Název systému je povinný"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
+    }
+  }
+}

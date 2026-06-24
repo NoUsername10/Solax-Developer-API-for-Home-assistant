@@ -10,15 +10,47 @@ from typing import Any
 TRANSLATIONS_DIR = Path(__file__).resolve().parent / "translations"
 RUNTIME_TRANSLATIONS_DIR = Path(__file__).resolve().parent / "runtime_translations"
 DEFAULT_LANGUAGE = "en"
+SUPPORTED_LANGUAGES = {
+    "bg",
+    "cs",
+    "da",
+    "de",
+    "el",
+    "en",
+    "es",
+    "es-419",
+    "fi",
+    "fr",
+    "hu",
+    "it",
+    "ja",
+    "lt",
+    "nb",
+    "nl",
+    "pl",
+    "pt",
+    "pt-BR",
+    "ro",
+    "sv",
+    "th",
+    "tr",
+    "uk",
+    "vi",
+    "zh-Hans",
+}
+LANGUAGE_ALIASES = {language.casefold(): language for language in SUPPORTED_LANGUAGES}
 _CATALOG_CACHE: dict[str, dict[str, Any]] = {}
 _CATALOG_LOAD_TASKS: dict[str, asyncio.Task[None]] = {}
 
 
 def _normalize_lang(lang: str | None) -> str:
-    value = str(lang or DEFAULT_LANGUAGE).strip().lower().replace("_", "-")
+    value = str(lang or DEFAULT_LANGUAGE).strip().replace("_", "-")
     if not value:
         return DEFAULT_LANGUAGE
-    return value.split("-", 1)[0]
+    folded = value.casefold()
+    if folded in LANGUAGE_ALIASES:
+        return LANGUAGE_ALIASES[folded]
+    return LANGUAGE_ALIASES.get(value.split("-", 1)[0].casefold(), DEFAULT_LANGUAGE)
 
 
 def _read_catalog_from_disk(language: str) -> dict[str, Any]:

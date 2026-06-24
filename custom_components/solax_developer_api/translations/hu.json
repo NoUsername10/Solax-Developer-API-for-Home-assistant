@@ -1,0 +1,1341 @@
+{
+  "title": "SolaX Developer API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "SolaX Developer API beállítása",
+        "description": "Add meg a Developer API hitelesítő adatait és a lekérdezési beállításokat.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Rendszernév",
+          "scan_interval": "Lekérdezési intervallum (másodperc)",
+          "api_region": "API régió"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Rendszernév",
+          "scan_interval": "Lekérdezési intervallum (másodperc)",
+          "api_region": "API régió"
+        }
+      },
+      "reauth_confirm": {
+        "title": "SolaX Developer API újracsatlakoztatása",
+        "description": "A hitelesítés sikertelen. Adj meg érvényes Developer API adatokat az integráció újracsatlakoztatásához.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "api_region": "API régió"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "API régió"
+        }
+      },
+      "reconfigure": {
+        "title": "SolaX Developer API újrakonfigurálása",
+        "description": "Frissítsd a kapcsolati adatokat, az API régiót vagy a Home Assistant rendszer nevét.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Rendszernév",
+          "api_region": "API régió"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Rendszernév",
+          "api_region": "API régió"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Az integráció már konfigurálva van",
+      "invalid_credentials": "Érvénytelen hitelesítő adatok",
+      "cannot_connect": "Nem lehet csatlakozni a SolaX Developer API-hoz",
+      "cannot_read_data": "A hitelesítő adatok érvényesek, de nem érkezett olvasható erőműadat",
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+    },
+    "error": {
+      "invalid_credentials": "Érvénytelen hitelesítő adatok",
+      "invalid_system_name": "A rendszer neve kötelező",
+      "invalid_region": "Érvénytelen régió",
+      "cannot_connect": "Nem lehet csatlakozni a SolaX Developer API-hoz",
+      "cannot_read_data": "A hitelesítő adatok érvényesek, de nem érkezett olvasható erőműadat"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SolaX Developer API Beállítások",
+        "description": "Válaszd ki, az integráció melyik részét szeretnéd beállítani.",
+        "menu_options": {
+          "credentials": "Credentials and system",
+          "polling": "Lekérdezés és Live View",
+          "manual_devices": "Manual devices",
+          "advanced": "Advanced and diagnostics"
+        }
+      },
+      "credentials": {
+        "title": "Credentials and system",
+        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Rendszernév",
+          "api_region": "API régió"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Rendszernév",
+          "api_region": "API régió"
+        }
+      },
+      "polling": {
+        "title": "Lekérdezés és Live View",
+        "description": "Állítsd be a normál lekérdezést, az ideiglenes Live View lekérdezést és az éjszakai profilt.",
+        "data": {
+          "scan_interval": "Lekérdezési intervallum (másodperc)",
+          "live_view_default_duration": "Live View Default Duration (seconds)",
+          "live_view_interval": "Live View Target Interval (seconds)",
+          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
+          "night_scan_interval": "Night Scan Interval (seconds)",
+          "night_start_hour": "Éjszaka Mód Indítás Hour (0-23)",
+          "night_end_hour": "Éjszaka Mód End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Lekérdezési intervallum (másodperc)",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
+        }
+      },
+      "manual_devices": {
+        "title": "Manual devices",
+        "description": "Adj hozzá olyan eszközöket, amelyeket a fiók olvasni tud, de az inventory endpointok nem adnak vissza. Minden eszköz mentés előtt ellenőrzésre kerül.",
+        "data": {
+          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_remove_serial": "Eltávolítandó kézi mérő",
+          "manual_meter_remove_confirm": "Kiválasztott kézi mérő eltávolítása",
+          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_remove_serial": "Eltávolítandó kézi EMS rendszer",
+          "manual_ems_remove_confirm": "Kiválasztott kézi EMS rendszer eltávolítása"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Eltávolítandó kézi mérő",
+          "manual_meter_remove_confirm": "Kiválasztott kézi mérő eltávolítása",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Eltávolítandó kézi EMS rendszer",
+          "manual_ems_remove_confirm": "Kiválasztott kézi EMS rendszer eltávolítása"
+        }
+      },
+      "advanced": {
+        "title": "Advanced and diagnostics",
+        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "data": {
+          "rate_limit_notifications": "Sebességkorlát Értesítések"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+        }
+      }
+    },
+    "error": {
+      "invalid_credentials": "Érvénytelen hitelesítő adatok",
+      "invalid_system_name": "A rendszer neve kötelező",
+      "invalid_region": "Érvénytelen régió",
+      "cannot_connect": "Nem lehet csatlakozni a SolaX Developer API-hoz",
+      "cannot_read_data": "A hitelesítő adatok érvényesek, de nem érkezett olvasható erőműadat",
+      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
+      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
+      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
+      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
+      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
+      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
+      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
+      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+    }
+  },
+  "issues": {
+    "api_rate_limit": {
+      "title": "SolaX Developer API rate limit is active",
+      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+    },
+    "api_permission": {
+      "title": "SolaX Developer API access is incomplete",
+      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+    }
+  },
+  "entity": {
+    "switch": {
+      "rate_limit_notifications": {
+        "name": "API Sebességkorlát Értesítések"
+      },
+      "live_view_mode": {
+        "name": "Live View Mód"
+      }
+    },
+    "button": {
+      "live_view_boost": {
+        "name": "Indítás Live View Boost"
+      }
+    },
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
+  },
+  "services": {
+    "manual_refresh": {
+      "name": "Kézi Frissítés",
+      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id; if omitted, all entries are refreshed."
+        }
+      }
+    },
+    "start_live_view": {
+      "name": "Indítás Live View",
+      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "duration_seconds": {
+          "name": "Időtartam (másodperc)",
+          "description": "Optional live mode duration override."
+        },
+        "interval_seconds": {
+          "name": "Célintervallum (másodperc)",
+          "description": "Optional live mode target interval override."
+        }
+      }
+    },
+    "stop_live_view": {
+      "name": "Leállítás Live View",
+      "description": "Disable live polling and return to standard/night profile timing.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        }
+      }
+    },
+    "fetch_device_history": {
+      "name": "Fetch Eszköz Előzmények",
+      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+        },
+        "device_type": {
+          "name": "Eszköztípus",
+          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "start_time": {
+          "name": "Kezdési idő",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "end_time": {
+          "name": "Befejezési idő",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "time_interval": {
+          "name": "Időintervallum",
+          "description": "5, 10, 15, 30, 60 minutes."
+        },
+        "request_sn_type": {
+          "name": "Request SN típus",
+          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "query_request_result": {
+      "name": "Query Kérés Eredmény",
+      "description": "Query asynchronous command request status by string requestId.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "request_id": {
+          "name": "Request ID",
+          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+        }
+      }
+    },
+    "query_master_control_device": {
+      "name": "Query Fő Vezérlés Eszköz",
+      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "device_sn": {
+          "name": "Eszköz SN"
+        },
+        "device_type": {
+          "name": "Eszköztípus"
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Must be 4 (commercial & industrial)."
+        }
+      }
+    },
+    "set_export_control": {
+      "name": "Set Export Vezérlés (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "device_type": {
+          "name": "Eszköztípus",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Engedélyezési jelző",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "limit_value": {
+          "name": "Határérték",
+          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "control_mode": {
+          "name": "Vezérlési mód",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_import_control": {
+      "name": "Set Import Vezérlés (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "device_type": {
+          "name": "Eszköztípus",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Engedélyezési jelző",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "limit_value": {
+          "name": "Határérték",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "batch_set_spontaneity_self_use": {
+      "name": "Inverter Self Használat Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Hálózat Engedélyezés",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Felső SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Engedélyezés Idő Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_on_grid_first": {
+      "name": "Inverter Feed-in Prioritás Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Felső SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Engedélyezés Idő Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_peace_mode": {
+      "name": "Inverter Tartalék Fel Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Hálózat Engedélyezés",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Felső SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Indítás Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Idő Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Engedélyezés Idő Period 2",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Indítás Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Idő Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_manual_mode": {
+      "name": "Inverter Kézi Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "manual_mode": {
+          "name": "Kézi Mód",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_use_mode": {
+      "name": "A1-Hybrid-G2 Self Használat (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "feed_in_priority": {
+      "name": "A1-Hybrid-G2 Feed-in Prioritás (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "back_up_mode": {
+      "name": "A1-Hybrid-G2 Tartalék Fel (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "back_up_grid_enable": {
+          "name": "Tartalék Fel Hálózat Engedélyezés",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "back_up_charge_start_time": {
+          "name": "Tartalék Fel Charge Indítás Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "back_up_charge_end_time": {
+          "name": "Tartalék Fel Charge End Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "demand_mode": {
+      "name": "A1-Hybrid-G2 Igény Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "demand_grid_enable": {
+          "name": "Igény Hálózat Engedélyezés",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "peak_limit_time1": {
+          "name": "Csúcs Korlát Idő 1",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "peak_limit_time2": {
+          "name": "Csúcs Korlát Idő 2",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "demand_discharge_start_time1": {
+          "name": "Igény Discharge Indítás Idő 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time1": {
+          "name": "Igény Discharge End Idő 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_start_time2": {
+          "name": "Igény Discharge Indítás Idő 2",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time2": {
+          "name": "Igény Discharge End Idő 2",
+          "description": "Required. HH:MM time value."
+        },
+        "charger_power_limit": {
+          "name": "Töltő Teljesítmény Korlát",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "demand_max_soc": {
+          "name": "Igény Max SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "reserve_soc": {
+          "name": "Tartalék SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "const_power_mode": {
+      "name": "A1-Hybrid-G2 ConstPower Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "const_power_grid_enable": {
+          "name": "Const Teljesítmény Hálózat Engedélyezés",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "const_power_discharge_limit": {
+          "name": "Const Teljesítmény Discharge Korlát",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "const_power_charge_start_time": {
+          "name": "Const Teljesítmény Charge Indítás Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_charge_end_time": {
+          "name": "Const Teljesítmény Charge End Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_start_time": {
+          "name": "Const Teljesítmény Discharge Indítás Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_end_time": {
+          "name": "Const Teljesítmény Discharge End Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "exit_vpp_mode": {
+      "name": "Exit VPP Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "power_control_mode": {
+      "name": "VPP Teljesítmény Vezérlés Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "active_power_target": {
+          "name": "Aktív Teljesítmény Cél",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "w_reactive_power_target": {
+          "name": "W Reactive Teljesítmény Cél",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "electric_quantity_target_control_mode": {
+      "name": "VPP Electric Quantity Cél Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "target_engergy": {
+          "name": "Cél Engergy",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Teljesítmény",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "soc_target_control_mode": {
+      "name": "VPP SOC Cél Vezérlés Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "target_soc": {
+          "name": "Cél SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Teljesítmény",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "push_power_positive_or_negative_mode": {
+      "name": "VPP Push Teljesítmény +/- Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Akkumulátor Teljesítmény",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "push_power_zero_mode": {
+      "name": "VPP Push Teljesítmény Zero Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_consume_charge_or_discharge_mode": {
+      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "self_consume_charge_only_mode": {
+      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_duration_mode": {
+      "name": "VPP PV&BAT Időtartam Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Akkumulátor Teljesítmény",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "pv_power_limit": {
+          "name": "PV Teljesítmény Korlát",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_target_soc_mode": {
+      "name": "VPP PV&BAT Cél SOC Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "battery_power": {
+          "name": "Akkumulátor Teljesítmény",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "pv_power_limit": {
+          "name": "PV Teljesítmény Korlát",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "target_soc": {
+          "name": "Cél SOC",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "time_of_duration": {
+          "name": "Idő Of Időtartam",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "next_motion": {
+          "name": "Következő Motion",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_charge_scene": {
+      "name": "EV Töltő Set Charge Jelenet (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "charger_scene": {
+          "name": "Töltő Jelenet",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "ocpp_url": {
+          "name": "OCPP Url",
+          "description": "Optional. String payload field used by dry-run validation."
+        },
+        "ocpp_charger_id": {
+          "name": "OCPP Töltő Id",
+          "description": "Optional. String payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_evc_qr_code": {
+      "name": "EV Töltő Set QR Code (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "qr_code": {
+          "name": "QR Code",
+          "description": "Required. String payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_work_mode": {
+      "name": "EV Töltő Set Munka Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "work_mode": {
+          "name": "Munka Mód",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        },
+        "current_gear": {
+          "name": "Áram Gear",
+          "description": "Optional. Integer payload field used by dry-run validation."
+        }
+      }
+    },
+    "set_evc_start_mode": {
+      "name": "EV Töltő Set Indítás Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "start_mode": {
+          "name": "Indítás Mód",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_charge_command": {
+      "name": "EV Töltő Set Charge Parancs (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "work_cmd": {
+          "name": "Munka Cmd",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_reserve_charge": {
+      "name": "EV Töltő Tartalék Charge (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "charge_start_time": {
+          "name": "Charge Indítás Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_end_time": {
+          "name": "Charge End Idő",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_current": {
+          "name": "Charge Áram",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_evc_current_limit": {
+      "name": "EV Töltő Áram Korlát (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi a payloadot és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+        },
+        "current_limit": {
+          "name": "Áram Korlát",
+          "description": "Required. Integer payload field used by dry-run validation."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_battery_heating": {
+      "name": "Akkumulátor Fűtés Beállítások (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi az akkufűtés beállításait és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "sn_list": {
+          "name": "Eszköz sorozatszám lista",
+          "description": "Required. Device SN list, minimum 1 and maximum 10."
+        },
+        "heating_enable": {
+          "name": "Fűtés Engedélyezés",
+          "description": "Required. 0 disables battery heating; 1 enables it."
+        },
+        "heating_level": {
+          "name": "Fűtés Szint",
+          "description": "Required when enabled. Supported values are 0, 1, and 2."
+        },
+        "heating_period1_start_time": {
+          "name": "Fűtés Period 1 Indítás",
+          "description": "Required when enabled. HH:MM time value."
+        },
+        "heating_period1_end_time": {
+          "name": "Fűtés Period 1 End",
+          "description": "Required when enabled and must be later than period 1 start."
+        },
+        "heating_period2_start_time": {
+          "name": "Fűtés Period 2 Indítás",
+          "description": "Optional second heating period start. HH:MM time value."
+        },
+        "heating_period2_end_time": {
+          "name": "Fűtés Period 2 End",
+          "description": "Required when period 2 start is supplied."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. 1 residential or 4 commercial & industrial."
+        }
+      }
+    },
+    "set_ems_manual_mode": {
+      "name": "EMS Kézi Mód (Dry-Run)",
+      "description": "Csak Dry-Run. Ellenőrzi az EMS kézi mód beállításait és blokkolja az írást.",
+      "fields": {
+        "entry_id": {
+          "name": "Bejegyzés ID",
+          "description": "Optional config entry id."
+        },
+        "device_type": {
+          "name": "Eszköztípus",
+          "description": "Required. Fixed value 100 for EMS System."
+        },
+        "business_type": {
+          "name": "Business típus",
+          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+        },
+        "param_list": {
+          "name": "EMS Paraméterek",
+          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Nincs konfigurált SolaX Developer API bejegyzés"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "A rendszer neve kötelező"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
+    }
+  }
+}

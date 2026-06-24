@@ -1,0 +1,1341 @@
+{
+  "title": "SolaX Developer API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "SolaX Developer API einrichten",
+        "description": "Geben Sie Ihre Developer API-Zugangsdaten und Abfrageoptionen ein.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systemname",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "api_region": "API-Region"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Systemname",
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "api_region": "API-Region"
+        }
+      },
+      "reauth_confirm": {
+        "title": "SolaX Developer API erneut verbinden",
+        "description": "Die Authentifizierung ist fehlgeschlagen. Geben Sie gültige Developer API-Zugangsdaten ein, um diese Integration erneut zu verbinden.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "api_region": "API-Region"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "API-Region"
+        }
+      },
+      "reconfigure": {
+        "title": "SolaX Developer API neu konfigurieren",
+        "description": "Aktualisieren Sie die Verbindungsdaten, die API-Region oder den Home Assistant-Systemnamen.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systemname",
+          "api_region": "API-Region"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Systemname",
+          "api_region": "API-Region"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Integration ist bereits konfiguriert",
+      "invalid_credentials": "Ungültige Zugangsdaten",
+      "cannot_connect": "Verbindung zur SolaX Developer API nicht möglich",
+      "cannot_read_data": "Die Zugangsdaten sind gültig, aber es wurden keine lesbaren Anlagendaten zurückgegeben",
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+    },
+    "error": {
+      "invalid_credentials": "Ungültige Zugangsdaten",
+      "invalid_system_name": "Systemname ist erforderlich",
+      "invalid_region": "Ungültige Region",
+      "cannot_connect": "Verbindung zur SolaX Developer API nicht möglich",
+      "cannot_read_data": "Die Zugangsdaten sind gültig, aber es wurden keine lesbaren Anlagendaten zurückgegeben"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SolaX Developer API Optionen",
+        "description": "Wählen Sie aus, welchen Teil der Integration Sie konfigurieren möchten.",
+        "menu_options": {
+          "credentials": "Zugangsdaten & System",
+          "polling": "Polling & Live View",
+          "manual_devices": "Manuell Geräte",
+          "advanced": "Erweitert & Diagnose"
+        }
+      },
+      "credentials": {
+        "title": "Zugangsdaten & System",
+        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systemname",
+          "api_region": "API-Region"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Systemname",
+          "api_region": "API-Region"
+        }
+      },
+      "polling": {
+        "title": "Polling & Live View",
+        "description": "Konfigurieren Sie die Standardabfrage, temporäres Live View-Polling und das Nachtprofil.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "live_view_default_duration": "Live View Default Duration (seconds)",
+          "live_view_interval": "Live View Target Interval (seconds)",
+          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
+          "night_scan_interval": "Night Scan Interval (seconds)",
+          "night_start_hour": "Nacht Modus Starten Hour (0-23)",
+          "night_end_hour": "Nacht Modus End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
+        }
+      },
+      "manual_devices": {
+        "title": "Manuell Geräte",
+        "description": "Fügen Sie Geräte hinzu, die das Konto lesen kann, die aber von den Inventar-Endpunkten nicht zurückgegeben werden. Jedes Gerät wird vor dem Speichern geprüft.",
+        "data": {
+          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_remove_serial": "Zu entfernender manueller Zähler",
+          "manual_meter_remove_confirm": "Ausgewählten manuellen Zähler entfernen",
+          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_remove_serial": "Zu entfernendes manuelles EMS-System",
+          "manual_ems_remove_confirm": "Ausgewähltes manuelles EMS-System entfernen"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Zu entfernender manueller Zähler",
+          "manual_meter_remove_confirm": "Ausgewählten manuellen Zähler entfernen",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Zu entfernendes manuelles EMS-System",
+          "manual_ems_remove_confirm": "Ausgewähltes manuelles EMS-System entfernen"
+        }
+      },
+      "advanced": {
+        "title": "Erweitert & Diagnose",
+        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "data": {
+          "rate_limit_notifications": "Ratenlimit Benachrichtigungen"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+        }
+      }
+    },
+    "error": {
+      "invalid_credentials": "Ungültige Zugangsdaten",
+      "invalid_system_name": "Systemname ist erforderlich",
+      "invalid_region": "Ungültige Region",
+      "cannot_connect": "Verbindung zur SolaX Developer API nicht möglich",
+      "cannot_read_data": "Die Zugangsdaten sind gültig, aber es wurden keine lesbaren Anlagendaten zurückgegeben",
+      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
+      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
+      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
+      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
+      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
+      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
+      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
+      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+    }
+  },
+  "issues": {
+    "api_rate_limit": {
+      "title": "SolaX Developer API rate limit is active",
+      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+    },
+    "api_permission": {
+      "title": "SolaX Developer API access is incomplete",
+      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+    }
+  },
+  "entity": {
+    "switch": {
+      "rate_limit_notifications": {
+        "name": "API Ratenlimit Benachrichtigungen"
+      },
+      "live_view_mode": {
+        "name": "Live View Modus"
+      }
+    },
+    "button": {
+      "live_view_boost": {
+        "name": "Starten Live View Boost"
+      }
+    },
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
+  },
+  "services": {
+    "manual_refresh": {
+      "name": "Manuell Aktualisierung",
+      "description": "Löst eine sofortige Aktualisierung für alle konfigurierten SolaX Developer API-Einträge aus.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optional config entry id; if omitted, all entries are refreshed."
+        }
+      }
+    },
+    "start_live_view": {
+      "name": "Starten Live View",
+      "description": "Aktiviert vorübergehendes, echtzeitnahes Polling mit automatischem Timeout.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "duration_seconds": {
+          "name": "Dauer (Sekunden)",
+          "description": "Optional live mode duration override."
+        },
+        "interval_seconds": {
+          "name": "Zielintervall (Sekunden)",
+          "description": "Optional live mode target interval override."
+        }
+      }
+    },
+    "stop_live_view": {
+      "name": "Stoppen Live View",
+      "description": "Deaktiviert Live-Polling und kehrt zum Standard-/Nachtprofil zurück.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        }
+      }
+    },
+    "fetch_device_history": {
+      "name": "Abrufen Device Verlauf",
+      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Geräte-SN-Liste, min. 1 max. 200. Anfragen werden automatisch aufgeteilt."
+        },
+        "device_type": {
+          "name": "Gerätetyp",
+          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "start_time": {
+          "name": "Startzeit",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "end_time": {
+          "name": "Endzeit",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "time_interval": {
+          "name": "Zeitintervall",
+          "description": "5, 10, 15, 30, 60 minutes."
+        },
+        "request_sn_type": {
+          "name": "Request-SN-Typ",
+          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "query_request_result": {
+      "name": "Abfragen Request Ergebnis",
+      "description": "Query asynchronous command request status by string requestId.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "request_id": {
+          "name": "Request ID",
+          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+        }
+      }
+    },
+    "query_master_control_device": {
+      "name": "Abfragen Master Steuerung Device",
+      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "device_sn": {
+          "name": "Geräte-SN"
+        },
+        "device_type": {
+          "name": "Gerätetyp"
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Must be 4 (commercial & industrial)."
+        }
+      }
+    },
+    "set_export_control": {
+      "name": "Set Export Steuerung (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "device_type": {
+          "name": "Gerätetyp",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Aktivierungs-Flag",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "limit_value": {
+          "name": "Grenzwert",
+          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "control_mode": {
+          "name": "Steuerungsmodus",
+          "description": "Optional. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        }
+      }
+    },
+    "set_import_control": {
+      "name": "Set Import Steuerung (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "device_type": {
+          "name": "Gerätetyp",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Aktivierungs-Flag",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "limit_value": {
+          "name": "Grenzwert",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "batch_set_spontaneity_self_use": {
+      "name": "Inverter Self Use Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Aktivieren",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Aktivieren Zeit Period 2",
+          "description": "Optional. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_on_grid_first": {
+      "name": "Inverter Feed-in Priority Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Aktivieren Zeit Period 2",
+          "description": "Optional. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_peace_mode": {
+      "name": "Inverter Back Up Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Aktivieren",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Starten Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Zeit Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Aktivieren Zeit Period 2",
+          "description": "Optional. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Starten Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Zeit Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_manual_mode": {
+      "name": "Inverter Manuell Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "manual_mode": {
+          "name": "Manuell Modus",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "self_use_mode": {
+      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "feed_in_priority": {
+      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "back_up_mode": {
+      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "back_up_grid_enable": {
+          "name": "Back Up Grid Aktivieren",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "back_up_charge_start_time": {
+          "name": "Back Up Charge Starten Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "back_up_charge_end_time": {
+          "name": "Back Up Charge End Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "demand_mode": {
+      "name": "A1-Hybrid-G2 Demand Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "demand_grid_enable": {
+          "name": "Demand Grid Aktivieren",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "peak_limit_time1": {
+          "name": "Peak Limit Zeit 1",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "peak_limit_time2": {
+          "name": "Peak Limit Zeit 2",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "demand_discharge_start_time1": {
+          "name": "Demand Discharge Starten Zeit 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time1": {
+          "name": "Demand Discharge End Zeit 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_start_time2": {
+          "name": "Demand Discharge Starten Zeit 2",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time2": {
+          "name": "Demand Discharge End Zeit 2",
+          "description": "Required. HH:MM time value."
+        },
+        "charger_power_limit": {
+          "name": "Charger Leistung Limit",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "demand_max_soc": {
+          "name": "Demand Max SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "reserve_soc": {
+          "name": "Reserve SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "const_power_mode": {
+      "name": "A1-Hybrid-G2 ConstPower Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "const_power_grid_enable": {
+          "name": "Const Leistung Grid Aktivieren",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "const_power_discharge_limit": {
+          "name": "Const Leistung Discharge Limit",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "const_power_charge_start_time": {
+          "name": "Const Leistung Charge Starten Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_charge_end_time": {
+          "name": "Const Leistung Charge End Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_start_time": {
+          "name": "Const Leistung Discharge Starten Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_end_time": {
+          "name": "Const Leistung Discharge End Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "exit_vpp_mode": {
+      "name": "Exit VPP Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "power_control_mode": {
+      "name": "VPP Leistung Steuerung Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "active_power_target": {
+          "name": "Active Leistung Ziel",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "w_reactive_power_target": {
+          "name": "W Reactive Leistung Ziel",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "electric_quantity_target_control_mode": {
+      "name": "VPP Electric Quantity Ziel Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "target_engergy": {
+          "name": "Ziel Engergy",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Leistung",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "soc_target_control_mode": {
+      "name": "VPP SOC Ziel Steuerung Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "target_soc": {
+          "name": "Ziel SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Leistung",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "push_power_positive_or_negative_mode": {
+      "name": "VPP Push Leistung +/- Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "battery_power": {
+          "name": "Battery Leistung",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "push_power_zero_mode": {
+      "name": "VPP Push Leistung Zero Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "self_consume_charge_or_discharge_mode": {
+      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "self_consume_charge_only_mode": {
+      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_duration_mode": {
+      "name": "VPP PV&BAT Dauer Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "battery_power": {
+          "name": "Battery Leistung",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "pv_power_limit": {
+          "name": "PV Leistung Limit",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_target_soc_mode": {
+      "name": "VPP PV&BAT Ziel SOC Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "battery_power": {
+          "name": "Battery Leistung",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "pv_power_limit": {
+          "name": "PV Leistung Limit",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "target_soc": {
+          "name": "Ziel SOC",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "time_of_duration": {
+          "name": "Zeit Of Dauer",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_charge_scene": {
+      "name": "EV Charger Set Charge Scene (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "charger_scene": {
+          "name": "Charger Scene",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "ocpp_url": {
+          "name": "OCPP Url",
+          "description": "Optional. Textfeld in den Nutzdaten für die Dry-Run-Validierung."
+        },
+        "ocpp_charger_id": {
+          "name": "OCPP Charger Id",
+          "description": "Optional. Textfeld in den Nutzdaten für die Dry-Run-Validierung."
+        }
+      }
+    },
+    "set_evc_qr_code": {
+      "name": "EV Charger Set QR Code (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "qr_code": {
+          "name": "QR Code",
+          "description": "Erforderlich. Textfeld in den Nutzdaten für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_evc_work_mode": {
+      "name": "EV Charger Set Work Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "work_mode": {
+          "name": "Work Modus",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        },
+        "current_gear": {
+          "name": "Strom Gear",
+          "description": "Optional. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        }
+      }
+    },
+    "set_evc_start_mode": {
+      "name": "EV Charger Set Starten Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "start_mode": {
+          "name": "Starten Modus",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_evc_charge_command": {
+      "name": "EV Charger Set Charge Befehl (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "work_cmd": {
+          "name": "Work Cmd",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_evc_reserve_charge": {
+      "name": "EV Charger Reserve Charge (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "charge_start_time": {
+          "name": "Charge Starten Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_end_time": {
+          "name": "Charge End Zeit",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_current": {
+          "name": "Charge Strom",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_evc_current_limit": {
+      "name": "EV Charger Strom Limit (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert die Nutzdaten und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Erforderlich. Geräte-SN-Liste. Die Laufzeitvalidierung erlaubt 1 bis 10 Seriennummern."
+        },
+        "current_limit": {
+          "name": "Strom Limit",
+          "description": "Erforderlich. Ganzzahliges Nutzdatenfeld für die Dry-Run-Validierung."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_battery_heating": {
+      "name": "Battery Heating Settings (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert Batterieheizungs-Einstellungen und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "sn_list": {
+          "name": "Geräte-Seriennummernliste",
+          "description": "Required. Device SN list, minimum 1 and maximum 10."
+        },
+        "heating_enable": {
+          "name": "Heating Aktivieren",
+          "description": "Required. 0 disables battery heating; 1 enables it."
+        },
+        "heating_level": {
+          "name": "Heating Level",
+          "description": "Required when enabled. Supported values are 0, 1, and 2."
+        },
+        "heating_period1_start_time": {
+          "name": "Heating Period 1 Starten",
+          "description": "Required when enabled. HH:MM time value."
+        },
+        "heating_period1_end_time": {
+          "name": "Heating Period 1 End",
+          "description": "Required when enabled and must be later than period 1 start."
+        },
+        "heating_period2_start_time": {
+          "name": "Heating Period 2 Starten",
+          "description": "Optional second heating period start. HH:MM time value."
+        },
+        "heating_period2_end_time": {
+          "name": "Heating Period 2 End",
+          "description": "Required when period 2 start is supplied."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Erforderlich. 1 Wohnbereich oder 4 Gewerbe & Industrie."
+        }
+      }
+    },
+    "set_ems_manual_mode": {
+      "name": "EMS Manuell Modus (Dry-Run)",
+      "description": "Nur Dry-Run. Validiert EMS-Einstellungen für manuellen Modus und blockiert Schreibausführung.",
+      "fields": {
+        "entry_id": {
+          "name": "Eintrags-ID",
+          "description": "Optionale Konfigurationseintrags-ID."
+        },
+        "device_type": {
+          "name": "Gerätetyp",
+          "description": "Required. Fixed value 100 for EMS System."
+        },
+        "business_type": {
+          "name": "Business-Typ",
+          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+        },
+        "param_list": {
+          "name": "EMS Parameters",
+          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Keine SolaX Developer API-Einträge konfiguriert"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "Systemname ist erforderlich"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
+    }
+  }
+}

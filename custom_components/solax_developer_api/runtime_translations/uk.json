@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - Ліміт частоти",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - Ручний Лічильник Серійний номер",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - Ручний EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "Немає налаштованих записів SolaX Developer API",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "Назва системи обов’язкова",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "Невідомо",
+      "device": "Пристрій",
+      "none": "(None)",
+      "business_type": {
+        "1": "Житловий",
+        "4": "Комерційний & Промисловий"
+      },
+      "device_type": {
+        "1": "Інвертор",
+        "2": "Батарея",
+        "3": "Лічильник",
+        "4": "EV Зарядний пристрій",
+        "100": "EMS Система"
+      },
+      "period": {
+        "year": "Рік",
+        "month": "Місяць"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "Назва системи"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API Ліміт частоти Сповіщення",
+        "live_view_mode": "Live View Режим"
+      },
+      "button": {
+        "live_view_boost": "Запуск Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "AC-потужність системи",
+        "system_dc_power": "DC-потужність системи",
+        "system_yield_today": "Виробіток системи сьогодні",
+        "system_yield_total": "Загальний виробіток системи",
+        "system_efficiency": "Загальна ефективність системи",
+        "system_health": "Стан системи",
+        "api_rate_limit_status": "Статус ліміту API",
+        "poll_profile": "Профіль опитування",
+        "effective_scan_interval": "Ефективний інтервал сканування",
+        "live_view_active": "Статус Live View",
+        "live_view_remaining_seconds": "Залишок Live View",
+        "last_poll_attempt": "Остання спроба опитування",
+        "next_scheduled_poll": "Наступне заплановане опитування",
+        "token_expires_at": "Token закінчується о",
+        "dry_run_command_count": "Кількість команд Dry-Run"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} Система Totals",
+      "plant_name": "Plant {plant_id}",
+      "plant_field": "Plant {plant_id} {field_name}",
+      "plant_alarm_count": "Plant {plant_id} Активний Alarm Кількість",
+      "plant_stat": "Plant {plant_id} {period} {metric_name}",
+      "plant_info": "Plant {plant_id} {key_name}",
+      "plant_alarm_preview": "Plant {plant_id} Alarm {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax Пристрій {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Plant {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single Інвертор Система",
+        "multi_inverter": "Multi-Інвертор Система",
+        "single_device": "Single Пристрій Система",
+        "multi_device": "Multi-Пристрій Система"
+      },
+      "plant": "Plant {business_type}",
+      "plant_simple": "Plant",
+      "plant_stats": "Plant Stats",
+      "plant_alarms": "Plant Alarms",
+      "inventory": "Inventory",
+      "ems_system": "EMS Система"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "Невідомо",
+        "ok": "OK",
+        "error": "Error",
+        "degraded": "Degraded"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "Ліміт частотиed"
+      },
+      "poll_profile": {
+        "standard": "Стандартний",
+        "night": "Ніч",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "Активний",
+        "inactive": "Неактивний"
+      },
+      "online": {
+        "0": "Офлайн",
+        "1": "Онлайн"
+      },
+      "plant_residential": {
+        "0": "Підключення",
+        "1": "Офлайн",
+        "2": "Онлайн"
+      },
+      "plant_ci": {
+        "0": "Офлайн",
+        "1": "Нормально",
+        "2": "Збій",
+        "3": "Попередження",
+        "4": "Підключення"
+      },
+      "parallel_ci": {
+        "0": "Головний",
+        "1": "Slave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "Головний",
+        "2": "Slave 1",
+        "3": "Slave 2",
+        "4": "Slave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "Пристрій Офлайн",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "Очікування",
+        "1": "Працює",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Помилка",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Заряджання",
+        "10": "Заряджання Помилка",
+        "11": "Потужність Off"
+      },
+      "ev": {
+        "0": "Доступний",
+        "1": "Підготовка",
+        "2": "Заряджання",
+        "3": "Завершено",
+        "4": "Несправний",
+        "5": "Недоступний",
+        "6": "Зарезервовано",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Update",
+        "10": "Card Activation",
+        "11": "Запуск Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "Очікує",
+        "101": "Self-check",
+        "102": "Нормально",
+        "103": "Помилка",
+        "104": "Permanent Помилка",
+        "105": "Update Режим",
+        "106": "EPS Check Режим",
+        "107": "EPS Режим",
+        "108": "Self Test",
+        "109": "Очікування Режим",
+        "110": "Standby Режим",
+        "111": "PV Wake Вгору BAT Режим",
+        "112": "GEN Check Режим",
+        "113": "GEN Run Режим",
+        "114": "RSD Standby",
+        "130": "VPP Режим",
+        "131": "TOU Self Використання",
+        "132": "TOU Заряджання",
+        "133": "TOU Discharging",
+        "134": "TOU Батарея Off",
+        "135": "TOU Пік Shaving",
+        "136": "Нормально Режим (GEN)",
+        "137": "Нормально Режим (BAT-E)",
+        "138": "Нормально Режим (BAT-H)",
+        "139": "EPS Режим (BAT-H)",
+        "140": "Запуск Режим",
+        "150": "Self Використання",
+        "151": "Force Час Використання",
+        "152": "Резервний Вгору Режим",
+        "153": "Feed-in Пріоритет",
+        "154": "Попит Режим",
+        "155": "ConstPower Режим",
+        "160": "OpenADR Режим",
+        "170": "Зупинка Режим",
+        "171": "Debug Режим",
+        "1301": "Потужність Керування Режим",
+        "1302": "Electric Quantity Ціль Керування Режим",
+        "1303": "SOC Ціль Керування Режим",
+        "1304": "Push Потужність Positive/Negative",
+        "1305": "Push Потужність Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT Тривалість Режим",
+        "1309": "PV&BAT Ціль SOC Режим",
+        "141": "Нормально Режим (R-1)",
+        "142": "Нормально Режим (R-2)",
+        "143": "Нормально Режим (R-3)",
+        "144": "Нормально Режим (R-4)",
+        "145": "Нормально Режим (R-5)",
+        "146": "Нормально Режим (R-6)",
+        "147": "Нормально Режим (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "Нормально (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "Очікування",
+        "1": "Робота"
+      },
+      "battery_ci": {
+        "0": "Очікування",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Помилка",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Заряджання",
+        "10": "Заряджання Помилка",
+        "11": "Потужність Off Статус"
+      }
+    }
+  }
+}

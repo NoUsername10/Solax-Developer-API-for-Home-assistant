@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - 速率限制",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - 手动 电表 序列号",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - 手动 EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "没有已配置的 SolaX Developer API 条目",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "系统名称为必填项",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "未知",
+      "device": "设备",
+      "none": "(None)",
+      "business_type": {
+        "1": "住宅",
+        "4": "商业 & 工业"
+      },
+      "device_type": {
+        "1": "逆变器",
+        "2": "电池",
+        "3": "电表",
+        "4": "EV 充电器",
+        "100": "EMS 系统"
+      },
+      "period": {
+        "year": "年",
+        "month": "月"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "系统名称"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API 速率限制 通知",
+        "live_view_mode": "Live View 模式"
+      },
+      "button": {
+        "live_view_boost": "启动 Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "系统 AC 功率",
+        "system_dc_power": "系统 DC 功率",
+        "system_yield_today": "系统今日发电量",
+        "system_yield_total": "系统累计发电量",
+        "system_efficiency": "系统总效率",
+        "system_health": "系统健康状态",
+        "api_rate_limit_status": "API 速率限制状态",
+        "poll_profile": "轮询配置",
+        "effective_scan_interval": "有效扫描间隔",
+        "live_view_active": "Live View 状态",
+        "live_view_remaining_seconds": "Live View 剩余时间",
+        "last_poll_attempt": "上次轮询尝试",
+        "next_scheduled_poll": "下次计划轮询",
+        "token_expires_at": "Token 过期时间",
+        "dry_run_command_count": "Dry-Run 命令计数"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} 系统 Totals",
+      "plant_name": "Plant {plant_id}",
+      "plant_field": "Plant {plant_id} {field_name}",
+      "plant_alarm_count": "Plant {plant_id} 活动 Alarm 计数",
+      "plant_stat": "Plant {plant_id} {period} {metric_name}",
+      "plant_info": "Plant {plant_id} {key_name}",
+      "plant_alarm_preview": "Plant {plant_id} Alarm {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax 设备 {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Plant {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single 逆变器 系统",
+        "multi_inverter": "Multi-逆变器 系统",
+        "single_device": "Single 设备 系统",
+        "multi_device": "Multi-设备 系统"
+      },
+      "plant": "Plant {business_type}",
+      "plant_simple": "Plant",
+      "plant_stats": "Plant Stats",
+      "plant_alarms": "Plant Alarms",
+      "inventory": "Inventory",
+      "ems_system": "EMS 系统"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "未知",
+        "ok": "OK",
+        "error": "Error",
+        "degraded": "Degraded"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "速率限制ed"
+      },
+      "poll_profile": {
+        "standard": "标准",
+        "night": "夜间",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "活动",
+        "inactive": "非活动"
+      },
+      "online": {
+        "0": "离线",
+        "1": "在线"
+      },
+      "plant_residential": {
+        "0": "连接中",
+        "1": "离线",
+        "2": "在线"
+      },
+      "plant_ci": {
+        "0": "离线",
+        "1": "正常",
+        "2": "故障",
+        "3": "警告",
+        "4": "连接中"
+      },
+      "parallel_ci": {
+        "0": "主",
+        "1": "Slave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "主",
+        "2": "Slave 1",
+        "3": "Slave 2",
+        "4": "Slave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "设备 离线",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "空闲",
+        "1": "工作中",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging 故障",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "充电中",
+        "10": "充电中 故障",
+        "11": "功率 Off"
+      },
+      "ev": {
+        "0": "可用",
+        "1": "准备中",
+        "2": "充电中",
+        "3": "完成",
+        "4": "故障",
+        "5": "不可用",
+        "6": "保留",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Update",
+        "10": "Card Activation",
+        "11": "启动 Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "等待",
+        "101": "Self-check",
+        "102": "正常",
+        "103": "故障",
+        "104": "Permanent 故障",
+        "105": "Update 模式",
+        "106": "EPS Check 模式",
+        "107": "EPS 模式",
+        "108": "Self Test",
+        "109": "空闲 模式",
+        "110": "Standby 模式",
+        "111": "PV Wake 上 BAT 模式",
+        "112": "GEN Check 模式",
+        "113": "GEN Run 模式",
+        "114": "RSD Standby",
+        "130": "VPP 模式",
+        "131": "TOU Self 使用",
+        "132": "TOU 充电中",
+        "133": "TOU Discharging",
+        "134": "TOU 电池 Off",
+        "135": "TOU 峰值 Shaving",
+        "136": "正常 模式 (GEN)",
+        "137": "正常 模式 (BAT-E)",
+        "138": "正常 模式 (BAT-H)",
+        "139": "EPS 模式 (BAT-H)",
+        "140": "启动 模式",
+        "150": "Self 使用",
+        "151": "Force 时间 使用",
+        "152": "备份 上 模式",
+        "153": "Feed-in 优先级",
+        "154": "需求 模式",
+        "155": "ConstPower 模式",
+        "160": "OpenADR 模式",
+        "170": "停止 模式",
+        "171": "Debug 模式",
+        "1301": "功率 控制 模式",
+        "1302": "Electric Quantity 目标 控制 模式",
+        "1303": "SOC 目标 控制 模式",
+        "1304": "Push 功率 Positive/Negative",
+        "1305": "Push 功率 Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT 持续时间 模式",
+        "1309": "PV&BAT 目标 SOC 模式",
+        "141": "正常 模式 (R-1)",
+        "142": "正常 模式 (R-2)",
+        "143": "正常 模式 (R-3)",
+        "144": "正常 模式 (R-4)",
+        "145": "正常 模式 (R-5)",
+        "146": "正常 模式 (R-6)",
+        "147": "正常 模式 (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "正常 (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "空闲",
+        "1": "工作"
+      },
+      "battery_ci": {
+        "0": "空闲",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging 故障",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "充电中",
+        "10": "充电中 故障",
+        "11": "功率 Off 状态"
+      }
+    }
+  }
+}

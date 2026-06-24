@@ -1,0 +1,1341 @@
+{
+  "title": "SolaX Developer API",
+  "config": {
+    "step": {
+      "user": {
+        "title": "SolaX Developer API instellen",
+        "description": "Voer je Developer API-inloggegevens en pollingopties in.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systeemnaam",
+          "scan_interval": "Pollinginterval (seconden)",
+          "api_region": "API-regio"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Systeemnaam",
+          "scan_interval": "Pollinginterval (seconden)",
+          "api_region": "API-regio"
+        }
+      },
+      "reauth_confirm": {
+        "title": "SolaX Developer API opnieuw verbinden",
+        "description": "Authenticatie mislukt. Voer geldige Developer API-inloggegevens in om deze integratie opnieuw te verbinden.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "api_region": "API-regio"
+        },
+        "data_description": {
+          "client_id": "Client ID for the existing SolaX Developer API application.",
+          "client_secret": "Current Client Secret for the application.",
+          "api_region": "API-regio"
+        }
+      },
+      "reconfigure": {
+        "title": "SolaX Developer API opnieuw configureren",
+        "description": "Werk de verbindingsgegevens, API-regio of Home Assistant-systeemnaam bij.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systeemnaam",
+          "api_region": "API-regio"
+        },
+        "data_description": {
+          "client_id": "Client ID to use after reconfiguration.",
+          "client_secret": "Client Secret to use after reconfiguration.",
+          "system_name": "Systeemnaam",
+          "api_region": "API-regio"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "Integratie is al geconfigureerd",
+      "invalid_credentials": "Ongeldige inloggegevens",
+      "cannot_connect": "Kan geen verbinding maken met SolaX Developer API",
+      "cannot_read_data": "De inloggegevens zijn geldig, maar er zijn geen leesbare installatiegegevens teruggegeven",
+      "reauth_successful": "SolaX Developer API was reconnected successfully",
+      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+    },
+    "error": {
+      "invalid_credentials": "Ongeldige inloggegevens",
+      "invalid_system_name": "Systeemnaam is vereist",
+      "invalid_region": "Ongeldige regio",
+      "cannot_connect": "Kan geen verbinding maken met SolaX Developer API",
+      "cannot_read_data": "De inloggegevens zijn geldig, maar er zijn geen leesbare installatiegegevens teruggegeven"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "SolaX Developer API Opties",
+        "description": "Kies welk deel van de integratie je wilt configureren.",
+        "menu_options": {
+          "credentials": "Inloggegevens & System",
+          "polling": "Polling & Live View",
+          "manual_devices": "Handmatig apparaten",
+          "advanced": "Geavanceerd & diagnose"
+        }
+      },
+      "credentials": {
+        "title": "Inloggegevens & System",
+        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "system_name": "Systeemnaam",
+          "api_region": "API-regio"
+        },
+        "data_description": {
+          "client_id": "Client ID from your SolaX Developer Portal application.",
+          "client_secret": "Client Secret from the same Developer Portal application.",
+          "system_name": "Systeemnaam",
+          "api_region": "API-regio"
+        }
+      },
+      "polling": {
+        "title": "Polling & Live View",
+        "description": "Configureer standaardpolling, tijdelijke Live View-polling en het nachtprofiel.",
+        "data": {
+          "scan_interval": "Pollinginterval (seconden)",
+          "live_view_default_duration": "Live View Default Duration (seconds)",
+          "live_view_interval": "Live View Target Interval (seconds)",
+          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
+          "night_scan_interval": "Night Scan Interval (seconds)",
+          "night_start_hour": "Nacht Modus Start Hour (0-23)",
+          "night_end_hour": "Nacht Modus End Hour (0-23)"
+        },
+        "data_description": {
+          "scan_interval": "Pollinginterval (seconden)",
+          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
+          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
+          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
+          "night_scan_interval": "Polling interval used during the configured night period.",
+          "night_start_hour": "Local hour when night polling starts.",
+          "night_end_hour": "Local hour when night polling ends."
+        }
+      },
+      "manual_devices": {
+        "title": "Handmatig apparaten",
+        "description": "Voeg apparaten toe die het account kan lezen maar die niet door de inventaris-endpoints worden teruggegeven. Elk apparaat wordt gecontroleerd voordat het wordt opgeslagen.",
+        "data": {
+          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_remove_serial": "Te verwijderen handmatige meter",
+          "manual_meter_remove_confirm": "Geselecteerde handmatige meter verwijderen",
+          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_remove_serial": "Te verwijderen handmatig EMS-systeem",
+          "manual_ems_remove_confirm": "Geselecteerd handmatig EMS-systeem verwijderen"
+        },
+        "data_description": {
+          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_remove_serial": "Te verwijderen handmatige meter",
+          "manual_meter_remove_confirm": "Geselecteerde handmatige meter verwijderen",
+          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Te verwijderen handmatig EMS-systeem",
+          "manual_ems_remove_confirm": "Geselecteerd handmatig EMS-systeem verwijderen"
+        }
+      },
+      "advanced": {
+        "title": "Geavanceerd & diagnose",
+        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "data": {
+          "rate_limit_notifications": "Ratelimiet Meldingen"
+        },
+        "data_description": {
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+        }
+      }
+    },
+    "error": {
+      "invalid_credentials": "Ongeldige inloggegevens",
+      "invalid_system_name": "Systeemnaam is vereist",
+      "invalid_region": "Ongeldige regio",
+      "cannot_connect": "Kan geen verbinding maken met SolaX Developer API",
+      "cannot_read_data": "De inloggegevens zijn geldig, maar er zijn geen leesbare installatiegegevens teruggegeven",
+      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
+      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
+      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
+      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
+      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
+      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
+      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
+      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+    }
+  },
+  "issues": {
+    "api_rate_limit": {
+      "title": "SolaX Developer API rate limit is active",
+      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+    },
+    "api_permission": {
+      "title": "SolaX Developer API access is incomplete",
+      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+    }
+  },
+  "entity": {
+    "switch": {
+      "rate_limit_notifications": {
+        "name": "API Ratelimiet Meldingen"
+      },
+      "live_view_mode": {
+        "name": "Live View Modus"
+      }
+    },
+    "button": {
+      "live_view_boost": {
+        "name": "Start Live View Boost"
+      }
+    },
+    "select": {},
+    "sensor": {
+      "dynamic_field": {
+        "name": "{field_name}"
+      }
+    }
+  },
+  "services": {
+    "manual_refresh": {
+      "name": "Handmatig Vernieuwen",
+      "description": "Start direct een vernieuwing voor alle geconfigureerde SolaX Developer API-items.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optional config entry id; if omitted, all entries are refreshed."
+        }
+      }
+    },
+    "start_live_view": {
+      "name": "Start Live View",
+      "description": "Schakel tijdelijk realtimegericht pollen in met automatische timeout.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "duration_seconds": {
+          "name": "Duur (seconden)",
+          "description": "Optional live mode duration override."
+        },
+        "interval_seconds": {
+          "name": "Doelinterval (seconden)",
+          "description": "Optional live mode target interval override."
+        }
+      }
+    },
+    "stop_live_view": {
+      "name": "Stop Live View",
+      "description": "Schakel live polling uit en keer terug naar standaard-/nachtprofiel-timing.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        }
+      }
+    },
+    "fetch_device_history": {
+      "name": "Ophalen Device Geschiedenis",
+      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Apparaten-SN-lijst, min. 1 max. 200. Verzoeken worden automatisch opgesplitst."
+        },
+        "device_type": {
+          "name": "Apparaattype",
+          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "start_time": {
+          "name": "Starttijd",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "end_time": {
+          "name": "Eindtijd",
+          "description": "13-digit UTC unix milliseconds."
+        },
+        "time_interval": {
+          "name": "Tijdsinterval",
+          "description": "5, 10, 15, 30, 60 minutes."
+        },
+        "request_sn_type": {
+          "name": "Request-SN-type",
+          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "query_request_result": {
+      "name": "Opvragen Request Resultaat",
+      "description": "Query asynchronous command request status by string requestId.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "request_id": {
+          "name": "Request ID",
+          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+        }
+      }
+    },
+    "query_master_control_device": {
+      "name": "Opvragen Master Besturing Device",
+      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "device_sn": {
+          "name": "Apparaat-SN"
+        },
+        "device_type": {
+          "name": "Apparaattype"
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Must be 4 (commercial & industrial)."
+        }
+      }
+    },
+    "set_export_control": {
+      "name": "Set Export Besturing (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "device_type": {
+          "name": "Apparaattype",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Inschakelvlag",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "limit_value": {
+          "name": "Limietwaarde",
+          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "control_mode": {
+          "name": "Besturingsmodus",
+          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        }
+      }
+    },
+    "set_import_control": {
+      "name": "Set Import Besturing (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "device_type": {
+          "name": "Apparaattype",
+          "description": "Required. Developer API device type, for example 1 inverter."
+        },
+        "is_enable": {
+          "name": "Inschakelvlag",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "limit_value": {
+          "name": "Limietwaarde",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "batch_set_spontaneity_self_use": {
+      "name": "Inverter Self Use Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Inschakelen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Inschakelen Tijd Period 2",
+          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_on_grid_first": {
+      "name": "Inverter Feed-in Priority Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Inschakelen Tijd Period 2",
+          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_peace_mode": {
+      "name": "Inverter Back Up Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "min_soc": {
+          "name": "Min SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_from_grid_enable": {
+          "name": "Charge From Grid Inschakelen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_upper_soc": {
+          "name": "Charge Upper SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "charge_start_time_period1": {
+          "name": "Charge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period1": {
+          "name": "Charge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period1": {
+          "name": "Discharge Start Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period1": {
+          "name": "Discharge End Tijd Period 1",
+          "description": "Optional. HH:MM time value."
+        },
+        "enable_time_period2": {
+          "name": "Inschakelen Tijd Period 2",
+          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_start_time_period2": {
+          "name": "Charge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "charge_end_time_period2": {
+          "name": "Charge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_start_time_period2": {
+          "name": "Discharge Start Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        },
+        "discharge_end_time_period2": {
+          "name": "Discharge End Tijd Period 2",
+          "description": "Optional. HH:MM time value."
+        }
+      }
+    },
+    "batch_set_manual_mode": {
+      "name": "Inverter Handmatig Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "manual_mode": {
+          "name": "Handmatig Modus",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "self_use_mode": {
+      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "feed_in_priority": {
+      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "back_up_mode": {
+      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "back_up_grid_enable": {
+          "name": "Back Up Grid Inschakelen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "back_up_charge_start_time": {
+          "name": "Back Up Charge Start Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "back_up_charge_end_time": {
+          "name": "Back Up Charge End Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "demand_mode": {
+      "name": "A1-Hybrid-G2 Demand Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "demand_grid_enable": {
+          "name": "Demand Grid Inschakelen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "peak_limit_time1": {
+          "name": "Peak Limiet Tijd 1",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "peak_limit_time2": {
+          "name": "Peak Limiet Tijd 2",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "demand_discharge_start_time1": {
+          "name": "Demand Discharge Start Tijd 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time1": {
+          "name": "Demand Discharge End Tijd 1",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_start_time2": {
+          "name": "Demand Discharge Start Tijd 2",
+          "description": "Required. HH:MM time value."
+        },
+        "demand_discharge_end_time2": {
+          "name": "Demand Discharge End Tijd 2",
+          "description": "Required. HH:MM time value."
+        },
+        "charger_power_limit": {
+          "name": "Charger Vermogen Limiet",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "demand_max_soc": {
+          "name": "Demand Max SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "reserve_soc": {
+          "name": "Reserve SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "const_power_mode": {
+      "name": "A1-Hybrid-G2 ConstPower Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "const_power_grid_enable": {
+          "name": "Const Vermogen Grid Inschakelen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "const_power_discharge_limit": {
+          "name": "Const Vermogen Discharge Limiet",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "const_power_charge_start_time": {
+          "name": "Const Vermogen Charge Start Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_charge_end_time": {
+          "name": "Const Vermogen Charge End Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_start_time": {
+          "name": "Const Vermogen Discharge Start Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "const_power_discharge_end_time": {
+          "name": "Const Vermogen Discharge End Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "exit_vpp_mode": {
+      "name": "Exit VPP Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "power_control_mode": {
+      "name": "VPP Vermogen Besturing Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "active_power_target": {
+          "name": "Active Vermogen Doel",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "w_reactive_power_target": {
+          "name": "W Reactive Vermogen Doel",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "electric_quantity_target_control_mode": {
+      "name": "VPP Electric Quantity Doel Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "target_engergy": {
+          "name": "Doel Engergy",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Vermogen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "soc_target_control_mode": {
+      "name": "VPP SOC Doel Besturing Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "target_soc": {
+          "name": "Doel SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "charge_discharg_power": {
+          "name": "Charge Discharg Vermogen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "push_power_positive_or_negative_mode": {
+      "name": "VPP Push Vermogen +/- Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "battery_power": {
+          "name": "Battery Vermogen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "push_power_zero_mode": {
+      "name": "VPP Push Vermogen Zero Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "self_consume_charge_or_discharge_mode": {
+      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "self_consume_charge_only_mode": {
+      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_duration_mode": {
+      "name": "VPP PV&BAT Duur Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "battery_power": {
+          "name": "Battery Vermogen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "pv_power_limit": {
+          "name": "PV Vermogen Limiet",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "pv_and_bat_individual_setting_target_soc_mode": {
+      "name": "VPP PV&BAT Doel SOC Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "battery_power": {
+          "name": "Battery Vermogen",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "pv_power_limit": {
+          "name": "PV Vermogen Limiet",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "target_soc": {
+          "name": "Doel SOC",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "time_of_duration": {
+          "name": "Tijd Of Duur",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "next_motion": {
+          "name": "Next Motion",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_charge_scene": {
+      "name": "EV Charger Set Charge Scene (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "charger_scene": {
+          "name": "Charger Scene",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "ocpp_url": {
+          "name": "OCPP Url",
+          "description": "Optioneel. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
+        },
+        "ocpp_charger_id": {
+          "name": "OCPP Charger Id",
+          "description": "Optioneel. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
+        }
+      }
+    },
+    "set_evc_qr_code": {
+      "name": "EV Charger Set QR Code (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "qr_code": {
+          "name": "QR Code",
+          "description": "Vereist. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_evc_work_mode": {
+      "name": "EV Charger Set Work Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "work_mode": {
+          "name": "Work Modus",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        },
+        "current_gear": {
+          "name": "Stroom Gear",
+          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        }
+      }
+    },
+    "set_evc_start_mode": {
+      "name": "EV Charger Set Start Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "start_mode": {
+          "name": "Start Modus",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_evc_charge_command": {
+      "name": "EV Charger Set Charge Commando (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "work_cmd": {
+          "name": "Work Cmd",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_evc_reserve_charge": {
+      "name": "EV Charger Reserve Charge (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "charge_start_time": {
+          "name": "Charge Start Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_end_time": {
+          "name": "Charge End Tijd",
+          "description": "Required. HH:MM time value."
+        },
+        "charge_current": {
+          "name": "Charge Stroom",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_evc_current_limit": {
+      "name": "EV Charger Stroom Limiet (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
+        },
+        "current_limit": {
+          "name": "Stroom Limiet",
+          "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_battery_heating": {
+      "name": "Battery Heating Settings (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert batterijverwarmingsinstellingen en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "sn_list": {
+          "name": "Lijst met apparaatserienummers",
+          "description": "Required. Device SN list, minimum 1 and maximum 10."
+        },
+        "heating_enable": {
+          "name": "Heating Inschakelen",
+          "description": "Required. 0 disables battery heating; 1 enables it."
+        },
+        "heating_level": {
+          "name": "Heating Level",
+          "description": "Required when enabled. Supported values are 0, 1, and 2."
+        },
+        "heating_period1_start_time": {
+          "name": "Heating Period 1 Start",
+          "description": "Required when enabled. HH:MM time value."
+        },
+        "heating_period1_end_time": {
+          "name": "Heating Period 1 End",
+          "description": "Required when enabled and must be later than period 1 start."
+        },
+        "heating_period2_start_time": {
+          "name": "Heating Period 2 Start",
+          "description": "Optional second heating period start. HH:MM time value."
+        },
+        "heating_period2_end_time": {
+          "name": "Heating Period 2 End",
+          "description": "Required when period 2 start is supplied."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
+        }
+      }
+    },
+    "set_ems_manual_mode": {
+      "name": "EMS Handmatig Modus (Dry-Run)",
+      "description": "Alleen Dry-Run. Valideert EMS-instellingen voor handmatige modus en blokkeert schrijven.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
+        },
+        "device_type": {
+          "name": "Apparaattype",
+          "description": "Required. Fixed value 100 for EMS System."
+        },
+        "business_type": {
+          "name": "Bedrijfstype",
+          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+        },
+        "param_list": {
+          "name": "EMS Parameters",
+          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "no_active_entry": {
+      "message": "No active {domain} entry for {entry_id}"
+    },
+    "no_configured_entries": {
+      "message": "Geen SolaX Developer API-items geconfigureerd"
+    },
+    "history_end_before_start": {
+      "message": "end_time must be greater than start_time"
+    },
+    "master_control_requires_ci": {
+      "message": "query_master_control_device supports business_type=4 only"
+    },
+    "system_name_required": {
+      "message": "Systeemnaam is vereist"
+    },
+    "control_unknown_service": {
+      "message": "{service}: unknown control service"
+    },
+    "control_field_name_invalid": {
+      "message": "{service}: service fields must use snake_case names"
+    },
+    "control_missing_required_field": {
+      "message": "{service}: missing required field {field}"
+    },
+    "control_field_must_be_int": {
+      "message": "{service}: field {field} must be int"
+    },
+    "control_field_type_mismatch": {
+      "message": "{service}: field {field} must be {expected_type}"
+    },
+    "control_sn_list_empty": {
+      "message": "{service}: snList must contain at least one serial"
+    },
+    "control_sn_list_too_long": {
+      "message": "{service}: snList supports max {max} serials"
+    },
+    "control_business_type_invalid": {
+      "message": "{service}: businessType must be 1 or 4"
+    },
+    "control_time_format_invalid": {
+      "message": "{service}: field {field} must use HH:MM format"
+    },
+    "control_not_available": {
+      "message": "{service}: no compatible device capability is available in this integration"
+    },
+    "control_field_number_invalid": {
+      "message": "{service}: field {field} must be a finite number"
+    },
+    "control_field_value_invalid": {
+      "message": "{service}: field {field} has an unsupported value"
+    },
+    "control_time_order_invalid": {
+      "message": "{service}: {end_field} must be later than {start_field}"
+    },
+    "control_ems_context_invalid": {
+      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+    },
+    "control_param_list_length_invalid": {
+      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+    },
+    "control_param_list_item_invalid": {
+      "message": "{service}: paramList item {index} must be an object"
+    }
+  }
+}

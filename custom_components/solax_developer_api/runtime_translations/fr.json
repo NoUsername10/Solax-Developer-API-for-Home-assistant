@@ -1,0 +1,294 @@
+{
+  "runtime": {
+    "notifications": {
+      "rate_limit_title": "SolaX Developer API - Limite de débit",
+      "rate_limit_body": "SolaX Developer API rate/usage limit is active.\nAffected area(s): {contexts}\nPrevious values are retained while recovery is in progress.",
+      "manual_meter_title": "SolaX Developer API - Manuel Meter Série",
+      "manual_meter_added_body": "Manual meter serial added successfully.\nSerial: {device_sn}\nBusiness Type: {business_type}\nRealtime fields validated: {field_count}",
+      "manual_meter_already_known_body": "Manual meter serial not added.\nSerial: {device_sn}\nAlready known via: {source}.",
+      "manual_meter_validation_failed_body": "Manual meter serial validation failed.\nSerial: {device_sn}\nNo meter data was returned by realtime endpoints.",
+      "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
+      "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "manual_ems_title": "SolaX Developer API - Manuel EMS Systems",
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+    },
+    "messages": {
+      "dry_run_block_reason": "Hard-blocked write path in development phase"
+    },
+    "errors": {
+      "no_active_entry": "No active {domain} entry for {entry_id}",
+      "no_configured_entries": "No configured SolaX Developer API entries",
+      "history_end_before_start": "end_time must be greater than start_time",
+      "master_control_requires_ci": "query_master_control_device supports business_type=4 only",
+      "system_name_required": "System name is required",
+      "control_unknown_service": "{service}: unknown control service",
+      "control_field_name_invalid": "{service}: service fields must use snake_case names",
+      "control_missing_required_field": "{service}: missing required field {field}",
+      "control_field_must_be_int": "{service}: field {field} must be int",
+      "control_field_type_mismatch": "{service}: field {field} must be {expected_type}",
+      "control_sn_list_empty": "{service}: snList must contain at least one serial",
+      "control_sn_list_too_long": "{service}: snList supports max {max} serials",
+      "control_business_type_invalid": "{service}: businessType must be 1 or 4",
+      "control_time_format_invalid": "{service}: field {field} must use HH:MM format",
+      "control_not_available": "{service}: no compatible device capability is available in this integration",
+      "control_field_number_invalid": "{service}: field {field} must be a finite number",
+      "control_field_value_invalid": "{service}: field {field} has an unsupported value",
+      "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
+      "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
+      "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+    },
+    "labels": {
+      "unknown": "Inconnu",
+      "device": "Appareil",
+      "none": "(Aucun)",
+      "business_type": {
+        "1": "Résidentiel",
+        "4": "Commercial et industriel"
+      },
+      "device_type": {
+        "1": "Onduleur",
+        "2": "Batterie",
+        "3": "Compteur",
+        "4": "Chargeur EV",
+        "100": "Système EMS"
+      },
+      "period": {
+        "year": "Année",
+        "month": "Mois"
+      },
+      "region": {
+        "eu": "EU (openapi-eu.solaxcloud.com)",
+        "cn": "CN (openapi-cn.solaxcloud.com)"
+      }
+    },
+    "defaults": {
+      "system_name": "Nom du système"
+    },
+    "entity_names": {
+      "switch": {
+        "rate_limit_notifications": "API Limite de débit Notifications",
+        "live_view_mode": "Live View Mode"
+      },
+      "button": {
+        "live_view_boost": "Démarrer Live View Boost"
+      },
+      "select": {},
+      "system": {
+        "system_ac_power": "Puissance AC du système",
+        "system_dc_power": "Puissance DC du système",
+        "system_yield_today": "Production du système aujourd’hui",
+        "system_yield_total": "Production totale du système",
+        "system_efficiency": "Efficacité totale du système",
+        "system_health": "État du système",
+        "api_rate_limit_status": "État de la limite API",
+        "poll_profile": "Profil d’interrogation",
+        "effective_scan_interval": "Intervalle d’interrogation effectif",
+        "live_view_active": "État Live View",
+        "live_view_remaining_seconds": "Live View restant",
+        "last_poll_attempt": "Dernière tentative d’interrogation",
+        "next_scheduled_poll": "Prochaine interrogation planifiée",
+        "token_expires_at": "Le token expire à",
+        "dry_run_command_count": "Nombre de commandes Dry-Run"
+      }
+    },
+    "entity_templates": {
+      "system_totals_name": "{system_name} System Totals",
+      "plant_name": "Installation {plant_id}",
+      "plant_field": "Installation {plant_id} {field_name}",
+      "plant_alarm_count": "Installation {plant_id} Active Alarme Nombre",
+      "plant_stat": "Installation {plant_id} {period} {metric_name}",
+      "plant_info": "Installation {plant_id} {key_name}",
+      "plant_alarm_preview": "Installation {plant_id} Alarme {alarm_index} {alarm_key}",
+      "device_name": "Solax {device_type} {device_sn}",
+      "device_inventory_name": "Solax Device {device_sn}",
+      "device_field": "{device_type} {field_name}",
+      "device_field_inverter": "{field_name}",
+      "device_info": "{device_type} {key_name}",
+      "device_info_inverter": "{key_name}",
+      "manual_meter_option": "{serial} ({business_type})",
+      "manual_ems_option": "{serial} (Installation {plant_id})"
+    },
+    "device_model": {
+      "system": {
+        "single_inverter": "Single Inverter System",
+        "multi_inverter": "Multi-Inverter System",
+        "single_device": "Single Device System",
+        "multi_device": "Multi-Device System"
+      },
+      "plant": "Installation {business_type}",
+      "plant_simple": "Installation",
+      "plant_stats": "Installation Stats",
+      "plant_alarms": "Installation Alarms",
+      "inventory": "Inventaire",
+      "ems_system": "Système EMS"
+    },
+    "status": {
+      "system_health": {
+        "unknown": "Inconnu",
+        "ok": "OK",
+        "error": "Erreur",
+        "degraded": "Dégradé"
+      },
+      "rate_limit": {
+        "ok": "OK",
+        "active": "Limite de débited"
+      },
+      "poll_profile": {
+        "standard": "Standard",
+        "night": "Nuit",
+        "live_view": "Live View"
+      },
+      "live_view": {
+        "active": "Actif",
+        "inactive": "Inactif"
+      },
+      "online": {
+        "0": "Hors ligne",
+        "1": "En ligne"
+      },
+      "plant_residential": {
+        "0": "Connexion",
+        "1": "Hors ligne",
+        "2": "En ligne"
+      },
+      "plant_ci": {
+        "0": "Hors ligne",
+        "1": "Normal",
+        "2": "Défaillance",
+        "3": "Avertissement",
+        "4": "Connexion"
+      },
+      "parallel_ci": {
+        "0": "Maître",
+        "1": "Esclave"
+      },
+      "parallel_residential": {
+        "0": "Not in parallel",
+        "1": "Maître",
+        "2": "Esclave 1",
+        "3": "Esclave 2",
+        "4": "Esclave 3"
+      },
+      "device_work_mode": {
+        "0": "STOP",
+        "1": "FAST",
+        "2": "ECO",
+        "3": "GREEN"
+      },
+      "command": {
+        "1": "Device Offline",
+        "2": "Command issuance failed",
+        "3": "Command issuance succeeded",
+        "4": "Device received and started execution",
+        "5": "Device execution failed",
+        "6": "Execution timed out"
+      },
+      "battery": {
+        "0": "Inactif",
+        "1": "En fonctionnement",
+        "2": "Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Fault",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Charge",
+        "10": "Charging Fault",
+        "11": "Puissance Off"
+      },
+      "ev": {
+        "0": "Disponible",
+        "1": "Preparing",
+        "2": "Charge",
+        "3": "Terminé",
+        "4": "Faulted",
+        "5": "Indisponible",
+        "6": "Reserved",
+        "7": "Suspended EV",
+        "8": "Suspended EVSE",
+        "9": "Mettre à jour",
+        "10": "Card Activation",
+        "11": "Démarrer Delay",
+        "12": "Charge Pause",
+        "13": "Stopping"
+      },
+      "inverter": {
+        "100": "En attente",
+        "101": "Self-check",
+        "102": "Normal",
+        "103": "Fault",
+        "104": "Permanent Fault",
+        "105": "Mettre à jour Mode",
+        "106": "EPS Check Mode",
+        "107": "EPS Mode",
+        "108": "Self Test",
+        "109": "Idle Mode",
+        "110": "Standby Mode",
+        "111": "PV Wake Up BAT Mode",
+        "112": "GEN Check Mode",
+        "113": "GEN Run Mode",
+        "114": "RSD Standby",
+        "130": "VPP Mode",
+        "131": "TOU Self Use",
+        "132": "TOU Charging",
+        "133": "TOU Discharging",
+        "134": "TOU Battery Off",
+        "135": "TOU Peak Shaving",
+        "136": "Normal Mode (GEN)",
+        "137": "Normal Mode (BAT-E)",
+        "138": "Normal Mode (BAT-H)",
+        "139": "EPS Mode (BAT-H)",
+        "140": "Démarrer Mode",
+        "150": "Self Use",
+        "151": "Force Heure Use",
+        "152": "Back Up Mode",
+        "153": "Feed-in Priority",
+        "154": "Demand Mode",
+        "155": "ConstPower Mode",
+        "160": "OpenADR Mode",
+        "170": "Arrêter Mode",
+        "171": "Debug Mode",
+        "1301": "Puissance Contrôle Mode",
+        "1302": "Electric Quantity Cible Contrôle Mode",
+        "1303": "SOC Cible Contrôle Mode",
+        "1304": "Push Puissance Positive/Negative",
+        "1305": "Push Puissance Zero",
+        "1306": "Self-Consume Charge/Discharge",
+        "1307": "Self-Consume Charge Only",
+        "1308": "PV&BAT Durée Mode",
+        "1309": "PV&BAT Cible SOC Mode",
+        "141": "Normal Mode (R-1)",
+        "142": "Normal Mode (R-2)",
+        "143": "Normal Mode (R-3)",
+        "144": "Normal Mode (R-4)",
+        "145": "Normal Mode (R-5)",
+        "146": "Normal Mode (R-6)",
+        "147": "Normal Mode (R-7)",
+        "174": "Normal (Smart selfuse)",
+        "175": "Normal (Smart feedin)",
+        "176": "Normal (Smart battery not discharge)",
+        "177": "Normal (WLV 0%)"
+      },
+      "battery_residential": {
+        "0": "Inactif",
+        "1": "Work"
+      },
+      "battery_ci": {
+        "0": "Inactif",
+        "1": "Standby",
+        "2": "Discharge Pre-Charge",
+        "3": "Charge-to-discharge pre-charge",
+        "4": "Discharging",
+        "5": "Discharging Fault",
+        "6": "Charge switching current limit",
+        "7": "Charge Self-Test",
+        "8": "Charge Pre-Charge",
+        "9": "Charge",
+        "10": "Charging Fault",
+        "11": "Puissance Off Statut"
+      }
+    }
+  }
+}
