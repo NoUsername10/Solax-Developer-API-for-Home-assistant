@@ -34,6 +34,10 @@ async def test_i18n_disk_cache_schedule_and_fallbacks():
 
     assert i18n._normalize_lang("") == "en"
     assert i18n._normalize_lang("SV_se") == "sv"
+    assert i18n._normalize_lang("pt_br") == "pt-BR"
+    assert i18n._normalize_lang("es_419") == "es-419"
+    assert i18n._normalize_lang("zh_hans") == "zh-Hans"
+    assert i18n._normalize_lang("en_GB") == "en"
     assert i18n._read_catalog_from_disk("missing")["runtime"]
     assert i18n._resolve_key({"a": {"b": "value"}}, "a.b") == "value"
     assert i18n._resolve_key({"a": {}}, "a.b") is None
@@ -55,6 +59,20 @@ async def test_i18n_disk_cache_schedule_and_fallbacks():
     assert i18n.translate(hass, "missing.key") == "missing.key"
 
     i18n._CATALOG_CACHE.clear()
+    hass.config.language = "pt-BR"
+    await i18n.async_ensure_catalog_loaded(hass)
+    assert "pt-BR" in i18n._CATALOG_CACHE
+    assert "en" in i18n._CATALOG_CACHE
+    assert i18n.translate(hass, "runtime.labels.none") == "(Nenhum)"
+
+    i18n._CATALOG_CACHE.clear()
+    hass.config.language = "zh-Hans"
+    await i18n.async_ensure_catalog_loaded(hass)
+    assert "zh-Hans" in i18n._CATALOG_CACHE
+    assert "en" in i18n._CATALOG_CACHE
+    assert i18n.translate(hass, "runtime.labels.device_type.3") == "电表"
+
+    i18n._CATALOG_CACHE.clear()
     i18n._schedule_catalog_load(None)
     i18n._schedule_catalog_load(object())
     i18n._schedule_catalog_load(hass, "sv")
@@ -66,6 +84,39 @@ async def test_i18n_disk_cache_schedule_and_fallbacks():
         config=property(lambda self: (_ for _ in ()).throw(RuntimeError()))
     )
     assert i18n.translate(bad_hass, "missing", fallback="{missing}") == "{missing}"
+
+
+def test_i18n_variant_fallback_and_error_branches(monkeypatch, tmp_path):
+    translations_dir = tmp_path / "translations"
+    runtime_dir = tmp_path / "runtime_translations"
+    translations_dir.mkdir()
+    runtime_dir.mkdir()
+    (translations_dir / "pt-BR.json").write_text("{", encoding="utf-8")
+    (runtime_dir / "en.json").write_text(
+        '{"runtime": {"labels": {"none": "(None)"}}}',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(i18n, "TRANSLATIONS_DIR", translations_dir)
+    monkeypatch.setattr(i18n, "RUNTIME_TRANSLATIONS_DIR", runtime_dir)
+
+    assert i18n._normalize_lang("   ") == "en"
+    assert i18n._read_catalog_from_disk("pt-BR") == {
+        "runtime": {"labels": {"none": "(None)"}}
+    }
+
+    i18n._CATALOG_CACHE["pt-BR"] = {}
+    i18n._CATALOG_LOAD_TASKS["en"] = object()
+    i18n._schedule_catalog_load(_Hass(), "pt-BR")
+    assert i18n._CATALOG_LOAD_TASKS["en"] is not None
+
+    class _BadConfigHass:
+        @property
+        def config(self):
+            raise RuntimeError
+
+    assert i18n.translate(_BadConfigHass(), "missing", fallback="Fallback") == "Fallback"
+    i18n._CATALOG_CACHE.clear()
+    i18n._CATALOG_LOAD_TASKS.clear()
 
 
 def test_diagnostics_helper_edge_cases_and_serial_collection():
