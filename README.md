@@ -107,11 +107,12 @@ Before installation, you need:
    - Obtain its **Client ID** and **Client Secret**.
 4. **Authorized plants and devices**
    - Your Developer API application must have permission to read the relevant SolaX plants.
-5. **The correct API region**
+5. **The correct API region** You select it in during setup in Home Assistant.
    - EU: `openapi-eu.solaxcloud.com`
    - CN: `openapi-cn.solaxcloud.com`
 
-The integration validates both authentication and read access during setup. A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
+The integration validates both authentication and read access during setup. 
+A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
 
 ## 📦 Installation with HACS (Step 2)
 
