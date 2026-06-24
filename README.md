@@ -8,24 +8,26 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.85%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-96.00%25-brightgreen.svg)](#quality-and-validation)
 
-**SolaX Developer API** integration for Home Assistant using the official **SolaX Developer OpenAPI**.
+**SolaX Developer API** integration to monitor your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
-It authenticates with a Developer Portal `client_id` and `client_secret`, automatically discovers authorized plants and devices, and creates entities dynamically from the data your system actually returns.
+Automatically discovers authorized plants and devices, creates per-device sensors, and provides a system-wide overview with total sensors.
+Requires no YAML configuration or template sensors.
 
-The integration supports residential and commercial/industrial systems, including inverters, batteries, meters, EV chargers, and confirmed EMS systems.
+Ideal if you want a modern, feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
+Uses Developer Portal `client_id` and `client_secret` authentication and supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
 
 > [!IMPORTANT]
 > All control services are currently **hard-blocked dry-runs at the moment**. Payloads are validated and audited, but no write request is sent to SolaX.
 
 ## 🥇 Quality and Validation
 
-This custom integration is built and validated to the requirements of the Home Assistant **🥇 Gold  Integration Quality Scale**:
+This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
-- **Gold-standard compliant:** 
-- **Test coverage:** `95.85%`, enforced by CI with a minimum threshold of `95%`.
-- **Automated tests:** `130` credential-free tests.
+- **Gold-standard aligned:** Quality-scale requirements are implemented and tracked for this custom integration.
+- **Test coverage:** `96.00%`, enforced by CI with a minimum threshold of `95%`.
+- **Automated tests:** `131` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -34,21 +36,19 @@ This custom integration is built and validated to the requirements of the Home A
 
 ## ✨ Features in short
 
-- **Automatic discovery** of all authorized residential and C&I plants and devices
-- **Dynamic sensors** based on real API fields and observed device capabilities
-- **Inverter, battery, meter, EV charger, and EMS support**
-- **Plant data, alarms, statistics, device telemetry, and system totals**
-- **Manual meter and EMS onboarding** when inventory endpoints omit an accessible device
-- **Standard, night, and temporary Live View polling profiles**
-- **Automatic token renewal and official Home Assistant reauthentication**
-- **Rate-limit protection, retry backoff, Repairs, and stale-data retention**
-- **Privacy-safe diagnostics** with raw and filtered API response views
-- **No YAML required**
-- **English, Spanish, and Swedish**
-  - 🇬🇧 🇪🇸 🇸🇪
-- **No dependency on another integration**
-- **Home Assistant Gold-standard quality compliance**
-- **95.85% automated test coverage**
+- 🔌 **Works with residential and C&I SolaX systems**
+- 📊 **Automatic plant, device, and system-wide total sensors**
+- 🧠 **Dynamic sensors** based on real Developer API data
+- ⚡ **Inverter, battery, meter, EV charger, and EMS support** where available
+- 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
+- 🚀 **Live View polling** with API budget protection
+- ⚠️ **Built-in API error, permission, quota, and rate-limit reporting**
+- 🧰 **Privacy-safe diagnostics** with raw and filtered API response views
+- 🛠️ **No YAML or template sensors required**
+- 🌍 **26-language translation layer**
+  - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
+- 🥇 **Home Assistant Gold-standard aligned quality work**
+- ✅ **96.00% automated test coverage**
 
 This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
 Contributions, issues, and pull requests are welcome.
@@ -91,28 +91,62 @@ Contributions, issues, and pull requests are welcome.
 - **Built-in Live View Controller** - Optional Lovelace card renews Live View while its dashboard view is open.
 - **Official Diagnostics Export** - Includes raw API envelopes, filtered entity-driving data, and raw-versus-filtered field summaries.
 - **Privacy Redaction** - Credentials, tokens, serials, plant identity, account identity, address, and coordinates are sanitized.
-- **Full Translation Layer** - English (`en`), Spanish (`es`), and Swedish (`sv`), with English fallback.
+- **Full Translation Layer** - English (`en`) default/fallback plus German (`de`), Dutch (`nl`), Czech (`cs`), Polish (`pl`), Portuguese (`pt`), Brazilian Portuguese (`pt-BR`), Spanish (`es`), Latin American Spanish (`es-419`), Italian (`it`), French (`fr`), Swedish (`sv`), Danish (`da`), Norwegian Bokmål (`nb`), Finnish (`fi`), Lithuanian (`lt`), Simplified Chinese (`zh-Hans`), Japanese (`ja`), Thai (`th`), Vietnamese (`vi`), Bulgarian (`bg`), Greek (`el`), Hungarian (`hu`), Romanian (`ro`), Turkish (`tr`), and Ukrainian (`uk`).
 - **Hard Dry-Run Controls** - Control payloads use schema validation, auditing, and event output without any outbound write request.
 
 </details>
 
-## ✅ Prerequisites (Step 1)
+## ✅ Developer Portal Setup (Step 1)
 
-Before installation, you need:
+Before installing the Home Assistant integration, create and authorize a SolaX Developer API application.
+
+You need:
 
 1. **Home Assistant 2025.1.0 or newer**
 2. **SolaX Developer Portal access**
    - [SolaX Developer Portal](https://developer.solaxcloud.com/home)
 3. **A Developer API application**
-   - Obtain its **Client ID** and **Client Secret**.
-4. **Authorized plants and devices**
-   - Your Developer API application must have permission to read the relevant SolaX plants.
-5. **The correct API region** You select it in during setup in Home Assistant.
+   - This provides the **Client ID** and **Client Secret** used by the integration.
+4. **Authorized read services**
+   - Your Developer API application must have permission to read the relevant SolaX plants and devices.
+5. **The correct API region**
    - EU: `openapi-eu.solaxcloud.com`
    - CN: `openapi-cn.solaxcloud.com`
 
-The integration validates both authentication and read access during setup. 
-A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
+### 1. Open the SolaX Developer Portal
+
+Open the [SolaX Developer Portal](https://developer.solaxcloud.com/home), sign in, and start from **Quick Start** or **Application**.
+
+<img src="assets/setup/1_developer_portal.png" alt="SolaX Developer Portal quick start page" width="70%">
+
+### 2. Create or open an application
+
+Go to **Application** and create a new application, or open an existing application that should be used for Home Assistant.
+
+<img src="assets/setup/2_application.png" alt="SolaX Developer Portal application page" width="100%">
+
+### 3. Copy the Client ID and Client Secret
+
+Open the application's **Authorization** tab and copy the **Client ID** and **Client Secret**. These are entered in the Home Assistant config flow.
+
+<img src="assets/setup/3_auth.png" alt="SolaX Developer Portal authorization tab with Client ID and Client Secret" width="100%">
+
+### 4. Authorize read access services
+
+Open **Service API**, select **Authorize**, and authorize the read/monitoring services required for this integration:
+
+- **Data Monitoring Service** (`API_Telemetry_V2`)
+- **Information Access Service** (`API_Info_V2`)
+
+<img src="assets/setup/4_services_api.png" alt="SolaX Developer Portal Service API authorization for monitoring services" width="100%">
+
+### 5. Keep control services separate from monitoring
+
+Control service packs are not required for normal monitoring. The integration exposes control actions only as schema-validated, hard-blocked dry-runs, and does not send outbound write requests.
+
+<img src="assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
+
+The integration validates both authentication and read access during setup. A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
 
 ## 📦 Installation with HACS (Step 2)
 
@@ -774,8 +808,31 @@ Never post unredacted credentials or Developer Portal secrets.
 Included languages:
 
 - English (`en`) - default and fallback
+- German (`de`)
+- Dutch (`nl`)
+- Czech (`cs`)
+- Polish (`pl`)
+- Portuguese (`pt`)
+- Brazilian Portuguese (`pt-BR`)
 - Spanish (`es`)
+- Latin American Spanish (`es-419`)
+- Italian (`it`)
+- French (`fr`)
 - Swedish (`sv`)
+- Danish (`da`)
+- Norwegian Bokmål (`nb`)
+- Finnish (`fi`)
+- Lithuanian (`lt`)
+- Simplified Chinese (`zh-Hans`)
+- Japanese (`ja`)
+- Thai (`th`)
+- Vietnamese (`vi`)
+- Bulgarian (`bg`)
+- Greek (`el`)
+- Hungarian (`hu`)
+- Romanian (`ro`)
+- Turkish (`tr`)
+- Ukrainian (`uk`)
 
 The official Home Assistant translation files and runtime translation catalogs are validated for key and placeholder parity.
 
@@ -813,9 +870,9 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 
 ## 🚧 Project Status
 
-- **Home Assistant Quality Scale:** Gold-standard compliant custom integration
-- **Automated test coverage:** 95.85%
-- **Credential-free automated tests:** 130
+- **Home Assistant Quality Scale:** Gold-standard aligned custom integration
+- **Automated test coverage:** 96.00%
+- **Credential-free automated tests:** 131
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active
