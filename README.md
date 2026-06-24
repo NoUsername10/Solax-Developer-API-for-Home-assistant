@@ -15,11 +15,33 @@
 Automatically discovers authorized plants and devices, creates per-device sensors, and provides a system-wide overview with total sensors.
 Requires no YAML configuration or template sensors.
 
-Ideal if you want a modern, feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
-Uses Developer Portal `client_id` and `client_secret` authentication and supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
+Great if you want a feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
+Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
+
+## ✨ Features in short
+
+- 📊 **Automatic plant, device, and system-wide total sensors**
+- 🧠 **Dynamic sensors** based on real Developer API data
+- ⚡ **Inverter, battery, meter, EV charger, and EMS support** where available
+- 🚀 **Live View polling and optional Built-in Card-Aware Live View** with API budget protection if your system supports it
+- 🔌 **Works with residential and C&I SolaX systems**
+- 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
+- ⚠️ **Built-in API error, permission, quota, and rate-limit reporting**
+- 🧰 **Privacy-safe diagnostics** with raw and filtered API response views
+- 🛠️ **No YAML or template sensors required**
+- 🌍 **26-language translation layer**
+  - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
+- 🥇 **Home Assistant Gold-standard aligned quality work**
+- ✅ **96.00% automated test coverage**
+
+This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
+Contributions, issues, and pull requests are welcome.
+
 
 > [!IMPORTANT]
-> All control services are currently **hard-blocked dry-runs at the moment**. Payloads are validated and audited, but no write request is sent to SolaX.
+> All control services (Control of devices) are currently **hard-blocked dry-runs at the moment**. Payloads are validated and audited, but no write request is sent to SolaX for user safety.
+> So, you can read all data from your system, but not control devices, at the moment.
+
 
 ## 🥇 Quality and Validation
 
@@ -34,24 +56,7 @@ This custom integration is built and validated as a **🥇 Gold-standard aligned
 > [!NOTE]
 > This is a HACS custom integration and is not included in Home Assistant Core. 
 
-## ✨ Features in short
 
-- 🔌 **Works with residential and C&I SolaX systems**
-- 📊 **Automatic plant, device, and system-wide total sensors**
-- 🧠 **Dynamic sensors** based on real Developer API data
-- ⚡ **Inverter, battery, meter, EV charger, and EMS support** where available
-- 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
-- 🚀 **Live View polling** with API budget protection
-- ⚠️ **Built-in API error, permission, quota, and rate-limit reporting**
-- 🧰 **Privacy-safe diagnostics** with raw and filtered API response views
-- 🛠️ **No YAML or template sensors required**
-- 🌍 **26-language translation layer**
-  - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
-- 🥇 **Home Assistant Gold-standard aligned quality work**
-- ✅ **96.00% automated test coverage**
-
-This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
-Contributions, issues, and pull requests are welcome.
 
 <!-- Future screenshot locations remain invisible until matching Developer API assets are published. -->
 <!-- Screenshot: assets/developer-system-overview.png -->
@@ -109,7 +114,7 @@ You need:
    - This provides the **Client ID** and **Client Secret** used by the integration.
 4. **Authorized read services**
    - Your Developer API application must have permission to read the relevant SolaX plants and devices.
-5. **The correct API region**
+5. **The correct API region** (Select this during setup in Home assistant)
    - EU: `openapi-eu.solaxcloud.com`
    - CN: `openapi-cn.solaxcloud.com`
 
