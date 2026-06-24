@@ -702,7 +702,7 @@ The integration serves this JavaScript file during setup, but Home Assistant doe
 ```yaml
 type: custom:solax-live-view-controller
 entry_id: YOUR_CONFIG_ENTRY_ID   # optional
-entity: switch.YOUR_SYSTEM_live_view_mode
+entity: switch.YOUR_SYSTEM_live_view_mode # optional
 minimal: false                   # optional, set true for compact single-row view
 duration_seconds: 120            # optional
 heartbeat_seconds: 45            # optional
