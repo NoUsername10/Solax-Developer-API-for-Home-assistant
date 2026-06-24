@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+_No unreleased changes._
+
+## [v0.2.2] - 2026-06-24
+
+### Added
+- Added a visible SolaX Live View Lovelace controller card with Home Assistant
+  light/dark theme support.
+- Added a compact/minimal Live View card mode using `minimal: true`.
+- Added Live View regular and compact README preview assets under
+  `assets/live-view/`.
+- Added German, Dutch, Czech, Polish, Portuguese, Italian, French, Danish,
+  Norwegian Bokmål, Finnish, Lithuanian, Simplified Chinese, Japanese, Thai,
+  Vietnamese, Bulgarian, Greek, Hungarian, Romanian, Turkish, Ukrainian,
+  Brazilian Portuguese, and Latin American Spanish translation catalogs for
+  both the Home Assistant translation layer and the runtime translation layer.
+- Expanded translation validation to cover all supported locales.
+- Raised automated test coverage to `96.00%`.
+
+### Changed
+- The Live View card now displays status, remaining time, polling interval
+  metadata, API-budget state, heartbeat status, and detected Live View entity
+  instead of rendering as an invisible heartbeat-only helper.
+- The Live View card registers `window.customCards` metadata when the frontend
+  resource is loaded.
+- The README now documents both regular and compact Live View card layouts.
+
+### Fixed
+- The Live View card custom element registration is guarded so browser reloads
+  or duplicate resource loads do not throw an already-defined error.
+- Runtime translation loading now preserves supported regional locale variants
+  such as `pt-BR`, `es-419`, and `zh-Hans` instead of collapsing them to their
+  base language.
+
+### Validation
+- `131` credential-free tests are documented for the current release.
+- Measured integration coverage is `96.00%`.
+
 ## [v0.2.1] - 2026-06-24
 
 ### Fixed

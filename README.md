@@ -64,6 +64,8 @@ This custom integration is built and validated as a **🥇 Gold-standard aligned
 <!-- Screenshot: assets/developer-meter-device.png -->
 <!-- Screenshot: assets/developer-plant-statistics.png -->
 <!-- Screenshot: assets/developer-live-view.png -->
+<!-- Screenshot: assets/live-view/regular-light.svg -->
+<!-- Screenshot: assets/live-view/compact-light.svg -->
 <!-- Screenshot: assets/developer-diagnostics.png -->
 
 ## ✨ Full Feature Set
@@ -672,21 +674,48 @@ Every dry-run service:
 
 ## ⚡ Built-in Card-Aware Live View
 
-The integration includes a lightweight Lovelace controller card that renews Live View while the card is mounted. When the dashboard view closes, the heartbeat stops and Live View expires automatically.
+The integration includes a Lovelace controller card that renews Live View while the card is mounted. When the dashboard view closes, the heartbeat stops and Live View expires automatically.
+
+The card also shows Live View status, remaining time, target/effective polling intervals, API-budget protection, heartbeat status, and the detected Live View entity.
+
+### Card previews
+
+The repository includes preview assets for both Live View card layouts. These can be replaced later with real Home Assistant screenshots using the same filenames.
+
+**Regular view**
+
+![SolaX Live View regular card preview](assets/live-view/regular-light.svg)
+
+**Compact view**
+
+![SolaX Live View compact card preview](assets/live-view/compact-light.svg)
 
 ### Add the resource
 
 - URL: `/api/solax_developer_api/frontend/solax-live-view-controller.js`
 - Type: `module`
 
+The integration serves this JavaScript file during setup, but Home Assistant does not automatically add optional custom-card resources to every dashboard. Add the resource once in **Settings → Dashboards → Resources**.
+
 ### Add the card
 
 ```yaml
 type: custom:solax-live-view-controller
 entry_id: YOUR_CONFIG_ENTRY_ID   # optional
+entity: switch.YOUR_SYSTEM_live_view_mode
+minimal: false                   # optional, set true for compact single-row view
 duration_seconds: 120            # optional
 heartbeat_seconds: 45            # optional
 interval_seconds: 5              # optional target
+```
+
+The `entity` line is optional. If omitted, the card tries to auto-detect the first SolaX Live View switch.
+
+For a compact card, use:
+
+```yaml
+type: custom:solax-live-view-controller
+minimal: true
 ```
 
 No `browser_mod` or other integration is required.
