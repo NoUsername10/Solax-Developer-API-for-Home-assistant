@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from copy import deepcopy
 import json
 import math
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -23,9 +23,12 @@ from .api import (
     serialize_api_error,
 )
 from .i18n import translate
+from .statistics import extract_plant_stat_metrics, extract_plant_stat_row_metrics
 from .const import (
     API_RATE_LIMIT_PER_MINUTE,
     BUSINESS_TYPES,
+    COMMAND_STATUS_MAP,
+    CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_MANUAL_EMS_SYSTEMS,
     CONF_MANUAL_METER_SERIALS,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
@@ -41,9 +44,13 @@ from .const import (
     DEFAULT_NIGHT_SCAN_INTERVAL,
     DEFAULT_NIGHT_START_HOUR,
     DEVICE_TYPES,
+    DEVICE_TYPE_NAMES,
+    DEVICE_HISTORY_SAFE_WINDOW_MS,
     DOMAIN,
     EMS_DEVICE_TYPE,
     CONTROL_SERVICE_CAPABILITIES,
+    EV_CHARGER_ACCEPTED_COMMAND_STATUSES,
+    EV_CHARGER_CONTROL_SERVICES,
     ERROR_QUOTA_CODES,
     ERROR_RATE_LIMIT_CODES,
     MAX_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
@@ -82,6 +89,8 @@ TEMPORARY_FAILURE_CLASSIFICATIONS = {
     "exception",
 }
 MAX_REFRESH_FAILURE_BACKOFF_SECONDS = 1800
+HISTORY_PACING_THRESHOLD_REQUESTS = 90
+HISTORY_TARGET_CALLS_PER_MINUTE = 80
 
 def _flatten_dict(data: dict[str, Any], parent_key: str = "") -> dict[str, Any]:
     flat: dict[str, Any] = {}
@@ -161,6 +170,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             min_value=0,
             max_value=23,
         )
+        self._ev_charger_controls_enabled = bool(
+            options.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
+        )
         self._live_view_until = None
         self.last_update_attempt = None
         self.last_successful_update = None
@@ -181,6 +193,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         self._request_result_cache: dict[str, dict[str, Any]] = {}
         self._master_control_cache: dict[str, dict[str, Any]] = {}
         self._control_dry_runs: list[dict[str, Any]] = []
+        self._ev_charger_control_commands: list[dict[str, Any]] = []
         self._manual_meter_entries = self._normalize_manual_meter_entries(
             options.get(CONF_MANUAL_METER_SERIALS)
         )
@@ -861,6 +874,29 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             return result
         return None
 
+    def get_known_ev_charger_serial(self, serial: str) -> dict[str, Any] | None:
+        """Return a discovered EV charger device by serial."""
+        normalized = str(serial).strip().casefold()
+        if not normalized:
+            return None
+
+        for sn, device in (self.data.get("devices") or {}).items():
+            if str(sn).strip().casefold() != normalized:
+                continue
+            if self._coerce_int((device or {}).get("deviceType")) != 4:
+                continue
+            return {
+                "serial": str((device or {}).get("deviceSn") or sn),
+                "source": (
+                    "manual"
+                    if bool((device or {}).get("manualSerial"))
+                    else "inventory"
+                ),
+                "business_type": int((device or {}).get("businessType") or 1),
+                "device": dict(device or {}),
+            }
+        return None
+
     def get_known_ems_serial(self, serial: str) -> dict[str, Any] | None:
         normalized = str(serial).strip().casefold()
         if not normalized:
@@ -1044,6 +1080,97 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             self._coerce_int((device or {}).get("deviceType")) in DEVICE_TYPES
             for device in (self.data.get("devices") or {}).values()
             if isinstance(device, Mapping)
+        )
+
+    def list_history_devices(self) -> list[dict[str, Any]]:
+        """Return current devices that can be queried through device history."""
+        devices: list[dict[str, Any]] = []
+        for serial, payload in (self.data.get("devices") or {}).items():
+            if not isinstance(payload, Mapping):
+                continue
+
+            device_type = self._coerce_int(payload.get("deviceType"))
+            if device_type not in DEVICE_TYPES:
+                continue
+
+            business_type = self._coerce_int(payload.get("businessType"))
+            if business_type not in BUSINESS_TYPES:
+                business_type = 1
+
+            serial_text = str(payload.get("deviceSn") or serial).strip()
+            if not serial_text:
+                continue
+
+            device_type_name = translate(
+                self.hass,
+                f"runtime.labels.device_type.{device_type}",
+                fallback=DEVICE_TYPE_NAMES.get(device_type, "Device"),
+            )
+            source = (
+                "manual"
+                if bool(payload.get("manualSerial"))
+                else str(payload.get("discoverySource") or "inventory")
+            )
+            label = f"{device_type_name} {serial_text}"
+
+            devices.append(
+                {
+                    "device_sn": serial_text,
+                    "device_type": device_type,
+                    "device_type_name": device_type_name,
+                    "business_type": business_type,
+                    "source": source,
+                    "label": label,
+                }
+            )
+
+        return sorted(
+            devices,
+            key=lambda item: (
+                int(item["device_type"]),
+                str(item["label"]).casefold(),
+                str(item["device_sn"]).casefold(),
+            ),
+        )
+
+    def list_plant_statistics_targets(self) -> list[dict[str, Any]]:
+        """Return current plants that can be queried through plant statistics."""
+        targets: list[dict[str, Any]] = []
+        for plant_id_key, payload in (self.data.get("plants") or {}).items():
+            if not isinstance(payload, Mapping):
+                continue
+
+            plant_id = str(payload.get("plantId") or plant_id_key).strip()
+            if not plant_id:
+                continue
+
+            business_type = self._coerce_int(payload.get("businessType"))
+            if business_type not in BUSINESS_TYPES:
+                business_type = 1
+
+            plant_name = str(payload.get("plantName") or "").strip()
+            label = plant_name or translate(
+                self.hass,
+                "runtime.entity_templates.plant_name",
+                placeholders={"plant_id": plant_id},
+                fallback="Plant {plant_id}",
+            )
+
+            targets.append(
+                {
+                    "plant_id": plant_id,
+                    "plant_name": plant_name,
+                    "business_type": business_type,
+                    "label": label,
+                }
+            )
+
+        return sorted(
+            targets,
+            key=lambda item: (
+                str(item["label"]).casefold(),
+                str(item["plant_id"]).casefold(),
+            ),
         )
 
     @property
@@ -1325,6 +1452,14 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         manual_ems_entries = getattr(self, "_manual_ems_entries", [])
         meta["manual_ems_system_count"] = len(manual_ems_entries)
         meta["manual_ems_systems"] = [dict(item) for item in manual_ems_entries]
+        meta["ev_charger_controls_enabled"] = getattr(
+            self,
+            "_ev_charger_controls_enabled",
+            False,
+        )
+        meta["ev_charger_control_commands"] = len(
+            getattr(self, "_ev_charger_control_commands", []) or []
+        )
         meta["capability_families"] = sorted(self.capability_families)
         meta["available_control_services"] = sorted(self.available_control_services)
         meta["token_scope"] = getattr(self.client, "token_scope", None)
@@ -2133,6 +2268,14 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     "token_expires_at": self.client.token_expires_at,
                     "history_cache_entries": len(self._history_cache),
                     "dry_run_commands": len(self._control_dry_runs),
+                    "ev_charger_controls_enabled": getattr(
+                        self,
+                        "_ev_charger_controls_enabled",
+                        False,
+                    ),
+                    "ev_charger_control_commands": len(
+                        getattr(self, "_ev_charger_control_commands", []) or []
+                    ),
                     "effective_scan_interval": self._effective_scan_interval,
                     "poll_profile": self._poll_profile,
                     "live_view_active": self.live_view_active,
@@ -2203,19 +2346,35 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         request_sn_type: int | None = None,
     ) -> dict[str, Any]:
         """Fetch history data on demand and cache by parameter key."""
+        normalized_sn = normalize_sn_list(sn_list)
+        window_count = max(
+            1,
+            math.ceil(
+                max(0, int(end_time) - int(start_time))
+                / DEVICE_HISTORY_SAFE_WINDOW_MS
+            ),
+        )
+        sn_chunk_count = max(1, math.ceil(len(normalized_sn) / MAX_SN_PER_REQUEST))
+        estimated_request_count = window_count * sn_chunk_count
+        request_delay_seconds = (
+            60 / HISTORY_TARGET_CALLS_PER_MINUTE
+            if estimated_request_count > HISTORY_PACING_THRESHOLD_REQUESTS
+            else 0.0
+        )
         payload = await self.client.device_history_data_windowed(
-            sn_list=sn_list,
+            sn_list=normalized_sn,
             device_type=device_type,
             business_type=business_type,
             start_time=start_time,
             end_time=end_time,
             time_interval=time_interval,
             request_sn_type=request_sn_type,
+            request_delay_seconds=request_delay_seconds,
         )
 
         cache_key = "|".join(
             [
-                ",".join(sorted(str(x).strip() for x in sn_list)),
+                ",".join(sorted(str(x).strip() for x in normalized_sn)),
                 str(device_type),
                 str(business_type),
                 str(start_time),
@@ -2228,13 +2387,15 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         self._history_cache[cache_key] = {
             "updated_at": dt_util.utcnow().isoformat(),
             "request": {
-                "snList": list(sn_list),
+                "snList": list(normalized_sn),
                 "deviceType": device_type,
                 "businessType": business_type,
                 "startTime": start_time,
                 "endTime": end_time,
                 "timeInterval": time_interval,
                 "requestSnType": request_sn_type,
+                "estimatedRequestCount": estimated_request_count,
+                "requestDelaySeconds": request_delay_seconds,
             },
             "window_summary": window_summary,
             "response": payload,
@@ -2251,6 +2412,202 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "message": payload.get("message"),
             "window_summary": window_summary,
         }
+
+    async def async_fetch_plant_year_statistics(
+        self,
+        *,
+        plant_id: str,
+        business_type: int,
+        year: int,
+    ) -> dict[str, Any]:
+        """Fetch monthly plant statistics for one year and prepare chart rows."""
+        now = dt_util.now()
+        normalized_year = int(year)
+        month_count = now.month if normalized_year == now.year else 12
+        rows: list[dict[str, Any]] = []
+        raw_months: list[dict[str, Any]] = []
+
+        for month in range(1, month_count + 1):
+            date_text = f"{normalized_year}-{month:02d}"
+            payload = await self.client.plant_stat_data(
+                plant_id=plant_id,
+                business_type=business_type,
+                date_type=2,
+                date=date_text,
+            )
+            result = payload.get("result") or {}
+            metrics = extract_plant_stat_metrics(result if isinstance(result, dict) else {})
+            timestamp = int(
+                datetime(normalized_year, month, 1, tzinfo=timezone.utc).timestamp()
+                * 1000
+            )
+            rows.append(
+                {
+                    "month": date_text,
+                    "timestamp": timestamp,
+                    **metrics,
+                }
+            )
+            raw_months.append(
+                {
+                    "month": date_text,
+                    "code": payload.get("code"),
+                    "message": payload.get("message"),
+                    "result": result,
+                }
+            )
+
+        available_metric_names = sorted(
+            {
+                key
+                for row in rows
+                for key, value in row.items()
+                if key not in {"month", "timestamp"} and isinstance(value, (int, float))
+            }
+        )
+        return {
+            "ok": True,
+            "plant_id": plant_id,
+            "business_type": business_type,
+            "year": normalized_year,
+            "month_count": month_count,
+            "api_calls_made": month_count,
+            "available_metric_names": available_metric_names,
+            "rows": rows,
+            "raw_months": raw_months,
+        }
+
+    async def async_fetch_plant_month_statistics(
+        self,
+        *,
+        plant_id: str,
+        business_type: int,
+        year: int,
+        month: int,
+    ) -> dict[str, Any]:
+        """Fetch daily plant statistics for one month and prepare chart rows."""
+        normalized_year = int(year)
+        normalized_month = int(month)
+        date_text = f"{normalized_year}-{normalized_month:02d}"
+        payload = await self.client.plant_stat_data(
+            plant_id=plant_id,
+            business_type=business_type,
+            date_type=2,
+            date=date_text,
+        )
+        result = payload.get("result") or {}
+        records = (
+            result.get("plantEnergyStatDataList")
+            if isinstance(result, Mapping)
+            else None
+        ) or []
+        rows: list[dict[str, Any]] = []
+
+        for index, row in enumerate(records, start=1):
+            if not isinstance(row, Mapping):
+                continue
+            metrics = extract_plant_stat_row_metrics(dict(row))
+            if not metrics:
+                continue
+            row_date, timestamp = self._plant_stat_daily_timestamp(
+                row,
+                year=normalized_year,
+                month=normalized_month,
+                fallback_day=index,
+            )
+            rows.append(
+                {
+                    "date": row_date,
+                    "day": datetime.fromtimestamp(
+                        timestamp / 1000,
+                        tz=timezone.utc,
+                    ).day,
+                    "timestamp": timestamp,
+                    **metrics,
+                }
+            )
+
+        rows.sort(key=lambda item: int(item["timestamp"]))
+        available_metric_names = sorted(
+            {
+                key
+                for row in rows
+                for key, value in row.items()
+                if key not in {"date", "day", "timestamp"}
+                and isinstance(value, (int, float))
+            }
+        )
+        return {
+            "ok": True,
+            "plant_id": plant_id,
+            "business_type": business_type,
+            "year": normalized_year,
+            "month": normalized_month,
+            "date": date_text,
+            "day_count": len(rows),
+            "api_calls_made": 1,
+            "available_metric_names": available_metric_names,
+            "rows": rows,
+            "raw_month": {
+                "month": date_text,
+                "code": payload.get("code"),
+                "message": payload.get("message"),
+                "result": result,
+            },
+        }
+
+    @staticmethod
+    def _plant_stat_daily_timestamp(
+        row: Mapping[str, Any],
+        *,
+        year: int,
+        month: int,
+        fallback_day: int,
+    ) -> tuple[str, int]:
+        """Return a stable UTC midnight timestamp for a plant statistics day row."""
+        for key in ("date", "statDate", "dataTime", "time", "plantLocalTime"):
+            raw = row.get(key)
+            if raw is None:
+                continue
+            if isinstance(raw, (int, float)) and math.isfinite(float(raw)):
+                timestamp = int(raw if raw > 9999999999 else raw * 1000)
+                date_text = datetime.fromtimestamp(
+                    timestamp / 1000,
+                    tz=timezone.utc,
+                ).date().isoformat()
+                return date_text, timestamp
+            text = str(raw).strip()
+            if not text:
+                continue
+            for fmt in (
+                "%Y-%m-%d",
+                "%Y/%m/%d",
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%dT%H:%M:%S",
+            ):
+                try:
+                    parsed = datetime.strptime(text[:19], fmt).replace(
+                        tzinfo=timezone.utc
+                    )
+                except ValueError:
+                    continue
+                midnight = datetime(
+                    parsed.year,
+                    parsed.month,
+                    parsed.day,
+                    tzinfo=timezone.utc,
+                )
+                return midnight.date().isoformat(), int(midnight.timestamp() * 1000)
+            if text.isdigit():
+                fallback_day = int(text)
+                break
+
+        safe_day = max(1, min(31, int(fallback_day)))
+        try:
+            midnight = datetime(year, month, safe_day, tzinfo=timezone.utc)
+        except ValueError:
+            midnight = datetime(year, month, 1, tzinfo=timezone.utc)
+        return midnight.date().isoformat(), int(midnight.timestamp() * 1000)
 
     async def async_query_request_result(self, request_id: str | int) -> dict[str, Any]:
         normalized_request_id = str(request_id).strip()
@@ -2280,6 +2637,117 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "response": payload,
         }
         return payload
+
+    @property
+    def ev_charger_controls_enabled(self) -> bool:
+        """Return whether real EV charger write calls are enabled."""
+        return bool(getattr(self, "_ev_charger_controls_enabled", False))
+
+    def _validate_ev_charger_control_targets(
+        self,
+        *,
+        service: str,
+        payload: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        if service not in EV_CHARGER_CONTROL_SERVICES:
+            raise ValueError("not_ev_charger_control")
+
+        business_type = self._coerce_int(payload.get("businessType"))
+        known_targets: list[dict[str, Any]] = []
+        for serial in payload.get("snList") or []:
+            known = self.get_known_ev_charger_serial(str(serial))
+            if known is None:
+                raise ValueError("control_ev_charger_target_unknown")
+            known_business_type = self._coerce_int(known.get("business_type"))
+            if (
+                business_type in BUSINESS_TYPES
+                and known_business_type in BUSINESS_TYPES
+                and known_business_type != business_type
+            ):
+                raise ValueError("control_ev_charger_business_type_mismatch")
+            known_targets.append(known)
+        return known_targets
+
+    @staticmethod
+    def _control_response_status_summary(payload: dict[str, Any]) -> dict[str, Any]:
+        result = payload.get("result") or {}
+        statuses: dict[str, dict[str, Any]] = {}
+        accepted = bool(payload.get("code") == 10000)
+
+        if isinstance(result, Mapping):
+            for serial, item in result.items():
+                status_value = None
+                if isinstance(item, Mapping):
+                    status_value = item.get("status")
+                status_int = SolaxDeveloperCoordinator._coerce_int(status_value)
+                status_accepted = (
+                    status_int in EV_CHARGER_ACCEPTED_COMMAND_STATUSES
+                    if status_int is not None
+                    else False
+                )
+                statuses[str(serial)] = {
+                    "status": status_int,
+                    "status_name": COMMAND_STATUS_MAP.get(status_int, "Unknown"),
+                    "accepted": status_accepted,
+                }
+            if statuses:
+                accepted = all(item["accepted"] for item in statuses.values())
+
+        return {
+            "accepted": accepted,
+            "device_statuses": statuses,
+        }
+
+    async def async_execute_ev_charger_control(
+        self,
+        *,
+        service: str,
+        endpoint: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute a validated EV charger control command."""
+        targets = self._validate_ev_charger_control_targets(
+            service=service,
+            payload=payload,
+        )
+        response = await self.client.execute_control(
+            path=endpoint,
+            payload=payload,
+        )
+        status_summary = self._control_response_status_summary(response)
+        event = {
+            "timestamp": dt_util.utcnow().isoformat(),
+            "service": service,
+            "endpoint": endpoint,
+            "payload": dict(payload),
+            "target_count": len(targets),
+            "targets": [
+                {
+                    "serial": str(target.get("serial") or ""),
+                    "business_type": target.get("business_type"),
+                    "source": target.get("source"),
+                }
+                for target in targets
+            ],
+            "blocked": False,
+            "sent": True,
+            "accepted": bool(status_summary["accepted"]),
+            "request_id": response.get("requestId"),
+            "response": response,
+            "device_statuses": status_summary["device_statuses"],
+        }
+        commands = getattr(self, "_ev_charger_control_commands", None)
+        if not isinstance(commands, list):
+            commands = []
+            self._ev_charger_control_commands = commands
+        commands.append(event)
+        if len(commands) > 100:
+            self._ev_charger_control_commands = commands[-100:]
+
+        meta = self.data.setdefault("meta", {})
+        meta["ev_charger_control_commands"] = len(self._ev_charger_control_commands)
+        meta["last_ev_charger_control"] = event
+        return event
 
     def record_control_dry_run(
         self,
@@ -2312,6 +2780,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
     @property
     def control_dry_runs(self) -> list[dict[str, Any]]:
         return list(self._control_dry_runs)
+
+    @property
+    def ev_charger_control_commands(self) -> list[dict[str, Any]]:
+        return list(getattr(self, "_ev_charger_control_commands", []) or [])
 
     @property
     def history_cache(self) -> dict[str, dict[str, Any]]:

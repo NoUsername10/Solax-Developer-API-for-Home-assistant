@@ -111,6 +111,28 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     return payload;
   }
 
+  async _callService(service, payload) {
+    if (this._hass?.connection?.sendMessagePromise) {
+      const response = await this._hass.connection.sendMessagePromise({
+        type: "call_service",
+        domain: "solax_developer_api",
+        service,
+        service_data: payload || {},
+        return_response: true,
+      });
+      return response?.response ?? response;
+    }
+
+    return await this._hass.callService(
+      "solax_developer_api",
+      service,
+      payload,
+      undefined,
+      true,
+      true
+    );
+  }
+
   _detectedLiveViewEntity() {
     if (!this._hass) {
       return undefined;
@@ -179,6 +201,26 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     return Math.max(0, Math.ceil((this._localLiveViewUntil - Date.now()) / 1000));
   }
 
+  _normalizeServiceResponse(response) {
+    if (!response || typeof response !== "object") {
+      return response;
+    }
+    if (response.response && typeof response.response === "object") {
+      return response.response;
+    }
+    if (response.service_response && typeof response.service_response === "object") {
+      return response.service_response;
+    }
+    if (
+      response.context &&
+      response.response === undefined &&
+      response.service_response === undefined
+    ) {
+      return undefined;
+    }
+    return response;
+  }
+
   _buildDisplayState() {
     const entity = this._liveViewEntityState();
     const attrs = entity.attributes || {};
@@ -198,7 +240,8 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     const targetInterval =
       this._numberOrUndefined(attrs.live_view_target_interval) ??
       this._numberOrUndefined(result.live_view_target_interval) ??
-      this._intervalSeconds;
+      this._intervalSeconds ??
+      5;
     const pollProfile = attrs.poll_profile || result.poll_profile || (active ? "live_view" : "standard");
     const budgetAdjusted =
       this._boolOrUndefined(attrs.live_view_budget_adjusted) ??
@@ -206,11 +249,14 @@ class SolaxLiveViewControllerCard extends HTMLElement {
       false;
     const callBudget =
       this._numberOrUndefined(attrs.live_view_call_budget_per_minute) ??
-      this._numberOrUndefined(result.live_view_call_budget_per_minute);
+      this._numberOrUndefined(result.live_view_call_budget_per_minute) ??
+      20;
     const estimatedCalls =
       this._numberOrUndefined(attrs.live_view_estimated_calls_per_cycle) ??
       this._numberOrUndefined(result.live_view_estimated_calls_per_cycle);
-    const refreshOk = this._boolOrUndefined(result.refresh_attempt_success);
+    const refreshOk =
+      this._boolOrUndefined(result.refresh_attempt_success) ??
+      (this._lastHeartbeatAt ? true : undefined);
 
     return {
       active,
@@ -233,23 +279,20 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     this._lastError = undefined;
     const payload = this._servicePayload();
     try {
-      const response = await this._hass.callService(
-        "solax_developer_api",
-        "start_live_view",
-        payload,
-        undefined,
-        true,
-        true
-      );
+      const response = await this._callService("start_live_view", payload);
+      const normalizedResponse = this._normalizeServiceResponse(response);
       this._lastHeartbeatAt = new Date();
       this._localLiveViewUntil = Date.now() + this._durationSeconds * 1000;
       this._lastServiceResult =
-        response && typeof response === "object"
-          ? response
+        normalizedResponse && typeof normalizedResponse === "object"
+          ? normalizedResponse
           : {
               ok: true,
               live_view_active: true,
               live_view_until: new Date(this._localLiveViewUntil).toISOString(),
+              live_view_target_interval: this._intervalSeconds ?? 5,
+              live_view_call_budget_per_minute: 20,
+              refresh_attempt_success: true,
             };
     } catch (err) {
       this._lastError = err?.message || String(err);

@@ -112,6 +112,12 @@ class SolaxLiveViewSwitch(SolaxSystemCoordinatorEntity, SwitchEntity):
             "effective_scan_interval": meta.get("effective_scan_interval"),
             "live_view_until": meta.get("live_view_until"),
             "live_view_remaining_seconds": meta.get("live_view_remaining_seconds"),
+            "live_view_target_interval": meta.get("live_view_target_interval"),
+            "live_view_budget_adjusted": meta.get("live_view_budget_adjusted"),
+            "live_view_call_budget_per_minute": meta.get("live_view_call_budget_per_minute"),
+            "live_view_estimated_calls_per_cycle": meta.get(
+                "live_view_estimated_calls_per_cycle"
+            ),
         }
 
     async def async_turn_on(self, **kwargs):

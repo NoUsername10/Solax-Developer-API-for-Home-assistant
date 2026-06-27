@@ -17,6 +17,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.util import dt as dt_util
 
 from .api import SolaxDeveloperApiClient
 from .const import (
@@ -33,13 +34,19 @@ from .const import (
     DEFAULT_SYSTEM_NAME,
     DOMAIN,
     EVENT_DRY_RUN_CONTROL,
+    EVENT_EV_CHARGER_CONTROL,
+    EV_CHARGER_CONTROL_SERVICES,
     MAX_LIVE_VIEW_DURATION,
     MAX_LIVE_VIEW_INTERVAL,
     MIN_LIVE_VIEW_DURATION,
     MIN_LIVE_VIEW_INTERVAL,
     PLATFORMS,
     RUNTIME_RELOAD_STATE,
+    SERVICE_FETCH_PLANT_MONTH_STATISTICS,
+    SERVICE_FETCH_PLANT_YEAR_STATISTICS,
     SERVICE_FETCH_DEVICE_HISTORY,
+    SERVICE_LIST_HISTORY_DEVICES,
+    SERVICE_LIST_PLANT_STATISTICS_TARGETS,
     SERVICE_MANUAL_REFRESH,
     SERVICE_START_LIVE_VIEW,
     SERVICE_STOP_LIVE_VIEW,
@@ -323,6 +330,56 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             "count": len(refreshed_entries),
         }
 
+    async def _handle_list_history_devices(call: ServiceCall):
+        explicit_entry_id = str(call.data.get("entry_id", "")).strip()
+        devices: list[dict[str, Any]] = []
+        entry_ids: list[str] = []
+
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            entry_id = config_entry.entry_id
+            if explicit_entry_id and entry_id != explicit_entry_id:
+                continue
+            runtime = _loaded_runtime_for_entry(hass, entry_id)
+            if runtime is None:
+                continue
+            coordinator = runtime.coordinator
+            for device in coordinator.list_history_devices():
+                devices.append({**device, "entry_id": entry_id})
+            entry_ids.append(entry_id)
+
+        return {
+            "ok": True,
+            "entry_id": explicit_entry_id or (entry_ids[0] if len(entry_ids) == 1 else None),
+            "entries": entry_ids,
+            "count": len(devices),
+            "devices": devices,
+        }
+
+    async def _handle_list_plant_statistics_targets(call: ServiceCall):
+        explicit_entry_id = str(call.data.get("entry_id", "")).strip()
+        plants: list[dict[str, Any]] = []
+        entry_ids: list[str] = []
+
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            entry_id = config_entry.entry_id
+            if explicit_entry_id and entry_id != explicit_entry_id:
+                continue
+            runtime = _loaded_runtime_for_entry(hass, entry_id)
+            if runtime is None:
+                continue
+            coordinator = runtime.coordinator
+            for plant in coordinator.list_plant_statistics_targets():
+                plants.append({**plant, "entry_id": entry_id})
+            entry_ids.append(entry_id)
+
+        return {
+            "ok": True,
+            "entry_id": explicit_entry_id or (entry_ids[0] if len(entry_ids) == 1 else None),
+            "entries": entry_ids,
+            "count": len(plants),
+            "plants": plants,
+        }
+
     async def _handle_fetch_history(call: ServiceCall):
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
         start_time = int(call.data["start_time"])
@@ -343,6 +400,48 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             ),
         )
         return response
+
+    async def _handle_fetch_plant_year_statistics(call: ServiceCall):
+        _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
+        year = int(call.data["year"])
+        current_year = dt_util.now().year
+        if year < 2000 or year > current_year:
+            raise _translated_service_error(
+                "plant_year_invalid",
+                placeholders={"min_year": 2000, "max_year": current_year},
+            )
+        return await coordinator.async_fetch_plant_year_statistics(
+            plant_id=str(call.data["plant_id"]).strip(),
+            business_type=int(call.data["business_type"]),
+            year=year,
+        )
+
+    async def _handle_fetch_plant_month_statistics(call: ServiceCall):
+        _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
+        year = int(call.data["year"])
+        month = int(call.data["month"])
+        current = dt_util.now()
+        if year < 2000 or year > current.year:
+            raise _translated_service_error(
+                "plant_year_invalid",
+                placeholders={"min_year": 2000, "max_year": current.year},
+            )
+        if year == current.year and month > current.month:
+            raise _translated_service_error(
+                "plant_month_invalid",
+                placeholders={"min_month": 1, "max_month": current.month},
+            )
+        if month < 1 or month > 12:
+            raise _translated_service_error(
+                "plant_month_invalid",
+                placeholders={"min_month": 1, "max_month": 12},
+            )
+        return await coordinator.async_fetch_plant_month_statistics(
+            plant_id=str(call.data["plant_id"]).strip(),
+            business_type=int(call.data["business_type"]),
+            year=year,
+            month=month,
+        )
 
     async def _handle_query_request_result(call: ServiceCall):
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
@@ -399,6 +498,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         schema=vol.Schema({vol.Optional("entry_id"): str}),
     )
 
+    list_history_devices_schema = vol.Schema({vol.Optional("entry_id"): str})
+    list_plant_statistics_targets_schema = vol.Schema({vol.Optional("entry_id"): str})
+
     history_schema = vol.Schema(
         {
             vol.Optional("entry_id"): str,
@@ -417,6 +519,28 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             vol.Optional("request_sn_type"): vol.All(
                 vol.Coerce(int), vol.In([1, 2])
             ),
+        }
+    )
+
+    plant_year_statistics_schema = vol.Schema(
+        {
+            vol.Optional("entry_id"): str,
+            vol.Required("plant_id"): vol.All(str, vol.Length(min=1)),
+            vol.Required("business_type"): vol.All(
+                vol.Coerce(int), vol.In([1, 4])
+            ),
+            vol.Required("year"): vol.Coerce(int),
+        }
+    )
+    plant_month_statistics_schema = vol.Schema(
+        {
+            vol.Optional("entry_id"): str,
+            vol.Required("plant_id"): vol.All(str, vol.Length(min=1)),
+            vol.Required("business_type"): vol.All(
+                vol.Coerce(int), vol.In([1, 4])
+            ),
+            vol.Required("year"): vol.Coerce(int),
+            vol.Required("month"): vol.Coerce(int),
         }
     )
 
@@ -473,6 +597,16 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             schema=vol.Schema({vol.Optional("entry_id"): str}),
         )
         _register_service(
+            SERVICE_LIST_HISTORY_DEVICES,
+            _handle_list_history_devices,
+            schema=list_history_devices_schema,
+        )
+        _register_service(
+            SERVICE_LIST_PLANT_STATISTICS_TARGETS,
+            _handle_list_plant_statistics_targets,
+            schema=list_plant_statistics_targets_schema,
+        )
+        _register_service(
             SERVICE_START_LIVE_VIEW,
             _handle_start_live_view,
             schema=vol.Schema(
@@ -523,6 +657,45 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                     "control_not_available",
                     placeholders={"service": _service_name},
                 )
+            if (
+                _service_name in EV_CHARGER_CONTROL_SERVICES
+                and getattr(coordinator, "ev_charger_controls_enabled", False)
+            ):
+                try:
+                    event = await coordinator.async_execute_ev_charger_control(
+                        service=_service_name,
+                        endpoint=_definition["endpoint"],
+                        payload=validated_payload,
+                    )
+                except ValueError as err:
+                    raise _translated_service_error(
+                        str(err),
+                        placeholders={"service": _service_name},
+                    ) from err
+                hass.bus.async_fire(EVENT_EV_CHARGER_CONTROL, event)
+                _LOGGER.warning(
+                    "Executed EV charger control service '%s' endpoint '%s'",
+                    _service_name,
+                    _definition["endpoint"],
+                )
+                _LOGGER.debug(
+                    "EV charger control sanitized payload service='%s' endpoint='%s' payload=%s",
+                    _service_name,
+                    _definition["endpoint"],
+                    _sanitize_dry_run_payload_for_log(validated_payload),
+                )
+                return {
+                    "ok": bool(event.get("accepted")),
+                    "blocked": False,
+                    "sent": True,
+                    "accepted": bool(event.get("accepted")),
+                    "service": _service_name,
+                    "endpoint": _definition["endpoint"],
+                    "request_id": event.get("request_id"),
+                    "device_statuses": event.get("device_statuses") or {},
+                    "response": event.get("response") or {},
+                    "timestamp": event["timestamp"],
+                }
             event = coordinator.record_control_dry_run(
                 service=_service_name,
                 endpoint=_definition["endpoint"],
@@ -562,6 +735,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         desired: set[str] = set()
         if any(coordinator.has_history_capable_devices for coordinator in coordinators):
             desired.add(SERVICE_FETCH_DEVICE_HISTORY)
+        if any(coordinator.list_plant_statistics_targets() for coordinator in coordinators):
+            desired.add(SERVICE_FETCH_PLANT_YEAR_STATISTICS)
+            desired.add(SERVICE_FETCH_PLANT_MONTH_STATISTICS)
         if any(coordinator.has_ci_devices for coordinator in coordinators):
             desired.add(SERVICE_QUERY_MASTER_CONTROL_DEVICE)
 
@@ -574,6 +750,14 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
         registrations = {
             SERVICE_FETCH_DEVICE_HISTORY: (_handle_fetch_history, history_schema),
+            SERVICE_FETCH_PLANT_YEAR_STATISTICS: (
+                _handle_fetch_plant_year_statistics,
+                plant_year_statistics_schema,
+            ),
+            SERVICE_FETCH_PLANT_MONTH_STATISTICS: (
+                _handle_fetch_plant_month_statistics,
+                plant_month_statistics_schema,
+            ),
             SERVICE_QUERY_REQUEST_RESULT: (
                 _handle_query_request_result,
                 request_result_schema,
@@ -737,7 +921,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> bo
     ):
         for service_name in [
             SERVICE_MANUAL_REFRESH,
+            SERVICE_LIST_HISTORY_DEVICES,
             SERVICE_FETCH_DEVICE_HISTORY,
+            SERVICE_LIST_PLANT_STATISTICS_TARGETS,
+            SERVICE_FETCH_PLANT_YEAR_STATISTICS,
+            SERVICE_FETCH_PLANT_MONTH_STATISTICS,
             SERVICE_START_LIVE_VIEW,
             SERVICE_STOP_LIVE_VIEW,
             SERVICE_QUERY_REQUEST_RESULT,

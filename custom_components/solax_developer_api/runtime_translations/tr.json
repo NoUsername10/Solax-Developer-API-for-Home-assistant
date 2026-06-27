@@ -36,7 +36,12 @@
       "control_time_order_invalid": "{service}: {end_field} must be later than {start_field}",
       "control_ems_context_invalid": "{service}: EMS controls require deviceType 100 and businessType 4",
       "control_param_list_length_invalid": "{service}: paramList must contain 1 to {max} EMS systems",
-      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object"
+      "control_param_list_item_invalid": "{service}: paramList item {index} must be an object",
+      "not_ev_charger_control": "{service}: this command is not an EV charger control service",
+      "control_ev_charger_target_unknown": "{service}: all serials must be discovered EV chargers before real EV control is allowed",
+      "control_ev_charger_business_type_mismatch": "{service}: businessType does not match the discovered EV charger",
+      "ev_charger_controls_disabled": "EV charger controls are disabled. Enable EV Charger Controls in integration options before using this control.",
+      "ev_charger_command_not_accepted": "{service}: SolaX did not accept the EV charger command ({statuses})"
     },
     "labels": {
       "unknown": "Bilinmiyor",
@@ -60,6 +65,29 @@
       "region": {
         "eu": "EU (openapi-eu.solaxcloud.com)",
         "cn": "CN (openapi-cn.solaxcloud.com)"
+      },
+      "ev_charger": {
+        "work_mode": {
+          "stop": "STOP",
+          "fast": "FAST",
+          "eco_6a": "ECO 6 A",
+          "eco_10a": "ECO 10 A",
+          "eco_16a": "ECO 16 A",
+          "eco_20a": "ECO 20 A",
+          "eco_25a": "ECO 25 A",
+          "green_3a": "GREEN 3 A",
+          "green_6a": "GREEN 6 A"
+        },
+        "start_mode": {
+          "plug_and_charge": "Plug and charge",
+          "swipe_card": "Swipe card",
+          "app": "APP"
+        },
+        "charge_scene": {
+          "home": "HOME",
+          "ocpp": "OCPP",
+          "standard_solar": "Standard / Solar"
+        }
       }
     },
     "defaults": {

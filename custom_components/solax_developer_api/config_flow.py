@@ -26,6 +26,7 @@ from .const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_ENTITY_PREFIX,
+    CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
     CONF_LIVE_VIEW_DEFAULT_DURATION,
     CONF_LIVE_VIEW_INTERVAL,
@@ -1457,6 +1458,9 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             current_options[CONF_RATE_LIMIT_NOTIFICATIONS] = bool(
                 user_input[CONF_RATE_LIMIT_NOTIFICATIONS]
             )
+            current_options[CONF_EV_CHARGER_CONTROLS_ENABLED] = bool(
+                user_input.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
+            )
             return await self._async_finish(options=current_options)
 
         return self.async_show_form(
@@ -1468,6 +1472,13 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                         default=current_options.get(
                             CONF_RATE_LIMIT_NOTIFICATIONS,
                             True,
+                        ),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_EV_CHARGER_CONTROLS_ENABLED,
+                        default=current_options.get(
+                            CONF_EV_CHARGER_CONTROLS_ENABLED,
+                            False,
                         ),
                     ): selector.BooleanSelector(),
                 }

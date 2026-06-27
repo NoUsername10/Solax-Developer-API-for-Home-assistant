@@ -45,6 +45,10 @@ def _time_minutes(value: str) -> int:
     return int(hour) * 60 + int(minute)
 
 
+def _byte_len(value: str) -> int:
+    return len(str(value).encode("utf-8"))
+
+
 def control_service_field_name(api_field: str) -> str:
     """Return the Home Assistant service-field name for an API payload field."""
     return re.sub(r"(?<!^)(?=[A-Z])", "_", str(api_field)).lower()
@@ -79,6 +83,104 @@ def _has_invalid_service_field_name(value: Any) -> bool:
     elif isinstance(value, list):
         return any(_has_invalid_service_field_name(item) for item in value)
     return False
+
+
+def _raise_invalid_value(service: str, field: str) -> None:
+    raise ControlValidationError(
+        "runtime.errors.control_field_value_invalid",
+        placeholders={"service": service, "field": field},
+    )
+
+
+def _validate_int_range(
+    service: str,
+    normalized: dict[str, Any],
+    field: str,
+    *,
+    min_value: int,
+    max_value: int,
+) -> None:
+    value = normalized.get(field)
+    if value is None:
+        return
+    if value < min_value or value > max_value:
+        _raise_invalid_value(service, field)
+
+
+def _validate_text_max_bytes(
+    service: str,
+    normalized: dict[str, Any],
+    field: str,
+    *,
+    max_bytes: int,
+) -> None:
+    value = normalized.get(field)
+    if value is None:
+        return
+    if _byte_len(str(value)) > max_bytes:
+        _raise_invalid_value(service, field)
+
+
+def _validate_evc_payload(service: str, normalized: dict[str, Any]) -> None:
+    """Validate EV charger control payloads according to v34 API rules."""
+    if service == "set_charge_scene":
+        if normalized["chargerScene"] not in (0, 1, 2):
+            _raise_invalid_value(service, "chargerScene")
+        _validate_text_max_bytes(service, normalized, "ocppUrl", max_bytes=128)
+        _validate_text_max_bytes(service, normalized, "ocppChargerId", max_bytes=25)
+        return
+
+    if service == "set_evc_qr_code":
+        _validate_text_max_bytes(service, normalized, "qrCode", max_bytes=255)
+        return
+
+    if service == "set_evc_work_mode":
+        work_mode = normalized["workMode"]
+        if work_mode not in (0, 1, 2, 3):
+            _raise_invalid_value(service, "workMode")
+        current_gear = normalized.get("currentGear")
+        if current_gear is None:
+            return
+        if work_mode in (0, 1):
+            _raise_invalid_value(service, "currentGear")
+        if work_mode == 2 and current_gear not in (6, 10, 16, 20, 25):
+            _raise_invalid_value(service, "currentGear")
+        if work_mode == 3 and current_gear not in (3, 6):
+            _raise_invalid_value(service, "currentGear")
+        return
+
+    if service == "set_evc_start_mode":
+        if normalized["startMode"] not in (0, 1, 2):
+            _raise_invalid_value(service, "startMode")
+        return
+
+    if service == "set_evc_charge_command":
+        if normalized["workCmd"] not in (0, 1, 2, 3):
+            _raise_invalid_value(service, "workCmd")
+        return
+
+    if service == "set_evc_reserve_charge":
+        if _time_minutes(normalized["chargeStartTime"]) == _time_minutes(
+            normalized["chargeEndTime"]
+        ):
+            _raise_invalid_value(service, "chargeEndTime")
+        _validate_int_range(
+            service,
+            normalized,
+            "chargeCurrent",
+            min_value=6,
+            max_value=32,
+        )
+        return
+
+    if service == "set_evc_current_limit":
+        _validate_int_range(
+            service,
+            normalized,
+            "currentLimit",
+            min_value=6,
+            max_value=40,
+        )
 
 
 def validate_control_payload(service: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -171,6 +273,9 @@ def validate_control_payload(service: str, payload: dict[str, Any]) -> dict[str,
                 "runtime.errors.control_time_format_invalid",
                 placeholders={"service": service, "field": key},
             )
+
+    if service.startswith("set_evc") or service == "set_charge_scene":
+        _validate_evc_payload(service, normalized)
 
     if service == "set_battery_heating":
         heating_enable = normalized["heatingEnable"]

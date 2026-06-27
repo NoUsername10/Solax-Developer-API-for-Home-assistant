@@ -33,6 +33,24 @@ stop_live_view:
       description: Optional config entry id.
       example: "1234567890abcdef"
 
+list_history_devices:
+  name: List History Devices
+  description: List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry id. If omitted, all loaded entries are included.
+      example: "1234567890abcdef"
+
+list_plant_statistics_targets:
+  name: List Plant Statistics Targets
+  description: List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry id. If omitted, all loaded entries are included.
+      example: "1234567890abcdef"
+
 fetch_device_history:
   name: Fetch Device History
   description: Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.
@@ -75,6 +93,59 @@ fetch_device_history:
       name: Request SN Type
       description: Optional battery query mode (1 inverter SN / 2 battery SN).
       example: 1
+
+fetch_plant_year_statistics:
+  name: Fetch Plant Year Statistics
+  description: Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry id.
+      example: "1234567890abcdef"
+    plant_id:
+      name: Plant ID
+      description: Plant ID returned by list_plant_statistics_targets.
+      required: true
+      example: "1981342105221492737"
+    business_type:
+      name: Business Type
+      description: 1 residential, 4 commercial & industrial.
+      required: true
+      example: 1
+    year:
+      name: Year
+      description: Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months.
+      required: true
+      example: 2026
+
+fetch_plant_month_statistics:
+  name: Fetch Plant Month Statistics
+  description: Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry id.
+      example: "1234567890abcdef"
+    plant_id:
+      name: Plant ID
+      description: Plant ID returned by list_plant_statistics_targets.
+      required: true
+      example: "1981342105221492737"
+    business_type:
+      name: Business Type
+      description: 1 residential, 4 commercial & industrial.
+      required: true
+      example: 1
+    year:
+      name: Year
+      description: Calendar year to fetch.
+      required: true
+      example: 2026
+    month:
+      name: Month
+      description: Calendar month to fetch, 1-12. Future months in the current year are rejected.
+      required: true
+      example: 6
 
 query_request_result:
   name: Query Request Result
@@ -898,8 +969,8 @@ pv_and_bat_individual_setting_target_soc_mode:
       required: true
       example: 1
 set_charge_scene:
-  name: EV Charger Set Charge Scene (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Set Charge Scene
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -929,8 +1000,8 @@ set_charge_scene:
       description: Optional. String payload field used by dry-run validation.
       example: "charger-1"
 set_evc_qr_code:
-  name: EV Charger Set QR Code (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Set QR Code
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -952,8 +1023,8 @@ set_evc_qr_code:
       required: true
       example: 1
 set_evc_work_mode:
-  name: EV Charger Set Work Mode (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Set Work Mode
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -979,8 +1050,8 @@ set_evc_work_mode:
       description: Optional. Integer payload field used by dry-run validation.
       example: 16
 set_evc_start_mode:
-  name: EV Charger Set Start Mode (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Set Start Mode
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -1002,8 +1073,8 @@ set_evc_start_mode:
       required: true
       example: 1
 set_evc_charge_command:
-  name: EV Charger Set Charge Command (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Set Charge Command
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -1025,8 +1096,8 @@ set_evc_charge_command:
       required: true
       example: 1
 set_evc_reserve_charge:
-  name: EV Charger Reserve Charge (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Reserve Charge
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID
@@ -1046,7 +1117,7 @@ set_evc_reserve_charge:
       name: Charge End Time
       description: Required. HH:MM time value.
       required: true
-      example: "08:00"
+      example: "10:00"
     charge_current:
       name: Charge Current
       description: Required. Integer payload field used by dry-run validation.
@@ -1058,8 +1129,8 @@ set_evc_reserve_charge:
       required: true
       example: 1
 set_evc_current_limit:
-  name: EV Charger Current Limit (Dry-Run)
-  description: Dry-run only. Validates payload and blocks write execution.
+  name: EV Charger Current Limit
+  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
   fields:
     entry_id:
       name: Entry ID

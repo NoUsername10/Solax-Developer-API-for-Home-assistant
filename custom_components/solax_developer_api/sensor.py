@@ -26,6 +26,7 @@ from .const import (
     INVERTER_STATUS_MAP,
 )
 from .entity import system_device_info, system_identity
+from .statistics import extract_plant_stat_metrics
 
 PARALLEL_UPDATES = 0
 
@@ -422,30 +423,7 @@ def _parallel_flag_text(hass, business_type: int, value: Any) -> Any:
 
 
 def _extract_stat_metrics(stat_payload: dict[str, Any] | None) -> dict[str, float]:
-    stat_payload = stat_payload or {}
-    records = stat_payload.get("plantEnergyStatDataList") or []
-    metrics = {
-        "pvGeneration": 0.0,
-        "inverterACOutputEnergy": 0.0,
-        "exportEnergy": 0.0,
-        "importEnergy": 0.0,
-        "loadConsumption": 0.0,
-        "batteryCharged": 0.0,
-        "batteryDischarged": 0.0,
-        "earnings": 0.0,
-    }
-    for row in records:
-        if not isinstance(row, dict):
-            continue
-        for key in metrics:
-            value = row.get(key)
-            if value is None:
-                continue
-            try:
-                metrics[key] += float(value)
-            except (TypeError, ValueError):
-                continue
-    return metrics
+    return extract_plant_stat_metrics(stat_payload)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):

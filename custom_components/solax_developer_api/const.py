@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 DOMAIN = "solax_developer_api"
-PLATFORMS = ["sensor", "switch", "button"]
+PLATFORMS = ["sensor", "switch", "button", "select", "number", "text", "time"]
 CONFIG_ENTRY_VERSION = 2
 
 CONF_CLIENT_ID = "client_id"
@@ -23,6 +23,7 @@ CONF_NIGHT_START_HOUR = "night_start_hour"
 CONF_NIGHT_END_HOUR = "night_end_hour"
 CONF_MANUAL_METER_SERIALS = "manual_meter_serials"
 CONF_MANUAL_EMS_SYSTEMS = "manual_ems_systems"
+CONF_EV_CHARGER_CONTROLS_ENABLED = "ev_charger_controls_enabled"
 
 DEFAULT_SYSTEM_NAME = "Solax Developer System"
 DEFAULT_SCAN_INTERVAL = 120
@@ -68,13 +69,18 @@ MAX_SN_PER_REQUEST = 10
 DEVICE_HISTORY_SAFE_WINDOW_MS = 11 * 60 * 60 * 1000
 
 SERVICE_MANUAL_REFRESH = "manual_refresh"
+SERVICE_LIST_HISTORY_DEVICES = "list_history_devices"
 SERVICE_FETCH_DEVICE_HISTORY = "fetch_device_history"
+SERVICE_LIST_PLANT_STATISTICS_TARGETS = "list_plant_statistics_targets"
+SERVICE_FETCH_PLANT_YEAR_STATISTICS = "fetch_plant_year_statistics"
+SERVICE_FETCH_PLANT_MONTH_STATISTICS = "fetch_plant_month_statistics"
 SERVICE_QUERY_REQUEST_RESULT = "query_request_result"
 SERVICE_QUERY_MASTER_CONTROL_DEVICE = "query_master_control_device"
 SERVICE_START_LIVE_VIEW = "start_live_view"
 SERVICE_STOP_LIVE_VIEW = "stop_live_view"
 
 EVENT_DRY_RUN_CONTROL = f"{DOMAIN}_dry_run_control"
+EVENT_EV_CHARGER_CONTROL = f"{DOMAIN}_ev_charger_control"
 
 RUNTIME_RELOAD_STATE = f"{DOMAIN}_reload_state"
 
@@ -120,6 +126,20 @@ COMMAND_STATUS_MAP = {
     5: "Device execution failed",
     6: "Execution timed out",
 }
+
+EV_CHARGER_CONTROL_SERVICES = frozenset(
+    {
+        "set_charge_scene",
+        "set_evc_qr_code",
+        "set_evc_work_mode",
+        "set_evc_start_mode",
+        "set_evc_charge_command",
+        "set_evc_reserve_charge",
+        "set_evc_current_limit",
+    }
+)
+
+EV_CHARGER_ACCEPTED_COMMAND_STATUSES = frozenset({3, 4})
 
 INVERTER_STATUS_MAP = {
     100: "Waiting",

@@ -141,10 +141,12 @@
         "title": "Geavanceerd & diagnose",
         "description": "Configure diagnostic notifications and advanced integration behavior.",
         "data": {
-          "rate_limit_notifications": "Ratelimiet Meldingen"
+          "rate_limit_notifications": "Ratelimiet Meldingen",
+          "ev_charger_controls_enabled": "EV Charger Controls"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit."
+          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
+          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services."
         }
       }
     },
@@ -188,12 +190,70 @@
     "button": {
       "live_view_boost": {
         "name": "Start Live View Boost"
+      },
+      "ev_charger_lock": {
+        "name": "Lock Charger"
+      },
+      "ev_charger_available": {
+        "name": "Set Charger Available"
+      },
+      "ev_charger_start_charging": {
+        "name": "Start Charging"
+      },
+      "ev_charger_stop_charging": {
+        "name": "Stop Charging"
+      },
+      "ev_charger_apply_charge_scene": {
+        "name": "Apply Charge Scene"
+      },
+      "ev_charger_apply_qr_code": {
+        "name": "Apply QR Code"
+      },
+      "ev_charger_apply_reserve_charge": {
+        "name": "Apply Reserve Charge"
       }
     },
-    "select": {},
+    "select": {
+      "ev_charger_work_mode": {
+        "name": "Work Mode"
+      },
+      "ev_charger_start_mode": {
+        "name": "Start Mode"
+      },
+      "ev_charger_charge_scene": {
+        "name": "Charge Scene"
+      }
+    },
     "sensor": {
       "dynamic_field": {
         "name": "{field_name}"
+      }
+    },
+    "number": {
+      "ev_charger_current_limit": {
+        "name": "Current Limit"
+      },
+      "ev_charger_reserve_current": {
+        "name": "Reserve Charge Current"
+      }
+    },
+    "text": {
+      "ev_charger_qr_code": {
+        "name": "QR Code"
+      },
+      "ev_charger_ocpp_url": {
+        "name": "OCPP URL"
+      },
+      "ev_charger_ocpp_charger_id": {
+        "name": "OCPP Charger ID"
+      }
+    },
+    "time": {
+      "ev_charger_reserve_start_time": {
+        "name": "Reserve Charge Start Time"
+      },
+      "ev_charger_reserve_end_time": {
+        "name": "Reserve Charge End Time"
       }
     }
   },
@@ -236,6 +296,26 @@
         }
       }
     },
+    "list_history_devices": {
+      "name": "List History Devices",
+      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id. If omitted, all loaded entries are included."
+        }
+      }
+    },
+    "list_plant_statistics_targets": {
+      "name": "List Plant Statistics Targets",
+      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id. If omitted, all loaded entries are included."
+        }
+      }
+    },
     "fetch_device_history": {
       "name": "Ophalen Device Geschiedenis",
       "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
@@ -271,6 +351,54 @@
         "request_sn_type": {
           "name": "Request-SN-type",
           "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+        }
+      }
+    },
+    "fetch_plant_year_statistics": {
+      "name": "Fetch Plant Year Statistics",
+      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id."
+        },
+        "plant_id": {
+          "name": "Plant ID",
+          "description": "Plant ID returned by list_plant_statistics_targets."
+        },
+        "business_type": {
+          "name": "Business Type",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "year": {
+          "name": "Year",
+          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+        }
+      }
+    },
+    "fetch_plant_month_statistics": {
+      "name": "Fetch Plant Month Statistics",
+      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id."
+        },
+        "plant_id": {
+          "name": "Plant ID",
+          "description": "Plant ID returned by list_plant_statistics_targets."
+        },
+        "business_type": {
+          "name": "Business Type",
+          "description": "1 residential, 4 commercial & industrial."
+        },
+        "year": {
+          "name": "Year",
+          "description": "Calendar year to fetch."
+        },
+        "month": {
+          "name": "Month",
+          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
         }
       }
     },
@@ -1035,8 +1163,8 @@
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Set Charge Scene",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1065,8 +1193,8 @@
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Set QR Code",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1087,8 +1215,8 @@
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Modus (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Set Work Mode",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1113,8 +1241,8 @@
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Modus (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Set Start Mode",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1135,8 +1263,8 @@
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Commando (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Set Charge Command",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1157,8 +1285,8 @@
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Reserve Charge",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1187,8 +1315,8 @@
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Stroom Limiet (Dry-Run)",
-      "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
+      "name": "EV Charger Current Limit",
+      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1336,6 +1464,12 @@
     },
     "control_param_list_item_invalid": {
       "message": "{service}: paramList item {index} must be an object"
+    },
+    "plant_year_invalid": {
+      "message": "year must be between {min_year} and {max_year}"
+    },
+    "plant_month_invalid": {
+      "message": "month must be between {min_month} and {max_month}"
     }
   }
 }

@@ -567,6 +567,10 @@ def _build_coordinator_snapshot(coordinator: Any, state: dict[str, Any]) -> dict
         "request_result_cache_entries": len(getattr(coordinator, "request_result_cache", {}) or {}),
         "master_control_cache_entries": len(getattr(coordinator, "master_control_cache", {}) or {}),
         "dry_run_commands": len(getattr(coordinator, "control_dry_runs", []) or []),
+        "ev_charger_control_commands": len(
+            getattr(coordinator, "ev_charger_control_commands", []) or []
+        ),
+        "ev_charger_controls_enabled": meta.get("ev_charger_controls_enabled"),
         "manual_meter_serial_count": meta.get("manual_meter_serial_count"),
         "manual_ems_system_count": meta.get("manual_ems_system_count"),
         "capability_families": meta.get("capability_families"),
@@ -601,6 +605,9 @@ def _build_and_sanitize_payload(
         "request_result_cache": deepcopy(getattr(coordinator, "request_result_cache", {}) or {}),
         "master_control_cache": deepcopy(getattr(coordinator, "master_control_cache", {}) or {}),
         "dry_run_commands": deepcopy(getattr(coordinator, "control_dry_runs", []) or []),
+        "ev_charger_control_commands": deepcopy(
+            getattr(coordinator, "ev_charger_control_commands", []) or []
+        ),
     }
 
     diagnostics_payload = {

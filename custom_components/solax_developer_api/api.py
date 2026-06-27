@@ -540,6 +540,7 @@ class SolaxDeveloperApiClient:
         time_interval: int,
         request_sn_type: int | None = None,
         max_window_ms: int = DEVICE_HISTORY_SAFE_WINDOW_MS,
+        request_delay_seconds: float = 0.0,
     ) -> dict[str, Any]:
         """Fetch history by splitting into API-safe windows and aggregating rows."""
         normalized_sn = normalize_sn_list(sn_list)
@@ -553,6 +554,7 @@ class SolaxDeveloperApiClient:
                     "snChunkCount": 0,
                     "requestCount": 0,
                     "maxWindowMs": max_window_ms,
+                    "requestDelaySeconds": 0.0,
                     "requestStartTime": int(start_time),
                     "requestEndTime": int(end_time),
                 },
@@ -563,6 +565,8 @@ class SolaxDeveloperApiClient:
         seen_identity: set[tuple[str, str]] = set()
         request_count = 0
         sn_chunks = chunked(normalized_sn, MAX_SN_PER_REQUEST)
+        total_requests = len(windows) * len(sn_chunks)
+        safe_delay = max(0.0, float(request_delay_seconds or 0.0))
 
         for sn_chunk in sn_chunks:
             for window_start, window_end in windows:
@@ -587,6 +591,8 @@ class SolaxDeveloperApiClient:
                         combined_rows.append(row)
                 elif isinstance(rows, dict):
                     combined_rows.append(rows)
+                if safe_delay > 0 and request_count < total_requests:
+                    await asyncio.sleep(safe_delay)
 
         return {
             "code": SUCCESS_CODE_API,
@@ -597,6 +603,7 @@ class SolaxDeveloperApiClient:
                 "snChunkCount": len(sn_chunks),
                 "requestCount": request_count,
                 "maxWindowMs": max_window_ms,
+                "requestDelaySeconds": safe_delay,
                 "requestStartTime": int(start_time),
                 "requestEndTime": int(end_time),
             },
@@ -611,6 +618,22 @@ class SolaxDeveloperApiClient:
             path="/openapi/apiRequestLog/listByCondition",
             json_body={"requestId": normalized_request_id},
             success_code=(SUCCESS_CODE_TOKEN, SUCCESS_CODE_API),
+        )
+
+    async def execute_control(
+        self,
+        *,
+        path: str,
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Execute a vetted Developer API control command."""
+        normalized_path = str(path or "").strip()
+        if not normalized_path.startswith("/openapi/v2/device/"):
+            raise ValueError("control path must be a device OpenAPI endpoint")
+        return await self._request_json(
+            method="POST",
+            path=normalized_path,
+            json_body=dict(payload),
         )
 
     async def get_master_control_device(
