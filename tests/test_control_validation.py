@@ -129,6 +129,120 @@ def test_control_payload_rejects_camel_case_fields():
     assert nested_err.value.key == "runtime.errors.control_field_name_invalid"
 
 
+def test_evc_control_payload_validates_documented_enums_and_ranges():
+    assert validate_control_payload(
+        "set_charge_scene",
+        {
+            "sn_list": ["C1******01"],
+            "charger_scene": 2,
+            "business_type": 1,
+        },
+    )["chargerScene"] == 2
+    assert validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1******01"],
+            "work_mode": 2,
+            "current_gear": 16,
+            "business_type": 4,
+        },
+    )["currentGear"] == 16
+    assert validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1******01"],
+            "work_mode": 3,
+            "current_gear": 6,
+            "business_type": 4,
+        },
+    )["workMode"] == 3
+    assert validate_control_payload(
+        "set_evc_start_mode",
+        {
+            "sn_list": ["C1******01"],
+            "start_mode": 2,
+            "business_type": 1,
+        },
+    )["startMode"] == 2
+    assert validate_control_payload(
+        "set_evc_charge_command",
+        {
+            "sn_list": ["C1******01"],
+            "work_cmd": 3,
+            "business_type": 1,
+        },
+    )["workCmd"] == 3
+    assert validate_control_payload(
+        "set_evc_reserve_charge",
+        {
+            "sn_list": ["C1******01"],
+            "charge_start_time": "22:00",
+            "charge_end_time": "06:00",
+            "charge_current": 16,
+            "business_type": 4,
+        },
+    )["chargeCurrent"] == 16
+    assert validate_control_payload(
+        "set_evc_current_limit",
+        {
+            "sn_list": ["C1******01"],
+            "current_limit": 40,
+            "business_type": 4,
+        },
+    )["currentLimit"] == 40
+
+    invalid_payloads = [
+        (
+            "set_charge_scene",
+            {"sn_list": ["C1"], "charger_scene": 9, "business_type": 1},
+        ),
+        (
+            "set_evc_work_mode",
+            {
+                "sn_list": ["C1"],
+                "work_mode": 2,
+                "current_gear": 3,
+                "business_type": 1,
+            },
+        ),
+        (
+            "set_evc_work_mode",
+            {
+                "sn_list": ["C1"],
+                "work_mode": 1,
+                "current_gear": 16,
+                "business_type": 1,
+            },
+        ),
+        (
+            "set_evc_start_mode",
+            {"sn_list": ["C1"], "start_mode": 9, "business_type": 1},
+        ),
+        (
+            "set_evc_charge_command",
+            {"sn_list": ["C1"], "work_cmd": 9, "business_type": 1},
+        ),
+        (
+            "set_evc_reserve_charge",
+            {
+                "sn_list": ["C1"],
+                "charge_start_time": "08:00",
+                "charge_end_time": "08:00",
+                "charge_current": 16,
+                "business_type": 1,
+            },
+        ),
+        (
+            "set_evc_current_limit",
+            {"sn_list": ["C1"], "current_limit": 41, "business_type": 1},
+        ),
+    ]
+    for service, payload in invalid_payloads:
+        with pytest.raises(ControlValidationError) as err:
+            validate_control_payload(service, payload)
+        assert err.value.key == "runtime.errors.control_field_value_invalid"
+
+
 def test_battery_heating_enforces_conditional_fields():
     with pytest.raises(ControlValidationError) as err:
         validate_control_payload(

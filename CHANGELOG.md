@@ -4,7 +4,71 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-_No unreleased changes._
+## [v0.3.0] - 2026-06-27
+
+### Added
+- Added opt-in real execution support for all seven SolaX Developer API EV
+  charger control endpoints. EV commands remain dry-run blocked by default,
+  require discovered EV charger targets, validate v34 enum/range rules, and
+  store sanitized command response metadata including per-device status and
+  request IDs when returned by SolaX.
+- Added native Home Assistant EV charger device controls for discovered EV
+  chargers, including command buttons, work/start/scene selects, current
+  numbers, QR/OCPP text fields, and reserve-charge time fields. These controls
+  use the same validated EV execution path as the service actions and remain
+  unavailable until `EV Charger Controls` is enabled.
+- Added a display-only SolaX history/statistics Lovelace card that manually
+  fetches Developer API device history, yearly plant statistics, or monthly
+  daily plant statistics and charts returned numeric fields without writing to
+  Home Assistant Recorder or long-term statistics.
+- Added `solax_developer_api.list_history_devices` to expose currently
+  discovered inverter, battery, meter, and EV charger devices for history-card
+  selectors without making an outbound SolaX API call.
+- Added `solax_developer_api.list_plant_statistics_targets` and
+  `solax_developer_api.fetch_plant_year_statistics` for display-only yearly
+  plant-statistics graphs built from monthly plant statistic reads.
+- Added `solax_developer_api.fetch_plant_month_statistics` for display-only
+  month graphs built from daily plant statistic rows.
+- Added tests for history device listing, manual meter inclusion, EMS exclusion,
+  plant target listing, yearly/monthly plant statistics, empty loaded-entry
+  handling, and service response wiring.
+- Expanded EV charger control tests; the current Home Assistant stable
+  validation run passes `150` credential-free tests with `95.72%` measured
+  coverage.
+
+### Changed
+- History viewer now has separate Device History and Plant Statistics modes.
+- Device History now supports multiple selected devices, auto-selects all
+  inverters by default, and charts total selected devices plus optional
+  per-device breakdown lines.
+- Device History mode is capped at Week; Month/Year views now use Plant
+  Statistics mode instead.
+- Plant Statistics mode now supports Year and Month views, clickable month
+  drilldown, and clickable day-to-device-history drilldown.
+- History/statistics charts now include pointer/touch tooltips with visible
+  series values.
+- Device History ranges use automatic resolution: short ranges keep
+  5-minute detail, day uses 15 minutes, 2-3 day ranges use 30 minutes, and
+  week uses 60 minutes.
+- Long history fetches are paced when the estimated API request count exceeds
+  the safe threshold, protecting the SolaX 100-calls/minute limit while still
+  supporting API-windowed long ranges.
+
+### Fixed
+- Fixed multi-inverter history chart totals by aligning device samples to the
+  requested API interval grid before calculating total series.
+
+### Documentation
+- Documented the upgraded two-mode history/statistics card resource and YAML examples.
+- Documented automatic device-history resolution, the SolaX 12-hour-per-request
+  history window behavior, multi-device history selection, and plant-statistics
+  year/month drilldown graphs.
+- Updated current README validation numbers to `150` tests and `95.72%`
+  measured coverage.
+
+### Validation
+- `150` credential-free tests pass in the Home Assistant stable container.
+- Measured integration coverage is `95.72%`.
 
 ## [v0.2.2] - 2026-06-24
 

@@ -1,3 +1,4 @@
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -121,14 +122,44 @@ class _Coordinator:
         self.has_history_capable_devices = True
         self.has_ci_devices = True
         self.available_control_services = {"set_export_control"}
+        self.ev_charger_controls_enabled = False
         self.refreshes = 0
         self.listener = None
+        self.executed_ev_controls = []
 
     async def async_request_refresh(self):
         self.refreshes += 1
 
     async def async_fetch_device_history(self, **kwargs):
         return {"history": kwargs}
+
+    async def async_fetch_plant_year_statistics(self, **kwargs):
+        return {"plant_year": kwargs}
+
+    async def async_fetch_plant_month_statistics(self, **kwargs):
+        return {"plant_month": kwargs}
+
+    def list_history_devices(self):
+        return [
+            {
+                "device_sn": "INV",
+                "device_type": 1,
+                "device_type_name": "Inverter",
+                "business_type": 1,
+                "source": "inventory",
+                "label": "Inverter INV",
+            }
+        ]
+
+    def list_plant_statistics_targets(self):
+        return [
+            {
+                "plant_id": "P1",
+                "plant_name": "Plant 1",
+                "business_type": 1,
+                "label": "Plant 1",
+            }
+        ]
 
     async def async_query_request_result(self, request_id):
         return {"request_id": request_id}
@@ -147,6 +178,30 @@ class _Coordinator:
             **kwargs,
             "reason": "blocked",
             "timestamp": "2026-06-23T00:00:00+00:00",
+        }
+
+    async def async_execute_ev_charger_control(self, **kwargs):
+        self.executed_ev_controls.append(kwargs)
+        return {
+            **kwargs,
+            "timestamp": "2026-06-23T00:00:00+00:00",
+            "blocked": False,
+            "sent": True,
+            "accepted": True,
+            "request_id": "REQ1",
+            "device_statuses": {
+                "EVC1": {
+                    "status": 3,
+                    "status_name": "Command issuance succeeded",
+                    "accepted": True,
+                }
+            },
+            "response": {
+                "code": 10000,
+                "message": "success",
+                "requestId": "REQ1",
+                "result": {"EVC1": {"status": 3}},
+            },
         }
 
     def async_add_listener(self, listener):
@@ -290,7 +345,11 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
 
     assert await async_setup(hass, {}) is True
     assert hass.services.has_service(DOMAIN, "manual_refresh")
+    assert hass.services.has_service(DOMAIN, "list_history_devices")
     assert hass.services.has_service(DOMAIN, "fetch_device_history")
+    assert hass.services.has_service(DOMAIN, "list_plant_statistics_targets")
+    assert hass.services.has_service(DOMAIN, "fetch_plant_year_statistics")
+    assert hass.services.has_service(DOMAIN, "fetch_plant_month_statistics")
     assert hass.services.has_service(DOMAIN, "set_export_control")
 
     manual = await hass.services.handler("manual_refresh")(_call())
@@ -299,6 +358,26 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
         _call(entry_id="other")
     )
     assert explicit["count"] == 0
+
+    history_devices = await hass.services.handler("list_history_devices")(_call())
+    assert history_devices["count"] == 1
+    assert history_devices["devices"][0]["device_sn"] == "INV"
+    assert history_devices["devices"][0]["entry_id"] == "entry-1"
+    assert (
+        await hass.services.handler("list_history_devices")(
+            _call(entry_id="missing")
+        )
+    )["devices"] == []
+
+    plant_targets = await hass.services.handler("list_plant_statistics_targets")(_call())
+    assert plant_targets["count"] == 1
+    assert plant_targets["plants"][0]["plant_id"] == "P1"
+    assert plant_targets["plants"][0]["entry_id"] == "entry-1"
+    assert (
+        await hass.services.handler("list_plant_statistics_targets")(
+            _call(entry_id="missing")
+        )
+    )["plants"] == []
 
     with pytest.raises(ServiceValidationError):
         await hass.services.handler("fetch_device_history")(
@@ -323,6 +402,22 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
         )
     )
     assert history["history"]["request_sn_type"] == 1
+    plant_year = await hass.services.handler("fetch_plant_year_statistics")(
+        _call(plant_id="P1", business_type=1, year=datetime.now().year)
+    )
+    assert plant_year["plant_year"]["plant_id"] == "P1"
+    plant_month = await hass.services.handler("fetch_plant_month_statistics")(
+        _call(plant_id="P1", business_type=1, year=datetime.now().year, month=1)
+    )
+    assert plant_month["plant_month"]["month"] == 1
+    with pytest.raises(ServiceValidationError):
+        await hass.services.handler("fetch_plant_year_statistics")(
+            _call(plant_id="P1", business_type=1, year=datetime.now().year + 1)
+        )
+    with pytest.raises(ServiceValidationError):
+        await hass.services.handler("fetch_plant_month_statistics")(
+            _call(plant_id="P1", business_type=1, year=datetime.now().year, month=13)
+        )
     assert (
         await hass.services.handler("query_request_result")(
             _call(request_id="123")
@@ -359,10 +454,67 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
 
     with pytest.raises(ServiceValidationError):
         await hass.services.handler("set_export_control")(_call())
+
+    coordinator.available_control_services = {"set_evc_work_mode"}
+    hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
+    assert hass.services.has_service(DOMAIN, "set_evc_work_mode")
+    dry_ev = await hass.services.handler("set_evc_work_mode")(
+        _call(
+            sn_list=["EVC1"],
+            work_mode=2,
+            current_gear=16,
+            business_type=1,
+        )
+    )
+    assert dry_ev["blocked"] is True
+    assert coordinator.executed_ev_controls == []
+
+    coordinator.ev_charger_controls_enabled = True
+    real_ev = await hass.services.handler("set_evc_work_mode")(
+        _call(
+            sn_list=["EVC1"],
+            work_mode=2,
+            current_gear=16,
+            business_type=1,
+        )
+    )
+    assert real_ev["blocked"] is False
+    assert real_ev["accepted"] is True
+    assert real_ev["request_id"] == "REQ1"
+    assert coordinator.executed_ev_controls[0]["service"] == "set_evc_work_mode"
+
     coordinator.available_control_services = set()
     hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
     assert not hass.services.has_service(DOMAIN, "set_export_control")
     assert hass.services.removed
+
+
+@pytest.mark.asyncio
+async def test_list_history_devices_empty_without_loaded_entries(monkeypatch):
+    async def _loaded(hass):
+        return None
+
+    monkeypatch.setattr(integration, "async_ensure_catalog_loaded", _loaded)
+    hass = _Hass()
+
+    assert await async_setup(hass, {}) is True
+    payload = await hass.services.handler("list_history_devices")(_call())
+
+    assert payload == {
+        "ok": True,
+        "entry_id": None,
+        "entries": [],
+        "count": 0,
+        "devices": [],
+    }
+    plant_payload = await hass.services.handler("list_plant_statistics_targets")(_call())
+    assert plant_payload == {
+        "ok": True,
+        "entry_id": None,
+        "entries": [],
+        "count": 0,
+        "plants": [],
+    }
 
 
 @pytest.mark.asyncio

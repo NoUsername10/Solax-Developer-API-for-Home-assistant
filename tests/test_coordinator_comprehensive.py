@@ -176,6 +176,14 @@ class _FullClient:
     async def query_request_result(self, **kwargs):
         return {"code": 0, "result": {"requestId": kwargs["request_id"]}}
 
+    async def execute_control(self, **kwargs):
+        return {
+            "code": 10000,
+            "message": "success",
+            "requestId": "REQ-EVC",
+            "result": {"D14": {"status": 3}},
+        }
+
 
 def _make(client=None):
     instance = object.__new__(SolaxDeveloperCoordinator)
@@ -203,6 +211,8 @@ def _make(client=None):
     instance._request_result_cache = {}
     instance._master_control_cache = {}
     instance._control_dry_runs = []
+    instance._ev_charger_controls_enabled = False
+    instance._ev_charger_control_commands = []
     instance._manual_meter_entries = [
         {
             "serial": "MANUALMETER",
@@ -274,6 +284,212 @@ def test_constructor_clamps_options_and_initializes_store(monkeypatch):
     assert instance.manual_meter_entries[0]["serial"] == "M1"
     assert instance.manual_ems_entries[0]["serial"] == "E1"
     assert instance._capability_store.key.endswith("entry-x")
+
+
+def test_list_history_devices_filters_sorts_and_includes_manual_meter():
+    instance = _make()
+    instance.data["devices"] = {
+        "EMS1": {
+            "deviceSn": "EMS1",
+            "deviceType": EMS_DEVICE_TYPE,
+            "businessType": 4,
+        },
+        "METER1": {
+            "deviceSn": "METER1",
+            "deviceType": 3,
+            "businessType": 1,
+            "manualSerial": True,
+            "discoverySource": "manual_meter_serial",
+        },
+        "INV1": {
+            "deviceSn": "INV1",
+            "deviceType": 1,
+            "businessType": 1,
+            "discoverySource": "inventory",
+        },
+        "EV1": {
+            "deviceSn": "EV1",
+            "deviceType": 4,
+            "businessType": 4,
+        },
+        "UNKNOWN": {
+            "deviceSn": "UNKNOWN",
+            "deviceType": 999,
+            "businessType": 1,
+        },
+    }
+
+    devices = instance.list_history_devices()
+
+    assert [device["device_sn"] for device in devices] == ["INV1", "METER1", "EV1"]
+    assert devices[0]["device_type_name"] == "Inverter"
+    assert devices[1]["source"] == "manual"
+    assert all(device["device_type"] in (1, 2, 3, 4) for device in devices)
+
+
+def test_list_plant_statistics_targets_sorts_loaded_plants():
+    instance = _make()
+    instance.data["plants"] = {
+        "P2": {"plantId": "P2", "plantName": "Zeta", "businessType": 4},
+        "P1": {"plantId": "P1", "plantName": "Alpha", "businessType": 1},
+        "bad": "ignored",
+    }
+
+    plants = instance.list_plant_statistics_targets()
+
+    assert [plant["plant_id"] for plant in plants] == ["P1", "P2"]
+    assert plants[0]["label"] == "Alpha"
+    assert plants[1]["business_type"] == 4
+
+
+class _PlantYearClient:
+    def __init__(self):
+        self.calls = []
+
+    async def plant_stat_data(self, **kwargs):
+        self.calls.append(kwargs)
+        month = int(str(kwargs["date"]).split("-")[1])
+        return {
+            "code": 10000,
+            "result": {
+                "plantEnergyStatDataList": [
+                    {
+                        "date": kwargs["date"],
+                        "pvGeneration": month,
+                        "earnings": str(month / 10),
+                    }
+                ]
+            },
+        }
+
+
+@pytest.mark.asyncio
+async def test_fetch_plant_year_statistics_past_year_fetches_12_months():
+    client = _PlantYearClient()
+    instance = _make(client)
+
+    result = await instance.async_fetch_plant_year_statistics(
+        plant_id="P1",
+        business_type=1,
+        year=2025,
+    )
+
+    assert result["api_calls_made"] == 12
+    assert result["month_count"] == 12
+    assert len(client.calls) == 12
+    assert client.calls[0]["date"] == "2025-01"
+    assert client.calls[-1]["date"] == "2025-12"
+    assert result["rows"][0]["month"] == "2025-01"
+    assert result["rows"][0]["pvGeneration"] == 1
+    assert result["rows"][-1]["earnings"] == 1.2
+    assert "pvGeneration" in result["available_metric_names"]
+
+
+@pytest.mark.asyncio
+async def test_fetch_plant_year_statistics_current_year_fetches_to_current_month(monkeypatch):
+    client = _PlantYearClient()
+    instance = _make(client)
+    monkeypatch.setattr(
+        coordinator_module.dt_util,
+        "now",
+        lambda: datetime(2026, 6, 24, tzinfo=timezone.utc),
+    )
+
+    result = await instance.async_fetch_plant_year_statistics(
+        plant_id="P1",
+        business_type=1,
+        year=2026,
+    )
+
+    assert result["api_calls_made"] == 6
+    assert result["month_count"] == 6
+    assert [call["date"] for call in client.calls] == [
+        "2026-01",
+        "2026-02",
+        "2026-03",
+        "2026-04",
+        "2026-05",
+        "2026-06",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_fetch_plant_month_statistics_returns_daily_rows():
+    class _PlantMonthClient:
+        def __init__(self):
+            self.calls = []
+
+        async def plant_stat_data(self, **kwargs):
+            self.calls.append(kwargs)
+            return {
+                "code": 10000,
+                "result": {
+                    "plantEnergyStatDataList": [
+                        {
+                            "date": "2026-06-01",
+                            "pvGeneration": "4.2",
+                            "exportEnergy": 1,
+                            "ignored": 100,
+                        },
+                        {
+                            "date": "2026-06-02",
+                            "pvGeneration": 5,
+                            "loadConsumption": "3.5",
+                        },
+                    ]
+                },
+            }
+
+    client = _PlantMonthClient()
+    instance = _make(client)
+
+    result = await instance.async_fetch_plant_month_statistics(
+        plant_id="P1",
+        business_type=1,
+        year=2026,
+        month=6,
+    )
+
+    assert client.calls == [
+        {
+            "plant_id": "P1",
+            "business_type": 1,
+            "date_type": 2,
+            "date": "2026-06",
+        }
+    ]
+    assert result["api_calls_made"] == 1
+    assert result["day_count"] == 2
+    assert result["rows"][0]["date"] == "2026-06-01"
+    assert result["rows"][0]["day"] == 1
+    assert result["rows"][0]["pvGeneration"] == 4.2
+    assert result["rows"][1]["loadConsumption"] == 3.5
+    assert result["available_metric_names"] == [
+        "exportEnergy",
+        "loadConsumption",
+        "pvGeneration",
+    ]
+
+
+class _FailingPlantYearClient:
+    async def plant_stat_data(self, **kwargs):
+        raise SolaxApiError(
+            code=10500,
+            message="permission",
+            classification="permission",
+        )
+
+
+@pytest.mark.asyncio
+async def test_fetch_plant_year_statistics_surfaces_api_errors():
+    instance = _make(_FailingPlantYearClient())
+
+    with pytest.raises(SolaxApiError):
+        await instance.async_fetch_plant_year_statistics(
+            plant_id="P1",
+            business_type=1,
+            year=2025,
+        )
 
 
 @pytest.mark.asyncio
@@ -646,3 +862,75 @@ async def test_on_demand_caches_and_dry_run_limit():
             payload={"value": index},
         )
     assert len(instance.control_dry_runs) == 100
+
+
+@pytest.mark.asyncio
+async def test_ev_charger_control_execution_and_target_validation():
+    instance = _make()
+    instance._ev_charger_controls_enabled = True
+    instance.data["devices"] = {
+        "D14": {
+            "deviceSn": "D14",
+            "deviceType": 4,
+            "businessType": 1,
+        },
+        "D44": {
+            "deviceSn": "D44",
+            "deviceType": 4,
+            "businessType": 4,
+        },
+        "D11": {
+            "deviceSn": "D11",
+            "deviceType": 1,
+            "businessType": 1,
+        },
+    }
+
+    assert instance.ev_charger_controls_enabled is True
+    assert instance.get_known_ev_charger_serial("D14")["source"] == "inventory"
+    assert instance.get_known_ev_charger_serial("D11") is None
+    assert instance._control_response_status_summary(
+        {"code": 10000, "result": {"D14": {"status": 4}}}
+    )["accepted"] is True
+    assert instance._control_response_status_summary(
+        {"code": 10000, "result": {"D14": {"status": 5}}}
+    )["accepted"] is False
+    assert instance._control_response_status_summary(
+        {"code": 10000, "result": []}
+    )["accepted"] is True
+
+    event = await instance.async_execute_ev_charger_control(
+        service="set_evc_work_mode",
+        endpoint="/openapi/v2/device/evc_control/set_evc_work_mode",
+        payload={"snList": ["D14"], "workMode": 2, "currentGear": 16, "businessType": 1},
+    )
+    assert event["sent"] is True
+    assert event["accepted"] is True
+    assert event["request_id"] == "REQ-EVC"
+    assert event["device_statuses"]["D14"]["status"] == 3
+    assert instance.data["meta"]["last_ev_charger_control"] is event
+
+    with pytest.raises(ValueError, match="not_ev_charger_control"):
+        instance._validate_ev_charger_control_targets(
+            service="set_export_control",
+            payload={"snList": ["D14"], "businessType": 1},
+        )
+    with pytest.raises(ValueError, match="control_ev_charger_target_unknown"):
+        instance._validate_ev_charger_control_targets(
+            service="set_evc_work_mode",
+            payload={"snList": ["MISSING"], "businessType": 1},
+        )
+    with pytest.raises(ValueError, match="control_ev_charger_business_type_mismatch"):
+        instance._validate_ev_charger_control_targets(
+            service="set_evc_work_mode",
+            payload={"snList": ["D44"], "businessType": 1},
+        )
+
+    instance._ev_charger_control_commands = [{"index": index} for index in range(100)]
+    await instance.async_execute_ev_charger_control(
+        service="set_evc_charge_command",
+        endpoint="/openapi/v2/device/evc_control/set_evc_charge_command",
+        payload={"snList": ["D14"], "workCmd": 2, "businessType": 1},
+    )
+    assert len(instance.ev_charger_control_commands) == 100
+    assert instance.ev_charger_control_commands[0]["index"] == 1

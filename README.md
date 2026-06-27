@@ -8,9 +8,9 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-96.00%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.72%25-brightgreen.svg)](#quality-and-validation)
 
-**SolaX Developer API** integration to monitor your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
+**SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
 Automatically discovers authorized plants and devices, creates per-device sensors, and provides a system-wide overview with total sensors.
 Requires no YAML configuration or template sensors.
@@ -31,16 +31,17 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 - 🛠️ **No YAML or template sensors required**
 - 🌍 **26-language translation layer**
   - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
-- 🥇 **Home Assistant Gold-standard aligned quality work**
-- ✅ **96.00% automated test coverage**
+- 🥇 **Home Assistant Gold-standard aligned**
 
 This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
 Contributions, issues, and pull requests are welcome.
 
 
 > [!IMPORTANT]
-> All control services (Control of devices) are currently **hard-blocked dry-runs at the moment**. Payloads are validated and audited, but no write request is sent to SolaX for user safety.
-> So, you can read all data from your system, but not control devices, at the moment.
+> EV charger controls can send real SolaX write requests only after you explicitly enable **EV Charger Controls** in integration options.
+> Keep EV charger controls disabled if you want a read-only installation.
+> Inverter, battery, grid, VPP, and EMS control services remain **hard-blocked dry-runs**. 
+
 
 
 ## 🥇 Quality and Validation
@@ -48,14 +49,13 @@ Contributions, issues, and pull requests are welcome.
 This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
 - **Gold-standard aligned:** Quality-scale requirements are implemented and tracked for this custom integration.
-- **Test coverage:** `96.00%`, enforced by CI with a minimum threshold of `95%`.
-- **Automated tests:** `131` credential-free tests.
+- **Test coverage:** `95.72%`, enforced by CI with a minimum threshold of `95%`.
+- **Automated tests:** `150` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
 > [!NOTE]
 > This is a HACS custom integration and is not included in Home Assistant Core. 
-
 
 
 <!-- Future screenshot locations remain invisible until matching Developer API assets are published. -->
@@ -149,7 +149,17 @@ Open **Service API**, select **Authorize**, and authorize the read/monitoring se
 
 ### 5. Keep control services separate from monitoring
 
-Control service packs are not required for normal monitoring. The integration exposes control actions only as schema-validated, hard-blocked dry-runs, and does not send outbound write requests.
+Control service packs are not required for normal monitoring. The integration keeps inverter, battery, grid, VPP, and EMS writes schema-validated and hard-blocked. EV charger writes are available only as an explicit opt-in under Advanced options.
+
+When a compatible EV charger is discovered and **EV Charger Controls** are enabled, Home Assistant also creates native controls directly on the EV charger device:
+
+- Buttons for lock, available, start charging, stop charging, apply charge scene, apply QR code, and apply reserve charge.
+- Selects for work mode, start mode, and charge scene.
+- Numbers for current limit and reserve-charge current.
+- Text fields for QR code, OCPP URL, and OCPP charger ID.
+- Time fields for reserve-charge start and end time.
+
+These device controls use the same validated execution path as the service actions; they are just easier to use from the device page.
 
 <img src="assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
 
@@ -393,7 +403,7 @@ Model names are resolved using the combination of business type, device type, an
 - Add a readable meter or EMS manually when the Developer API supports direct reads but omits the device from inventory discovery.
 - Temporarily increase realtime polling while viewing a dashboard without permanently consuming the same API budget.
 - Download privacy-redacted raw and filtered API diagnostics when a model or account returns an unexpected field set.
-- Prepare and validate control payloads safely while outbound writes remain hard-blocked.
+- Prepare and validate control payloads safely; non-EV writes remain hard-blocked while EV charger writes require explicit opt-in.
 
 <details>
 <summary><b>Commercial and industrial inverter mappings</b></summary><br>
@@ -530,7 +540,11 @@ Universal polling services are always registered. Capability-specific read servi
 - `solax_developer_api.manual_refresh`
 - `solax_developer_api.start_live_view`
 - `solax_developer_api.stop_live_view`
+- `solax_developer_api.list_history_devices`
 - `solax_developer_api.fetch_device_history`
+- `solax_developer_api.list_plant_statistics_targets`
+- `solax_developer_api.fetch_plant_year_statistics`
+- `solax_developer_api.fetch_plant_month_statistics`
 - `solax_developer_api.query_request_result`
 - `solax_developer_api.query_master_control_device`
 
@@ -563,6 +577,25 @@ Required service fields:
 - `time_interval`
 
 All Home Assistant service fields use `snake_case`.
+
+### Plant Statistics
+
+`list_plant_statistics_targets` returns loaded plants without making an outbound SolaX API call.
+
+`fetch_plant_year_statistics` is an on-demand read service for yearly plant graphs. It:
+
+- Fetches monthly plant statistics with `dateType=2`
+- Uses January through the current month for the current year
+- Uses January through December for previous years
+- Returns chart-ready monthly rows and available metric names
+- Does not write anything to Home Assistant Recorder or long-term statistics
+
+`fetch_plant_month_statistics` is an on-demand read service for one month. It:
+
+- Fetches one plant-statistics month with `dateType=2`
+- Returns chart-ready daily rows for that month
+- Uses the same plant-statistics metric extraction as the plant sensors and yearly graph
+- Does not write anything to Home Assistant Recorder or long-term statistics
 
 ### Automation Examples
 
@@ -609,7 +642,7 @@ actions:
 mode: restart
 ```
 
-## 🛡️ Dry-Run Control Services
+## 🛡️ Control Services and EV Charger Writes
 
 Control services are registered only when compatible equipment is present.
 
@@ -663,14 +696,15 @@ Control services are registered only when compatible equipment is present.
 
 </details>
 
-Every dry-run service:
+Every control service and EV charger device control:
 
 1. Accepts documented `snake_case` Home Assistant fields.
 2. Validates required fields, types, values, time formats, ranges, and serial limits.
 3. Converts validated fields to SolaX API-native names internally.
 4. Records a sanitized audit event.
-5. Returns a blocked dry-run result.
-6. Sends **no outbound write request**.
+5. Keeps non-EV charger control families hard-blocked as dry-runs.
+6. Executes EV charger controls only when `EV Charger Controls` is enabled in options.
+7. Returns per-device command status and `requestId` when SolaX provides them.
 
 ## ⚡ Built-in Card-Aware Live View
 
@@ -721,6 +755,74 @@ minimal: true
 No `browser_mod` or other integration is required.
 
 The requested interval is a target. The integration can automatically select a slower effective interval to protect the configured API call budget.
+
+## 📈 Built-in History Viewer Card
+
+The integration also includes a display-only Lovelace card for on-demand SolaX Developer API history and plant statistics.
+
+This card does **not** write fetched API history or plant statistics into Home Assistant Recorder or long-term statistics. It only fetches and charts data inside the card after you press **Fetch History** or **Fetch Statistics**.
+
+### Add the resource
+
+- URL: `/api/solax_developer_api/frontend/solax-history-viewer.js`
+- Type: `module`
+
+### Add the card
+
+Recommended default config:
+
+```yaml
+type: custom:solax-history-viewer
+```
+
+Optional advanced config:
+
+```yaml
+type: custom:solax-history-viewer
+default_range_hours: 6
+max_selected_fields: 6
+```
+
+Only add `entry_id` if you have multiple SolaX Developer API config entries and want this card pinned to one exact entry. If `entry_id` is wrong or copied as a placeholder, the card cannot list devices or plants.
+
+### Device History mode
+
+1. The card loads discovered inverter, battery, meter, and EV charger devices from the integration.
+2. Inverters are auto-selected by default; you can select all devices in a family, one device, or any subset.
+3. You press **Fetch History**.
+4. The card calls `solax_developer_api.fetch_device_history`.
+5. Numeric fields actually returned by the API appear as selectable chips.
+6. Selected fields are charted as total selected devices plus optional per-device breakdown lines.
+
+Device history is capped at **Week** in the UI. Longer yearly-style views use Plant Statistics mode instead.
+
+Device history resolution is automatic so long ranges do not use short 5-minute data everywhere:
+
+- `1h`, `3h`, `6h`, `12h`: `5 min`
+- `Day`: `15 min`
+- `2 days`, `3 days`: `30 min`
+- `Week`: `60 min`
+
+The SolaX device history API accepts a maximum of 12 hours per request. The integration automatically splits longer device-history ranges into safe windows, and the backend still paces very large direct service requests as a safety net.
+
+For multi-day and week results, the card shows day drilldown chips. Clicking a day fetches that exact day through Device History without writing anything to Recorder.
+
+### Plant Statistics mode
+
+1. The card loads discovered plants from the integration.
+2. You select **Year** or **Month** view.
+3. You press **Fetch Statistics**.
+4. Year view calls `solax_developer_api.fetch_plant_year_statistics`.
+5. Month view calls `solax_developer_api.fetch_plant_month_statistics`.
+6. Numeric metrics appear as selectable chips and are charted in the card.
+
+For the current year, Plant Statistics mode fetches January through the current month. For previous years, it fetches January through December. This is the recommended yearly graph path because it uses monthly plant statistics instead of high-volume device-history reads.
+
+Clicking a month in Year view fetches that month. Clicking a day in Month view switches to Device History and fetches that exact day for the selected devices.
+
+The chart includes pointer/touch tooltips with the timestamp or period and visible series values, so multi-field and multi-device graphs can be read directly.
+
+Fields are intentionally discovered from the fetched API response, not from a static list, because SolaX history and statistics fields vary by model, firmware, topology, business type, and account permissions.
 
 ## 🩺 Diagnostics and Privacy
 
@@ -834,7 +936,7 @@ Never post unredacted credentials or Developer Portal secrets.
 - Some meters and EMS systems are readable by serial but absent from inventory endpoints; these require manual validated onboarding.
 - Device history remains an on-demand read service. It does not write historical API samples into Home Assistant's recorder.
 - Callback URL push processing is not implemented.
-- All control services are schema-validated hard-blocked dry-runs. No outbound write request is sent.
+- Non-EV control services are schema-validated hard-blocked dry-runs. EV charger controls can send outbound write requests only when explicitly enabled.
 - A device that is offline can retain its known entities, but current values can remain unavailable until SolaX returns fresh telemetry.
 
 ## 🌍 Translation Support
@@ -905,16 +1007,16 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Gold-standard aligned custom integration
-- **Automated test coverage:** 96.00%
-- **Credential-free automated tests:** 131
+- **Automated test coverage:** 95.72%
+- **Credential-free automated tests:** 150
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active
 - **Manual meter/EMS validation:** Active
 - **Diagnostics and Repairs:** Active
 - **Live View:** Active
-- **Control functionality:** Integrated as hard-blocked dry-run only
-- **Outbound write requests:** Disabled
+- **Control functionality:** Non-EV dry-run only; EV charger controls are explicit opt-in
+- **Outbound write requests:** EV charger endpoints only when enabled; otherwise disabled
 - **Callback URL async push processing:** Deferred
 
 ---

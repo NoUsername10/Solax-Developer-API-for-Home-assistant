@@ -1,5 +1,8 @@
+from unittest.mock import AsyncMock
+
 import pytest
 
+from custom_components.solax_developer_api import api as api_module
 from custom_components.solax_developer_api.api import SolaxDeveloperApiClient
 
 
@@ -172,6 +175,51 @@ async def test_query_request_result_accepts_string_request_id_and_code_zero():
 
 
 @pytest.mark.asyncio
+async def test_execute_control_uses_authenticated_device_post_contract():
+    session = FakeSession(
+        [
+            FakeResponse(
+                200,
+                {
+                    "code": 0,
+                    "result": {"access_token": "token-1", "expires_in": 3600},
+                },
+            ),
+            FakeResponse(
+                200,
+                {
+                    "code": 10000,
+                    "message": "success",
+                    "requestId": "REQ1",
+                    "result": {"EVC1": {"status": 3}},
+                },
+            ),
+        ]
+    )
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+
+    payload = await client.execute_control(
+        path="/openapi/v2/device/evc_control/set_evc_charge_command",
+        payload={"snList": ["EVC1"], "workCmd": 2, "businessType": 1},
+    )
+
+    assert payload["requestId"] == "REQ1"
+    assert session.calls[-1]["method"] == "POST"
+    assert session.calls[-1]["json"]["workCmd"] == 2
+    assert session.calls[-1]["headers"]["Authorization"].startswith("bearer ")
+    with pytest.raises(ValueError):
+        await client.execute_control(
+            path="/openapi/v2/plant/not_a_control",
+            payload={},
+        )
+
+
+@pytest.mark.asyncio
 async def test_ems_read_wrappers_use_dedicated_post_contracts():
     session = FakeSession(
         [
@@ -270,3 +318,40 @@ async def test_device_history_windowed_splits_and_dedupes_rows():
     assert payload["code"] == 10000
     assert payload["windowSummary"]["windowCount"] == 2
     assert [row["value"] for row in payload["result"]] == [1, 2, 3]
+
+
+@pytest.mark.asyncio
+async def test_device_history_windowed_paces_long_requests(monkeypatch):
+    session = FakeSession(
+        [
+            FakeResponse(200, {"code": 0, "result": {"access_token": "token-1", "expires_in": 3600}}),
+            FakeResponse(200, {"code": 10000, "result": []}),
+            FakeResponse(200, {"code": 10000, "result": []}),
+            FakeResponse(200, {"code": 10000, "result": []}),
+        ]
+    )
+    sleep_mock = AsyncMock()
+    monkeypatch.setattr(api_module.asyncio, "sleep", sleep_mock)
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+
+    payload = await client.device_history_data_windowed(
+        sn_list=["SN1"],
+        device_type=1,
+        business_type=1,
+        start_time=0,
+        end_time=3000,
+        time_interval=60,
+        max_window_ms=1000,
+        request_delay_seconds=0.75,
+    )
+
+    assert payload["windowSummary"]["windowCount"] == 3
+    assert payload["windowSummary"]["requestCount"] == 3
+    assert payload["windowSummary"]["requestDelaySeconds"] == 0.75
+    assert sleep_mock.await_count == 2
+    sleep_mock.assert_awaited_with(0.75)
