@@ -124,19 +124,19 @@ You need:
 
 Open the [SolaX Developer Portal](https://developer.solaxcloud.com/home), sign in, and start from **Quick Start** or **Application**.
 
-<img src="assets/setup/1_developer_portal.png" alt="SolaX Developer Portal quick start page" width="70%">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/1_developer_portal.png" alt="SolaX Developer Portal quick start page" width="70%">
 
 ### 2. Create or open an application
 
 Go to **Application** and create a new application, or open an existing application that should be used for Home Assistant.
 
-<img src="assets/setup/2_application.png" alt="SolaX Developer Portal application page" width="100%">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/2_application.png" alt="SolaX Developer Portal application page" width="100%">
 
 ### 3. Copy the Client ID and Client Secret
 
 Open the application's **Authorization** tab and copy the **Client ID** and **Client Secret**. These are entered in the Home Assistant config flow.
 
-<img src="assets/setup/3_auth.png" alt="SolaX Developer Portal authorization tab with Client ID and Client Secret" width="100%">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/3_auth.png" alt="SolaX Developer Portal authorization tab with Client ID and Client Secret" width="100%">
 
 ### 4. Authorize read access services
 
@@ -145,7 +145,7 @@ Open **Service API**, select **Authorize**, and authorize the read/monitoring se
 - **Data Monitoring Service** (`API_Telemetry_V2`)
 - **Information Access Service** (`API_Info_V2`)
 
-<img src="assets/setup/4_services_api.png" alt="SolaX Developer Portal Service API authorization for monitoring services" width="100%">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/4_services_api.png" alt="SolaX Developer Portal Service API authorization for monitoring services" width="100%">
 
 ### 5. Keep control services separate from monitoring
 
@@ -161,7 +161,7 @@ When a compatible EV charger is discovered and **EV Charger Controls** are enabl
 
 These device controls use the same validated execution path as the service actions; they are just easier to use from the device page.
 
-<img src="assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
 
 The integration validates both authentication and read access during setup. A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
 
