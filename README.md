@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-96.07%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.80%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -56,8 +56,8 @@ Contributions, issues, and pull requests are welcome.
 This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
 - **Gold-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
-- **Test coverage:** `96.07%`, enforced by CI with a minimum threshold of `95%`.
-- **Automated tests:** `157` credential-free tests.
+- **Test coverage:** `95.80%`, enforced by CI with a minimum threshold of `95%`.
+- **Automated tests:** `161` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -255,6 +255,8 @@ Changed credentials are validated before they are saved.
 #### Advanced and diagnostics
 
 - Enable or disable rate-limit notifications
+- Enable or disable SolaX alarm persistent notifications
+- Enable or disable real EV charger controls
 
 The integration reloads automatically after saved option changes.
 
@@ -773,6 +775,8 @@ The integration also includes a display-only Lovelace card for on-demand SolaX D
 
 This card does **not** write fetched API history or plant statistics into Home Assistant Recorder or long-term statistics. It only fetches and charts data inside the card after you press **Fetch History** or **Fetch Statistics**.
 
+![SolaX History Viewer card](assets/history-viewer/solax-history.png)
+
 ### Add the resource
 
 - URL: `/api/solax_developer_api/frontend/solax-history-viewer.js`
@@ -848,6 +852,10 @@ The integration includes a separate display-only Lovelace card for manual alarm 
 `GET /openapi/v2/alarm/page_alarm_info`
 
 This card does **not** poll automatically and does **not** write anything to Home Assistant Recorder. It loads local integration targets from Home Assistant, then only calls SolaX when you press **Fetch Alarms**.
+
+The integration also creates a native Home Assistant persistent notification when normal polling detects active SolaX alarms. The **Active Alarm Count** sensor remains the source of truth for automations, while the notification gives a quick attention-needed summary with up to three returned alarm details.
+
+![SolaX Alarm Viewer card](assets/history-viewer/solax-alarm.png)
 
 ### Add the resource
 
@@ -1066,8 +1074,8 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Gold-standard aligned custom integration
-- **Automated test coverage:** 96.07%
-- **Credential-free automated tests:** 157
+- **Automated test coverage:** 95.80%
+- **Credential-free automated tests:** 161
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

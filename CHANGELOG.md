@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.3.2] - 2026-06-28
+
+### Added
+- Added optional SolaX alarm persistent notifications, enabled by default,
+  with active-alarm summaries, up to three returned alarm details, and a
+  cleared message when SolaX returns to zero active alarms.
+- Added focused notification tests; the Home Assistant stable validation run
+  now passes `161` credential-free tests with `95.80%` measured coverage.
+
+### Fixed
+- Alarm Viewer Lovelace card now uses light/dark-safe Home Assistant theme
+  surfaces and registers a card-picker preview like the other bundled cards.
+- Alarm and History Viewer cards now share a tighter header/control style,
+  styled native dropdowns, clearer subtitles, and cooperative fetch
+  cancellation through the new `cancel_fetch` service.
+- Alarm Viewer now defaults to ongoing alarms and moves the fetch button below
+  the dropdown row to avoid clipped controls on narrower dashboard columns.
+- Alarm Viewer header text is now grouped with the icon, matching the History
+  Viewer alignment.
+- Alarm Viewer now uses its own alert-style icon instead of reusing the
+  History Viewer chart icon.
+
 ## [v0.3.1] - 2026-06-28
 
 ### Added
