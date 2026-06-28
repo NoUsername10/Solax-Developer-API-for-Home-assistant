@@ -10,7 +10,14 @@
       "manual_meter_skipped_discovered_body": "One or more serials were not added because they are already auto-discovered devices: {serials}",
       "manual_meter_options_result_body": "Manual meter settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
       "manual_ems_title": "SolaX Developer API - Ръчно EMS Systems",
-      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}"
+      "manual_ems_options_result_body": "Manual EMS settings saved.\nSkipped (already auto-discovered): {skipped_serials}\nRemoved: {removed_serials}",
+      "alarm_active_title": "SolaX active alarm detected",
+      "alarm_active_body": "SolaX reports {count} active alarm(s).\n{alarm_details}\nOpen the SolaX Alarm Viewer card for full details.",
+      "alarm_active_detail_line": "- {plant}: {alarm_name} (code: {error_code}, type: {alarm_type})",
+      "alarm_active_more_line": "- and {count} more active alarm(s)",
+      "alarm_active_no_details": "- No detailed alarm records were returned by SolaX.",
+      "alarm_cleared_title": "SolaX alarms cleared",
+      "alarm_cleared_body": "SolaX reports no active alarms now.\nThe previous active alarm notification has cleared."
     },
     "messages": {
       "dry_run_block_reason": "Hard-blocked write path in development phase"

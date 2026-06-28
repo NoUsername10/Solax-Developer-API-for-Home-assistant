@@ -22,6 +22,7 @@ from .const import (
     API_REGION_CN,
     API_REGION_DEFAULT,
     API_REGION_EU,
+    CONF_ALARM_NOTIFICATIONS,
     CONF_API_REGION,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
@@ -1458,6 +1459,9 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             current_options[CONF_RATE_LIMIT_NOTIFICATIONS] = bool(
                 user_input[CONF_RATE_LIMIT_NOTIFICATIONS]
             )
+            current_options[CONF_ALARM_NOTIFICATIONS] = bool(
+                user_input.get(CONF_ALARM_NOTIFICATIONS, True)
+            )
             current_options[CONF_EV_CHARGER_CONTROLS_ENABLED] = bool(
                 user_input.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
             )
@@ -1471,6 +1475,13 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_RATE_LIMIT_NOTIFICATIONS,
                         default=current_options.get(
                             CONF_RATE_LIMIT_NOTIFICATIONS,
+                            True,
+                        ),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_ALARM_NOTIFICATIONS,
+                        default=current_options.get(
+                            CONF_ALARM_NOTIFICATIONS,
                             True,
                         ),
                     ): selector.BooleanSelector(),

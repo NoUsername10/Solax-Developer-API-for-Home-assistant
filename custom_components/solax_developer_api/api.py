@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from collections.abc import Callable
 from typing import Any, Iterable
 
 import async_timeout
@@ -541,6 +542,7 @@ class SolaxDeveloperApiClient:
         request_sn_type: int | None = None,
         max_window_ms: int = DEVICE_HISTORY_SAFE_WINDOW_MS,
         request_delay_seconds: float = 0.0,
+        cancellation_check: Callable[[], bool] | None = None,
     ) -> dict[str, Any]:
         """Fetch history by splitting into API-safe windows and aggregating rows."""
         normalized_sn = normalize_sn_list(sn_list)
@@ -575,6 +577,23 @@ class SolaxDeveloperApiClient:
 
         for sn_chunk in sn_chunks:
             for window_start, window_end in windows:
+                if cancellation_check is not None and cancellation_check():
+                    return {
+                        "code": SUCCESS_CODE_API,
+                        "message": "cancelled",
+                        "result": combined_rows,
+                        "windowSummary": {
+                            "windowCount": len(windows),
+                            "snChunkCount": len(sn_chunks),
+                            "requestCount": request_count,
+                            "maxWindowMs": max_window_ms,
+                            "requestDelaySeconds": safe_delay,
+                            "requestStartTime": int(start_time),
+                            "requestEndTime": int(end_time),
+                            "serialIsolatedRequests": True,
+                            "cancelled": True,
+                        },
+                    }
                 payload = await self.device_history_data(
                     sn_list=sn_chunk,
                     device_type=device_type,
@@ -595,7 +614,28 @@ class SolaxDeveloperApiClient:
                             seen_identity.add(row_id)
                         combined_rows.append(row)
                 elif isinstance(rows, dict):
-                    combined_rows.append(rows)
+                        combined_rows.append(rows)
+                if (
+                    cancellation_check is not None
+                    and cancellation_check()
+                    and request_count < total_requests
+                ):
+                    return {
+                        "code": SUCCESS_CODE_API,
+                        "message": "cancelled",
+                        "result": combined_rows,
+                        "windowSummary": {
+                            "windowCount": len(windows),
+                            "snChunkCount": len(sn_chunks),
+                            "requestCount": request_count,
+                            "maxWindowMs": max_window_ms,
+                            "requestDelaySeconds": safe_delay,
+                            "requestStartTime": int(start_time),
+                            "requestEndTime": int(end_time),
+                            "serialIsolatedRequests": True,
+                            "cancelled": True,
+                        },
+                    }
                 if safe_delay > 0 and request_count < total_requests:
                     await asyncio.sleep(safe_delay)
 

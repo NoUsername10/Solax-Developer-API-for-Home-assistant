@@ -19,6 +19,7 @@ class SolaxRuntimeData:
     client: SolaxDeveloperApiClient
     coordinator: SolaxDeveloperCoordinator
     rate_limit_unsub: CALLBACK_TYPE | None = None
+    alarm_notification_state: str = "none"
 
 
 SolaxConfigEntry: TypeAlias = ConfigEntry[SolaxRuntimeData]

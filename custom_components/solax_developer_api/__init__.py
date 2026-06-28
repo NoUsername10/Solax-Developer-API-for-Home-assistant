@@ -21,6 +21,7 @@ from homeassistant.util import dt as dt_util
 
 from .api import SolaxDeveloperApiClient
 from .const import (
+    CONF_ALARM_NOTIFICATIONS,
     CONF_API_REGION,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
@@ -42,6 +43,7 @@ from .const import (
     MIN_LIVE_VIEW_INTERVAL,
     PLATFORMS,
     RUNTIME_RELOAD_STATE,
+    SERVICE_CANCEL_FETCH,
     SERVICE_FETCH_PLANT_MONTH_STATISTICS,
     SERVICE_FETCH_PLANT_YEAR_STATISTICS,
     SERVICE_FETCH_DEVICE_HISTORY,
@@ -68,6 +70,9 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 FRONTEND_STATIC_URL_PATH = f"/api/{DOMAIN}/frontend"
 REPAIR_API_RATE_LIMIT = "api_rate_limit"
 REPAIR_API_PERMISSION = "api_permission"
+ALARM_NOTIFICATION_NONE = "none"
+ALARM_NOTIFICATION_ACTIVE = "active"
+ALARM_NOTIFICATION_CLEARED = "cleared"
 _SENSITIVE_LOG_KEY_HINTS = (
     "token",
     "secret",
@@ -153,11 +158,22 @@ def _rate_limit_notification_id(entry_id: str) -> str:
     return f"{DOMAIN}_rate_limit_{entry_id}"
 
 
+def _alarm_notification_id(entry_id: str) -> str:
+    return f"{DOMAIN}_alarm_{entry_id}"
+
+
 def _rate_limit_notifications_enabled(hass: HomeAssistant, entry_id: str) -> bool:
     entry = hass.config_entries.async_get_entry(entry_id)
     if entry is None:
         return True
     return bool(entry.options.get(CONF_RATE_LIMIT_NOTIFICATIONS, True))
+
+
+def _alarm_notifications_enabled(hass: HomeAssistant, entry_id: str) -> bool:
+    entry = hass.config_entries.async_get_entry(entry_id)
+    if entry is None:
+        return True
+    return bool(entry.options.get(CONF_ALARM_NOTIFICATIONS, True))
 
 
 def _update_rate_limit_notification(
@@ -199,6 +215,214 @@ def _update_rate_limit_notification(
         ),
         notification_id=notification_id,
     )
+
+
+def _alarm_notification_state(
+    hass: HomeAssistant,
+    entry_id: str,
+) -> str:
+    entry = hass.config_entries.async_get_entry(entry_id)
+    runtime = getattr(entry, "runtime_data", None) if entry is not None else None
+    return str(
+        getattr(runtime, "alarm_notification_state", ALARM_NOTIFICATION_NONE)
+        or ALARM_NOTIFICATION_NONE
+    )
+
+
+def _set_alarm_notification_state(
+    hass: HomeAssistant,
+    entry_id: str,
+    state: str,
+) -> None:
+    entry = hass.config_entries.async_get_entry(entry_id)
+    runtime = getattr(entry, "runtime_data", None) if entry is not None else None
+    if runtime is not None:
+        runtime.alarm_notification_state = state
+
+
+def _alarm_refresh_has_errors(coordinator: SolaxDeveloperCoordinator) -> bool:
+    for error in (coordinator.data.get("last_errors") or []):
+        if not isinstance(error, Mapping):
+            continue
+        context = str(error.get("context") or "").casefold()
+        endpoint = str(error.get("endpoint") or "").casefold()
+        if "alarm" in context or "alarm" in endpoint:
+            return True
+    return False
+
+
+def _plant_alarm_label(
+    hass: HomeAssistant,
+    plant_id: str,
+    plants: Mapping[str, Any],
+) -> str:
+    plant = plants.get(plant_id) if isinstance(plants, Mapping) else None
+    if isinstance(plant, Mapping):
+        for key in ("plantName", "plant_name", "name"):
+            label = str(plant.get(key) or "").strip()
+            if label:
+                return label
+    return translate(
+        hass,
+        "runtime.entity_templates.plant_name",
+        placeholders={"plant_id": plant_id},
+        fallback="Plant {plant_id}",
+    )
+
+
+def _alarm_field_text(hass: HomeAssistant, value: Any) -> str:
+    text = str(value or "").strip()
+    if text:
+        return text
+    return translate(hass, "runtime.labels.unknown", fallback="Unknown")
+
+
+def _active_alarm_summary(
+    hass: HomeAssistant,
+    coordinator: SolaxDeveloperCoordinator,
+) -> tuple[int, list[dict[str, str]]]:
+    alarms = coordinator.data.get("alarms") or {}
+    plants = coordinator.data.get("plants") or {}
+    total = 0
+    details: list[dict[str, str]] = []
+
+    if not isinstance(alarms, Mapping):
+        return 0, []
+
+    for plant_id_raw, alarm_payload in sorted(alarms.items(), key=lambda item: str(item[0])):
+        plant_id = str(plant_id_raw)
+        if not isinstance(alarm_payload, Mapping):
+            continue
+        records = alarm_payload.get("records") or []
+        if not isinstance(records, list):
+            records = []
+        try:
+            total += int(alarm_payload.get("total") or len(records))
+        except (TypeError, ValueError):
+            total += len(records)
+        plant_label = _plant_alarm_label(hass, plant_id, plants)
+        for record in records:
+            if not isinstance(record, Mapping):
+                continue
+            details.append(
+                {
+                    "plant": plant_label,
+                    "alarm_name": _alarm_field_text(hass, record.get("alarmName")),
+                    "error_code": _alarm_field_text(hass, record.get("errorCode")),
+                    "alarm_type": _alarm_field_text(hass, record.get("alarmType")),
+                }
+            )
+
+    return total, details
+
+
+def _alarm_detail_lines(
+    hass: HomeAssistant,
+    total: int,
+    details: list[dict[str, str]],
+) -> str:
+    rendered: list[str] = []
+    for detail in details[:3]:
+        rendered.append(
+            translate(
+                hass,
+                "runtime.notifications.alarm_active_detail_line",
+                placeholders=detail,
+                fallback=(
+                    "- {plant}: {alarm_name} "
+                    "(code: {error_code}, type: {alarm_type})"
+                ),
+            )
+        )
+
+    remaining = max(0, total - len(rendered))
+    if remaining:
+        rendered.append(
+            translate(
+                hass,
+                "runtime.notifications.alarm_active_more_line",
+                placeholders={"count": remaining},
+                fallback="- and {count} more active alarm(s)",
+            )
+        )
+
+    if rendered:
+        return "\n".join(rendered)
+
+    return translate(
+        hass,
+        "runtime.notifications.alarm_active_no_details",
+        fallback="- No detailed alarm records were returned by SolaX.",
+    )
+
+
+def _update_alarm_notification(
+    hass: HomeAssistant,
+    entry_id: str,
+    coordinator: SolaxDeveloperCoordinator,
+) -> None:
+    notification_id = _alarm_notification_id(entry_id)
+    if not _alarm_notifications_enabled(hass, entry_id):
+        persistent_notification.async_dismiss(hass, notification_id)
+        _set_alarm_notification_state(hass, entry_id, ALARM_NOTIFICATION_NONE)
+        return
+
+    total, details = _active_alarm_summary(hass, coordinator)
+    previous_state = _alarm_notification_state(hass, entry_id)
+
+    if total > 0:
+        body = translate(
+            hass,
+            "runtime.notifications.alarm_active_body",
+            placeholders={
+                "count": total,
+                "alarm_details": _alarm_detail_lines(hass, total, details),
+            },
+            fallback=(
+                "SolaX reports {count} active alarm(s).\n"
+                "{alarm_details}\n"
+                "Open the SolaX Alarm Viewer card for full details."
+            ),
+        )
+        persistent_notification.async_create(
+            hass,
+            body,
+            title=translate(
+                hass,
+                "runtime.notifications.alarm_active_title",
+                fallback="SolaX active alarm detected",
+            ),
+            notification_id=notification_id,
+        )
+        _set_alarm_notification_state(hass, entry_id, ALARM_NOTIFICATION_ACTIVE)
+        return
+
+    if _alarm_refresh_has_errors(coordinator):
+        return
+
+    if previous_state == ALARM_NOTIFICATION_ACTIVE:
+        persistent_notification.async_create(
+            hass,
+            translate(
+                hass,
+                "runtime.notifications.alarm_cleared_body",
+                fallback=(
+                    "SolaX reports no active alarms now.\n"
+                    "The previous active alarm notification has cleared."
+                ),
+            ),
+            title=translate(
+                hass,
+                "runtime.notifications.alarm_cleared_title",
+                fallback="SolaX alarms cleared",
+            ),
+            notification_id=notification_id,
+        )
+        _set_alarm_notification_state(hass, entry_id, ALARM_NOTIFICATION_CLEARED)
+        return
+
+    if previous_state == ALARM_NOTIFICATION_NONE:
+        persistent_notification.async_dismiss(hass, notification_id)
 
 
 def _repair_issue_id(entry_id: str, issue_type: str) -> str:
@@ -428,6 +652,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                 if call.data.get("request_sn_type") is not None
                 else None
             ),
+            request_id=str(call.data.get("request_id") or "").strip() or None,
         )
         return response
 
@@ -444,6 +669,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             plant_id=str(call.data["plant_id"]).strip(),
             business_type=int(call.data["business_type"]),
             year=year,
+            request_id=str(call.data.get("request_id") or "").strip() or None,
         )
 
     async def _handle_fetch_plant_month_statistics(call: ServiceCall):
@@ -471,6 +697,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             business_type=int(call.data["business_type"]),
             year=year,
             month=month,
+            request_id=str(call.data.get("request_id") or "").strip() or None,
         )
 
     async def _handle_fetch_alarm_information(call: ServiceCall):
@@ -485,7 +712,27 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             alarm_state=call.data.get("alarm_state", "all"),
             device_sn=str(call.data.get("device_sn") or "").strip() or None,
             max_pages=int(call.data.get("max_pages") or 20),
+            request_id=str(call.data.get("request_id") or "").strip() or None,
         )
+
+    async def _handle_cancel_fetch(call: ServiceCall):
+        request_id = str(call.data["request_id"]).strip()
+        explicit_entry_id = str(call.data.get("entry_id") or "").strip()
+        if explicit_entry_id:
+            entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
+            result = coordinator.cancel_fetch(request_id)
+            return {"ok": result["ok"], "entries": {entry_id: result}}
+        results: dict[str, Any] = {}
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            runtime = _loaded_runtime_for_entry(hass, config_entry.entry_id)
+            if runtime is None:
+                continue
+            results[config_entry.entry_id] = runtime.coordinator.cancel_fetch(request_id)
+        return {
+            "ok": bool(results),
+            "request_id": request_id,
+            "entries": results,
+        }
 
     async def _handle_query_request_result(call: ServiceCall):
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
@@ -564,6 +811,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             vol.Optional("request_sn_type"): vol.All(
                 vol.Coerce(int), vol.In([1, 2])
             ),
+            vol.Optional("request_id"): vol.All(
+                vol.Coerce(str), vol.Length(min=1)
+            ),
         }
     )
 
@@ -575,6 +825,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
                 vol.Coerce(int), vol.In([1, 4])
             ),
             vol.Required("year"): vol.Coerce(int),
+            vol.Optional("request_id"): vol.All(
+                vol.Coerce(str), vol.Length(min=1)
+            ),
         }
     )
     plant_month_statistics_schema = vol.Schema(
@@ -586,6 +839,9 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             ),
             vol.Required("year"): vol.Coerce(int),
             vol.Required("month"): vol.Coerce(int),
+            vol.Optional("request_id"): vol.All(
+                vol.Coerce(str), vol.Length(min=1)
+            ),
         }
     )
     alarm_information_schema = vol.Schema(
@@ -601,6 +857,18 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             vol.Optional("device_sn"): str,
             vol.Optional("max_pages", default=20): vol.All(
                 vol.Coerce(int), vol.Range(min=1, max=100)
+            ),
+            vol.Optional("request_id"): vol.All(
+                vol.Coerce(str), vol.Length(min=1)
+            ),
+        }
+    )
+
+    cancel_fetch_schema = vol.Schema(
+        {
+            vol.Optional("entry_id"): str,
+            vol.Required("request_id"): vol.All(
+                vol.Coerce(str), vol.Length(min=1)
             ),
         }
     )
@@ -699,6 +967,11 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             SERVICE_STOP_LIVE_VIEW,
             _handle_stop_live_view,
             schema=vol.Schema({vol.Optional("entry_id"): str}),
+        )
+        _register_service(
+            SERVICE_CANCEL_FETCH,
+            _handle_cancel_fetch,
+            schema=cancel_fetch_schema,
         )
 
     control_handlers: dict[str, Any] = {}
@@ -900,10 +1173,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> boo
         register_universal_services()
 
     _update_rate_limit_notification(hass, entry.entry_id, coordinator)
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
     _update_repairs(hass, entry.entry_id, coordinator)
 
     def _handle_coordinator_update() -> None:
         _update_rate_limit_notification(hass, entry.entry_id, coordinator)
+        _update_alarm_notification(hass, entry.entry_id, coordinator)
         _update_repairs(hass, entry.entry_id, coordinator)
         sync_services = hass.data.get(RUNTIME_RELOAD_STATE, {}).get(
             "sync_capability_services"
@@ -968,6 +1243,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> bo
         unsub()
 
     persistent_notification.async_dismiss(hass, _rate_limit_notification_id(entry.entry_id))
+    persistent_notification.async_dismiss(hass, _alarm_notification_id(entry.entry_id))
     ir.async_delete_issue(
         hass,
         DOMAIN,
@@ -997,6 +1273,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: SolaxConfigEntry) -> bo
             SERVICE_LIST_PLANT_STATISTICS_TARGETS,
             SERVICE_FETCH_PLANT_YEAR_STATISTICS,
             SERVICE_FETCH_PLANT_MONTH_STATISTICS,
+            SERVICE_LIST_ALARM_TARGETS,
+            SERVICE_FETCH_ALARM_INFORMATION,
+            SERVICE_CANCEL_FETCH,
             SERVICE_START_LIVE_VIEW,
             SERVICE_STOP_LIVE_VIEW,
             SERVICE_QUERY_REQUEST_RESULT,

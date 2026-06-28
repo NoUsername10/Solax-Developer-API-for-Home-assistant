@@ -192,6 +192,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
 
         self._poll_count = 0
         self._history_cache: dict[str, dict[str, Any]] = {}
+        self._active_fetch_request_ids: set[str] = set()
+        self._cancelled_fetch_request_ids: set[str] = set()
         self._request_result_cache: dict[str, dict[str, Any]] = {}
         self._master_control_cache: dict[str, dict[str, Any]] = {}
         self._control_dry_runs: list[dict[str, Any]] = []
@@ -214,6 +216,45 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         )
 
         self.data = self._empty_state()
+
+    @staticmethod
+    def _normalize_fetch_request_id(request_id: str | None) -> str | None:
+        """Return a normalized frontend fetch request id."""
+        normalized = str(request_id or "").strip()
+        return normalized or None
+
+    def _begin_fetch_request(self, request_id: str | None) -> str | None:
+        """Track a frontend fetch request while it is running."""
+        normalized = self._normalize_fetch_request_id(request_id)
+        if normalized is not None:
+            self._active_fetch_request_ids.add(normalized)
+        return normalized
+
+    def _finish_fetch_request(self, request_id: str | None) -> None:
+        """Forget a completed frontend fetch request."""
+        normalized = self._normalize_fetch_request_id(request_id)
+        if normalized is not None:
+            self._active_fetch_request_ids.discard(normalized)
+            self._cancelled_fetch_request_ids.discard(normalized)
+
+    def _is_fetch_cancelled(self, request_id: str | None) -> bool:
+        """Return whether a frontend fetch request was cancelled."""
+        normalized = self._normalize_fetch_request_id(request_id)
+        return normalized is not None and normalized in self._cancelled_fetch_request_ids
+
+    def cancel_fetch(self, request_id: str) -> dict[str, Any]:
+        """Mark a frontend fetch request as cancelled."""
+        normalized = self._normalize_fetch_request_id(request_id)
+        if normalized is None:
+            return {"ok": False, "cancelled": False, "request_id": ""}
+        was_active = normalized in self._active_fetch_request_ids
+        self._cancelled_fetch_request_ids.add(normalized)
+        return {
+            "ok": True,
+            "cancelled": True,
+            "request_id": normalized,
+            "was_active": was_active,
+        }
 
     async def async_load_capability_cache(self) -> None:
         """Load cached observed realtime fields by device serial."""
@@ -2452,8 +2493,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         end_time: int,
         time_interval: int,
         request_sn_type: int | None = None,
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         """Fetch history data on demand and cache by parameter key."""
+        fetch_request_id = self._begin_fetch_request(request_id)
         normalized_sn = normalize_sn_list(sn_list)
         window_count = max(
             1,
@@ -2471,16 +2514,20 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             if estimated_request_count > HISTORY_PACING_THRESHOLD_REQUESTS
             else 0.0
         )
-        payload = await self.client.device_history_data_windowed(
-            sn_list=normalized_sn,
-            device_type=device_type,
-            business_type=business_type,
-            start_time=start_time,
-            end_time=end_time,
-            time_interval=time_interval,
-            request_sn_type=request_sn_type,
-            request_delay_seconds=request_delay_seconds,
-        )
+        try:
+            payload = await self.client.device_history_data_windowed(
+                sn_list=normalized_sn,
+                device_type=device_type,
+                business_type=business_type,
+                start_time=start_time,
+                end_time=end_time,
+                time_interval=time_interval,
+                request_sn_type=request_sn_type,
+                request_delay_seconds=request_delay_seconds,
+                cancellation_check=lambda: self._is_fetch_cancelled(fetch_request_id),
+            )
+        finally:
+            self._finish_fetch_request(fetch_request_id)
 
         cache_key = "|".join(
             [
@@ -2507,6 +2554,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 "estimatedRequestCount": estimated_request_count,
                 "requestDelaySeconds": request_delay_seconds,
                 "serialIsolatedRequests": True,
+                "requestId": fetch_request_id,
             },
             "window_summary": window_summary,
             "response": payload,
@@ -2522,6 +2570,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "code": payload.get("code"),
             "message": payload.get("message"),
             "window_summary": window_summary,
+            "cancelled": bool(window_summary.get("cancelled")),
+            "request_id": fetch_request_id,
         }
 
     async def async_fetch_alarm_information(
@@ -2532,8 +2582,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         alarm_state: str | int = "all",
         device_sn: str | None = None,
         max_pages: int = 20,
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         """Fetch paged plant alarm information on demand."""
+        fetch_request_id = self._begin_fetch_request(request_id)
         targets = self.list_alarm_targets()
         plants = targets["plants"]
         target_plants: list[dict[str, Any]] = []
@@ -2568,6 +2620,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             target_plants = [dict(plant) for plant in plants]
 
         if not target_plants:
+            self._finish_fetch_request(fetch_request_id)
             return {
                 "ok": True,
                 "records": [],
@@ -2577,6 +2630,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 "available_fields": [],
                 "state_counts": {"ongoing": 0, "closed": 0},
                 "page_summaries": [],
+                "cancelled": False,
+                "request_id": fetch_request_id,
             }
 
         states = self._normalize_alarm_states(alarm_state)
@@ -2586,107 +2641,118 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         seen: set[tuple[Any, ...]] = set()
         api_calls_made = 0
 
-        for plant in target_plants:
-            plant_id_text = str(plant["plant_id"])
-            plant_business_type = int(plant.get("business_type") or business_type or 1)
-            for state in states:
-                page_no = 1
-                while page_no <= bounded_max_pages:
-                    payload = await self.client.page_alarm_info(
-                        plant_id=plant_id_text,
-                        business_type=plant_business_type,
-                        alarm_state=state,
-                        page_no=page_no,
-                        device_sn=normalized_device_sn or None,
-                    )
-                    api_calls_made += 1
-                    result = payload.get("result") or {}
-                    if not isinstance(result, Mapping):
-                        result = {}
-                    raw_records = result.get("records") or []
-                    if not isinstance(raw_records, list):
-                        raw_records = []
+        def _response(cancelled: bool = False) -> dict[str, Any]:
+            records.sort(
+                key=lambda item: (
+                    self._coerce_int(item.get("alarmState")),
+                    str(item.get("alarmStartTime") or ""),
+                    str(item.get("deviceSn") or ""),
+                    str(item.get("alarmName") or ""),
+                ),
+                reverse=True,
+            )
+            available_fields = sorted({key for row in records for key in row})
+            state_counts = {
+                "ongoing": sum(
+                    1 for row in records if self._coerce_int(row.get("alarmState")) == 1
+                ),
+                "closed": sum(
+                    1 for row in records if self._coerce_int(row.get("alarmState")) == 0
+                ),
+            }
+            return {
+                "ok": True,
+                "records": records,
+                "count": len(records),
+                "api_calls_made": api_calls_made,
+                "targets": target_plants,
+                "available_fields": available_fields,
+                "state_counts": state_counts,
+                "page_summaries": page_summaries,
+                "cancelled": cancelled,
+                "request_id": fetch_request_id,
+            }
 
-                    page_summaries.append(
-                        {
-                            "plant_id": plant_id_text,
-                            "business_type": plant_business_type,
-                            "alarm_state": state,
-                            "page_no": page_no,
-                            "code": payload.get("code"),
-                            "message": payload.get("message"),
-                            "total": result.get("total"),
-                            "pages": result.get("pages"),
-                            "current": result.get("current"),
-                            "size": result.get("size"),
-                            "record_count": len(raw_records),
-                        }
-                    )
-
-                    for row in raw_records:
-                        if not isinstance(row, Mapping):
-                            continue
-                        enriched = dict(row)
-                        enriched.setdefault("plantId", result.get("plantId") or plant_id_text)
-                        enriched.setdefault("businessType", plant_business_type)
-                        enriched.setdefault("queriedAlarmState", state)
-                        if enriched.get("deviceType") is not None:
-                            enriched["deviceTypeName"] = self._device_type_text(
-                                enriched.get("deviceType")
-                            )
-                        if enriched.get("deviceModel") is not None:
-                            enriched["deviceModelName"] = self._device_model_text(
-                                enriched.get("deviceModel"),
-                                business_type=plant_business_type,
-                                device_type=enriched.get("deviceType"),
-                            )
-                        dedupe_key = (
-                            enriched.get("plantId"),
-                            enriched.get("deviceSn"),
-                            enriched.get("errorCode"),
-                            enriched.get("alarmName"),
-                            enriched.get("alarmStartTime"),
-                            enriched.get("alarmState"),
+        try:
+            for plant in target_plants:
+                plant_id_text = str(plant["plant_id"])
+                plant_business_type = int(plant.get("business_type") or business_type or 1)
+                for state in states:
+                    page_no = 1
+                    while page_no <= bounded_max_pages:
+                        if self._is_fetch_cancelled(fetch_request_id):
+                            return _response(cancelled=True)
+                        payload = await self.client.page_alarm_info(
+                            plant_id=plant_id_text,
+                            business_type=plant_business_type,
+                            alarm_state=state,
+                            page_no=page_no,
+                            device_sn=normalized_device_sn or None,
                         )
-                        if dedupe_key in seen:
-                            continue
-                        seen.add(dedupe_key)
-                        records.append(enriched)
+                        api_calls_made += 1
+                        if self._is_fetch_cancelled(fetch_request_id):
+                            return _response(cancelled=True)
+                        result = payload.get("result") or {}
+                        if not isinstance(result, Mapping):
+                            result = {}
+                        raw_records = result.get("records") or []
+                        if not isinstance(raw_records, list):
+                            raw_records = []
 
-                    pages = self._coerce_int(result.get("pages")) or 1
-                    current = self._coerce_int(result.get("current")) or page_no
-                    if current >= pages or not raw_records:
-                        break
-                    page_no += 1
+                        page_summaries.append(
+                            {
+                                "plant_id": plant_id_text,
+                                "business_type": plant_business_type,
+                                "alarm_state": state,
+                                "page_no": page_no,
+                                "code": payload.get("code"),
+                                "message": payload.get("message"),
+                                "total": result.get("total"),
+                                "pages": result.get("pages"),
+                                "current": result.get("current"),
+                                "size": result.get("size"),
+                                "record_count": len(raw_records),
+                            }
+                        )
 
-        records.sort(
-            key=lambda item: (
-                self._coerce_int(item.get("alarmState")),
-                str(item.get("alarmStartTime") or ""),
-                str(item.get("deviceSn") or ""),
-                str(item.get("alarmName") or ""),
-            ),
-            reverse=True,
-        )
-        available_fields = sorted({key for row in records for key in row})
-        state_counts = {
-            "ongoing": sum(
-                1 for row in records if self._coerce_int(row.get("alarmState")) == 1
-            ),
-            "closed": sum(
-                1 for row in records if self._coerce_int(row.get("alarmState")) == 0
-            ),
-        }
-        return {
-            "ok": True,
-            "records": records,
-            "count": len(records),
-            "api_calls_made": api_calls_made,
-            "targets": target_plants,
-            "available_fields": available_fields,
-            "state_counts": state_counts,
-            "page_summaries": page_summaries,
-        }
+                        for row in raw_records:
+                            if not isinstance(row, Mapping):
+                                continue
+                            enriched = dict(row)
+                            enriched.setdefault("plantId", result.get("plantId") or plant_id_text)
+                            enriched.setdefault("businessType", plant_business_type)
+                            enriched.setdefault("queriedAlarmState", state)
+                            if enriched.get("deviceType") is not None:
+                                enriched["deviceTypeName"] = self._device_type_text(
+                                    enriched.get("deviceType")
+                                )
+                            if enriched.get("deviceModel") is not None:
+                                enriched["deviceModelName"] = self._device_model_text(
+                                    enriched.get("deviceModel"),
+                                    business_type=plant_business_type,
+                                    device_type=enriched.get("deviceType"),
+                                )
+                            dedupe_key = (
+                                enriched.get("plantId"),
+                                enriched.get("deviceSn"),
+                                enriched.get("errorCode"),
+                                enriched.get("alarmName"),
+                                enriched.get("alarmStartTime"),
+                                enriched.get("alarmState"),
+                            )
+                            if dedupe_key in seen:
+                                continue
+                            seen.add(dedupe_key)
+                            records.append(enriched)
+
+                        pages = self._coerce_int(result.get("pages")) or 1
+                        current = self._coerce_int(result.get("current")) or page_no
+                        if current >= pages or not raw_records:
+                            break
+                        page_no += 1
+            return _response()
+        finally:
+            self._finish_fetch_request(fetch_request_id)
 
     @staticmethod
     def _normalize_alarm_states(alarm_state: str | int) -> list[int]:
@@ -2706,43 +2772,53 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         plant_id: str,
         business_type: int,
         year: int,
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         """Fetch monthly plant statistics for one year and prepare chart rows."""
+        fetch_request_id = self._begin_fetch_request(request_id)
         now = dt_util.now()
         normalized_year = int(year)
         month_count = now.month if normalized_year == now.year else 12
         rows: list[dict[str, Any]] = []
         raw_months: list[dict[str, Any]] = []
 
-        for month in range(1, month_count + 1):
-            date_text = f"{normalized_year}-{month:02d}"
-            payload = await self.client.plant_stat_data(
-                plant_id=plant_id,
-                business_type=business_type,
-                date_type=2,
-                date=date_text,
-            )
-            result = payload.get("result") or {}
-            metrics = extract_plant_stat_metrics(result if isinstance(result, dict) else {})
-            timestamp = int(
-                datetime(normalized_year, month, 1, tzinfo=timezone.utc).timestamp()
-                * 1000
-            )
-            rows.append(
-                {
-                    "month": date_text,
-                    "timestamp": timestamp,
-                    **metrics,
-                }
-            )
-            raw_months.append(
-                {
-                    "month": date_text,
-                    "code": payload.get("code"),
-                    "message": payload.get("message"),
-                    "result": result,
-                }
-            )
+        try:
+            for month in range(1, month_count + 1):
+                if self._is_fetch_cancelled(fetch_request_id):
+                    break
+                date_text = f"{normalized_year}-{month:02d}"
+                payload = await self.client.plant_stat_data(
+                    plant_id=plant_id,
+                    business_type=business_type,
+                    date_type=2,
+                    date=date_text,
+                )
+                result = payload.get("result") or {}
+                metrics = extract_plant_stat_metrics(result if isinstance(result, dict) else {})
+                timestamp = int(
+                    datetime(normalized_year, month, 1, tzinfo=timezone.utc).timestamp()
+                    * 1000
+                )
+                rows.append(
+                    {
+                        "month": date_text,
+                        "timestamp": timestamp,
+                        **metrics,
+                    }
+                )
+                raw_months.append(
+                    {
+                        "month": date_text,
+                        "code": payload.get("code"),
+                        "message": payload.get("message"),
+                        "result": result,
+                    }
+                )
+                if self._is_fetch_cancelled(fetch_request_id):
+                    break
+            cancelled = self._is_fetch_cancelled(fetch_request_id)
+        finally:
+            self._finish_fetch_request(fetch_request_id)
 
         available_metric_names = sorted(
             {
@@ -2758,10 +2834,12 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "business_type": business_type,
             "year": normalized_year,
             "month_count": month_count,
-            "api_calls_made": month_count,
+            "api_calls_made": len(raw_months),
             "available_metric_names": available_metric_names,
             "rows": rows,
             "raw_months": raw_months,
+            "cancelled": cancelled,
+            "request_id": fetch_request_id,
         }
 
     async def async_fetch_plant_month_statistics(
@@ -2771,17 +2849,40 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         business_type: int,
         year: int,
         month: int,
+        request_id: str | None = None,
     ) -> dict[str, Any]:
         """Fetch daily plant statistics for one month and prepare chart rows."""
+        fetch_request_id = self._begin_fetch_request(request_id)
         normalized_year = int(year)
         normalized_month = int(month)
         date_text = f"{normalized_year}-{normalized_month:02d}"
-        payload = await self.client.plant_stat_data(
-            plant_id=plant_id,
-            business_type=business_type,
-            date_type=2,
-            date=date_text,
-        )
+        if self._is_fetch_cancelled(fetch_request_id):
+            self._finish_fetch_request(fetch_request_id)
+            return {
+                "ok": True,
+                "plant_id": plant_id,
+                "business_type": business_type,
+                "year": normalized_year,
+                "month": normalized_month,
+                "date": date_text,
+                "day_count": 0,
+                "api_calls_made": 0,
+                "available_metric_names": [],
+                "rows": [],
+                "raw_month": {},
+                "cancelled": True,
+                "request_id": fetch_request_id,
+            }
+        try:
+            payload = await self.client.plant_stat_data(
+                plant_id=plant_id,
+                business_type=business_type,
+                date_type=2,
+                date=date_text,
+            )
+            cancelled = self._is_fetch_cancelled(fetch_request_id)
+        finally:
+            self._finish_fetch_request(fetch_request_id)
         result = payload.get("result") or {}
         records = (
             result.get("plantEnergyStatDataList")
@@ -2841,6 +2942,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 "message": payload.get("message"),
                 "result": result,
             },
+            "cancelled": cancelled,
+            "request_id": fetch_request_id,
         }
 
     @staticmethod

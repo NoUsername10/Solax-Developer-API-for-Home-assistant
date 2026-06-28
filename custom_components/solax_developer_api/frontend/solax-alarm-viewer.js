@@ -1,4 +1,8 @@
 class SolaxAlarmViewerCard extends HTMLElement {
+  static getStubConfig() {
+    return {};
+  }
+
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
@@ -12,9 +16,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
     this._targetsLoaded = false;
     this._loadingTargets = false;
     this._fetching = false;
+    this._activeFetchRequestId = undefined;
     this._selectedPlantKey = "all";
     this._selectedDeviceKey = "";
-    this._alarmState = "all";
+    this._alarmState = "ongoing";
     this._records = [];
     this._lastFetchAt = undefined;
     this._lastMeta = {};
@@ -81,6 +86,14 @@ class SolaxAlarmViewerCard extends HTMLElement {
 
   _servicePayload(extra = {}) {
     return this._entryId ? { entry_id: this._entryId, ...extra } : extra;
+  }
+
+  _newRequestId(prefix) {
+    const random =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return `${prefix}-${random}`;
   }
 
   async _callService(service, payload) {
@@ -198,6 +211,8 @@ class SolaxAlarmViewerCard extends HTMLElement {
     if (!this._hass || this._fetching) {
       return;
     }
+    const requestId = this._newRequestId("alarm");
+    this._activeFetchRequestId = requestId;
     this._fetching = true;
     this._lastError = undefined;
     this._render();
@@ -207,6 +222,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
       const payload = {
         alarm_state: this._alarmState,
         max_pages: this._maxPages,
+        request_id: requestId,
       };
       if (plant) {
         payload.plant_id = plant.plant_id;
@@ -223,16 +239,41 @@ class SolaxAlarmViewerCard extends HTMLElement {
         "fetch_alarm_information",
         this._servicePayload(payload)
       );
+      if (this._activeFetchRequestId !== requestId || response?.cancelled) {
+        return;
+      }
       this._records = Array.isArray(response?.records) ? response.records : [];
       this._lastMeta = response || {};
       this._lastFetchAt = new Date();
     } catch (err) {
+      if (this._activeFetchRequestId !== requestId) {
+        return;
+      }
       this._lastError = err?.message || String(err);
       this._records = [];
       this._lastMeta = {};
     } finally {
-      this._fetching = false;
-      this._render();
+      if (this._activeFetchRequestId === requestId) {
+        this._activeFetchRequestId = undefined;
+        this._fetching = false;
+        this._render();
+      }
+    }
+  }
+
+  async _cancelFetch() {
+    if (!this._hass || !this._fetching || !this._activeFetchRequestId) {
+      return;
+    }
+    const requestId = this._activeFetchRequestId;
+    this._activeFetchRequestId = undefined;
+    this._fetching = false;
+    this._lastError = undefined;
+    this._render();
+    try {
+      await this._callService("cancel_fetch", this._servicePayload({ request_id: requestId }));
+    } catch (_err) {
+      // The card has already cancelled locally; late fetch responses are ignored.
     }
   }
 
@@ -360,15 +401,23 @@ class SolaxAlarmViewerCard extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <style>
         :host {
+          container-type: inline-size;
           display: block;
+          max-width: none;
+          min-width: 0;
           width: 100%;
           --solax-alarm-accent: #f2aa00;
           --solax-alarm-blue: #1d63c4;
           --solax-alarm-danger: #ff5548;
           --solax-alarm-good: #45b84c;
-          --solax-alarm-card: color-mix(in srgb, var(--ha-card-background, #202020) 90%, transparent);
-          --solax-alarm-border: color-mix(in srgb, var(--primary-text-color, #f2f2f2) 16%, transparent);
-          --solax-alarm-muted: color-mix(in srgb, var(--secondary-text-color, #a9a9a9) 88%, transparent);
+          --solax-alarm-surface: var(--ha-card-background, var(--card-background-color, #ffffff));
+          --solax-alarm-surface-soft: var(--secondary-background-color, #f5f6f8);
+          --solax-alarm-panel: color-mix(in srgb, var(--solax-alarm-surface) 82%, var(--solax-alarm-surface-soft) 18%);
+          --solax-alarm-panel-strong: color-mix(in srgb, var(--solax-alarm-surface) 92%, var(--primary-text-color) 8%);
+          --solax-alarm-border: var(--divider-color, rgba(127, 127, 127, 0.26));
+          --solax-alarm-muted: var(--secondary-text-color, #6b7280);
+          --solax-alarm-soft: rgba(127, 127, 127, 0.08);
+          color-scheme: light dark;
         }
         ha-card {
           width: 100%;
@@ -377,111 +426,144 @@ class SolaxAlarmViewerCard extends HTMLElement {
           border-radius: 28px;
           border: 1px solid var(--solax-alarm-border);
           background:
-            radial-gradient(circle at 8% 8%, color-mix(in srgb, var(--solax-alarm-accent) 28%, transparent), transparent 34%),
-            radial-gradient(circle at 88% 18%, color-mix(in srgb, var(--solax-alarm-blue) 20%, transparent), transparent 36%),
-            linear-gradient(135deg, color-mix(in srgb, var(--ha-card-background, #202020) 94%, #000 6%), var(--ha-card-background, #202020));
+            radial-gradient(circle at 8% 8%, rgba(242, 170, 0, 0.2), transparent 34%),
+            radial-gradient(circle at 88% 18%, rgba(29, 99, 196, 0.16), transparent 36%),
+            linear-gradient(135deg, var(--solax-alarm-surface) 0%, var(--solax-alarm-surface-soft) 100%);
           color: var(--primary-text-color);
           box-shadow: var(--ha-card-box-shadow, 0 18px 40px rgba(0, 0, 0, 0.22));
         }
         .wrap {
-          padding: 28px;
+          padding: 20px;
           display: grid;
-          gap: 22px;
+          gap: 18px;
         }
         .header {
-          display: grid;
-          grid-template-columns: auto 1fr auto;
-          gap: 18px;
-          align-items: start;
+          align-items: flex-start;
+          display: flex;
+          gap: 14px;
+          justify-content: space-between;
+        }
+        .brand {
+          align-items: center;
+          display: flex;
+          gap: 12px;
+          min-width: 0;
         }
         .icon {
-          width: 74px;
-          height: 74px;
-          border-radius: 24px;
-          border: 2px solid color-mix(in srgb, var(--solax-alarm-accent) 70%, transparent);
+          align-items: center;
+          width: 46px;
+          height: 46px;
+          border-radius: 16px;
+          border: 1px solid color-mix(in srgb, var(--solax-alarm-accent) 70%, transparent);
           display: grid;
           place-items: center;
+          flex: 0 0 auto;
           color: var(--solax-alarm-accent);
-          background: color-mix(in srgb, var(--solax-alarm-accent) 12%, transparent);
+          background: rgba(255, 186, 0, 0.18);
         }
         .icon svg {
-          width: 42px;
-          height: 42px;
+          width: 26px;
+          height: 26px;
         }
         h2 {
           margin: 0;
-          font-size: clamp(24px, 3vw, 34px);
-          line-height: 1.05;
-          font-weight: 800;
+          font-size: 1.15rem;
+          line-height: 1.2;
+          font-weight: 700;
+          letter-spacing: -0.01em;
         }
         .subtitle {
-          margin-top: 8px;
+          margin-top: 4px;
           color: var(--solax-alarm-muted);
-          font-size: 18px;
+          font-size: 0.82rem;
           line-height: 1.35;
         }
         .status {
-          justify-self: end;
           display: inline-flex;
           align-items: center;
-          gap: 10px;
-          padding: 12px 18px;
+          flex: 0 0 auto;
+          gap: 8px;
+          padding: 7px 10px;
           border-radius: 999px;
           border: 1px solid var(--solax-alarm-border);
-          background: color-mix(in srgb, var(--ha-card-background, #202020) 70%, transparent);
+          background: var(--solax-alarm-panel);
+          font-size: 0.78rem;
           text-transform: uppercase;
-          font-weight: 800;
+          font-weight: 700;
           letter-spacing: .04em;
         }
         .status::before {
           content: "";
-          width: 16px;
-          height: 16px;
+          width: 9px;
+          height: 9px;
           border-radius: 999px;
           background: var(--solax-alarm-good);
-          box-shadow: 0 0 0 8px color-mix(in srgb, var(--solax-alarm-good) 18%, transparent);
+          box-shadow: 0 0 0 5px color-mix(in srgb, var(--solax-alarm-good) 18%, transparent);
         }
         .status.loading::before {
           background: var(--solax-alarm-accent);
-          box-shadow: 0 0 0 8px color-mix(in srgb, var(--solax-alarm-accent) 18%, transparent);
+          box-shadow: 0 0 0 5px color-mix(in srgb, var(--solax-alarm-accent) 18%, transparent);
         }
         .status.error::before {
           background: var(--solax-alarm-danger);
-          box-shadow: 0 0 0 8px color-mix(in srgb, var(--solax-alarm-danger) 18%, transparent);
+          box-shadow: 0 0 0 5px color-mix(in srgb, var(--solax-alarm-danger) 18%, transparent);
         }
         .controls {
           display: grid;
-          grid-template-columns: minmax(180px, 1.3fr) minmax(180px, 1.3fr) minmax(140px, .8fr) auto;
-          gap: 16px;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
           align-items: end;
         }
         label {
           display: grid;
-          gap: 9px;
+          gap: 6px;
           color: var(--solax-alarm-muted);
+          font-size: 0.74rem;
           font-weight: 800;
           text-transform: uppercase;
-          letter-spacing: .05em;
+          letter-spacing: .04em;
+          min-width: 0;
         }
         select,
         button {
-          min-height: 58px;
-          border-radius: 18px;
+          min-height: 42px;
+          border-radius: 13px;
           border: 1px solid var(--solax-alarm-border);
           color: var(--primary-text-color);
           font: inherit;
           font-weight: 800;
+          min-width: 0;
+          width: 100%;
         }
         select {
-          padding: 0 16px;
-          background: color-mix(in srgb, var(--ha-card-background, #202020) 82%, #000 18%);
+          appearance: none;
+          -webkit-appearance: none;
+          background:
+            linear-gradient(45deg, transparent 50%, var(--solax-alarm-muted) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,
+            linear-gradient(135deg, var(--solax-alarm-muted) 50%, transparent 50%) calc(100% - 13px) 50% / 6px 6px no-repeat,
+            var(--solax-alarm-panel-strong);
+          overflow: hidden;
+          padding: 0 36px 0 12px;
+          text-overflow: ellipsis;
+        }
+        select:focus {
+          border-color: color-mix(in srgb, var(--solax-alarm-blue) 70%, transparent);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--solax-alarm-blue) 18%, transparent);
+          outline: none;
+        }
+        .fetch-row {
+          display: grid;
         }
         button {
-          padding: 0 28px;
+          padding: 0 16px;
           border-color: color-mix(in srgb, var(--solax-alarm-blue) 70%, transparent);
           background: linear-gradient(135deg, #2275dd, #0f4ca8);
           color: #fff;
           cursor: pointer;
+        }
+        button.cancel {
+          border-color: color-mix(in srgb, var(--solax-alarm-danger) 60%, transparent);
+          background: linear-gradient(135deg, #c24135, #8b1e18);
         }
         button[disabled] {
           cursor: wait;
@@ -490,31 +572,38 @@ class SolaxAlarmViewerCard extends HTMLElement {
         .summary {
           display: grid;
           grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 16px;
+          gap: 10px;
         }
         .tile,
         .records,
         .error-box,
         .empty {
           border: 1px solid var(--solax-alarm-border);
-          background: color-mix(in srgb, var(--ha-card-background, #202020) 76%, transparent);
+          background: var(--solax-alarm-panel);
           border-radius: 22px;
         }
         .tile {
-          padding: 20px;
+          padding: 12px;
         }
         .tile .label {
           color: var(--solax-alarm-muted);
-          font-weight: 800;
+          font-size: 0.76rem;
+          font-weight: 700;
+          line-height: 1.2;
         }
         .tile .value {
-          margin-top: 9px;
-          font-size: 28px;
-          font-weight: 900;
+          margin-top: 5px;
+          font-size: 1rem;
+          font-weight: 750;
+          line-height: 1.3;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
         .tile .hint {
           margin-top: 5px;
           color: var(--solax-alarm-muted);
+          font-size: 0.74rem;
+          line-height: 1.25;
         }
         .error-box {
           padding: 18px 22px;
@@ -530,15 +619,15 @@ class SolaxAlarmViewerCard extends HTMLElement {
           font-size: 18px;
         }
         .records {
-          padding: 18px;
+          padding: 12px;
           display: grid;
-          gap: 14px;
+          gap: 10px;
         }
         .record {
-          padding: 18px;
-          border-radius: 18px;
+          padding: 14px;
+          border-radius: 16px;
           border: 1px solid color-mix(in srgb, var(--primary-text-color) 10%, transparent);
-          background: color-mix(in srgb, var(--ha-card-background, #202020) 82%, transparent);
+          background: var(--solax-alarm-panel-strong);
         }
         .record-head {
           display: grid;
@@ -547,8 +636,8 @@ class SolaxAlarmViewerCard extends HTMLElement {
           align-items: start;
         }
         .record-title {
-          font-size: 19px;
-          font-weight: 900;
+          font-size: 1rem;
+          font-weight: 800;
         }
         .pill {
           display: inline-flex;
@@ -558,7 +647,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
           font-weight: 900;
           text-transform: uppercase;
           letter-spacing: .04em;
-          font-size: 12px;
+          font-size: 0.72rem;
         }
         .pill.ongoing {
           color: #fff;
@@ -584,7 +673,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
         .kv span {
           display: block;
           color: var(--solax-alarm-muted);
-          font-size: 13px;
+          font-size: 0.72rem;
           font-weight: 800;
           text-transform: uppercase;
           letter-spacing: .04em;
@@ -626,11 +715,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
             grid-template-columns: 1fr;
           }
           .header {
-            grid-template-columns: auto 1fr;
+            align-items: stretch;
+            flex-direction: column;
           }
           .status {
-            grid-column: 1 / -1;
-            justify-self: stretch;
             justify-content: center;
           }
           button {
@@ -641,17 +729,19 @@ class SolaxAlarmViewerCard extends HTMLElement {
       <ha-card>
         <div class="wrap">
           <div class="header">
-            <div class="icon" aria-hidden="true">
-              <svg viewBox="0 0 64 64" fill="none">
-                <path d="M12 50h40" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
-                <path d="M16 46V14" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
-                <path d="M22 39l9-11 8 7 11-18" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M48 12h7v7" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div>
-              <h2>${this._escape(this._name)}</h2>
-              <div class="subtitle">Manual alarm lookup from the official SolaX Developer API. Dashboard loading does not call SolaX.</div>
+            <div class="brand">
+              <div class="icon" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none">
+                  <path d="M18 42h28c-3-4-5-8-5-14v-5c0-6-4-11-9-11s-9 5-9 11v5c0 6-2 10-5 14Z" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M28 49c1 3 2 4 4 4s3-1 4-4" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M32 21v10" stroke="currentColor" stroke-width="5" stroke-linecap="round"/>
+                  <path d="M32 37h.01" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <h2>${this._escape(this._name)}</h2>
+                <div class="subtitle">Get SolaX alarms from your SolaX account.</div>
+              </div>
             </div>
             <div class="status ${statusClass}">${statusLabel}</div>
           </div>
@@ -677,8 +767,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
                 <option value="closed"${this._alarmState === "closed" ? " selected" : ""}>Closed</option>
               </select>
             </label>
-            <button id="fetch" ${this._fetching || !this._targetsLoaded || !this._plants.length ? "disabled" : ""}>
-              ${this._fetching ? "Fetching..." : "Fetch Alarms"}
+          </div>
+          <div class="fetch-row">
+            <button id="fetch" class="${this._fetching ? "cancel" : ""}" ${!this._fetching && (!this._targetsLoaded || !this._plants.length) ? "disabled" : ""}>
+              ${this._fetching ? "Cancel Fetch" : "Fetch Alarms"}
             </button>
           </div>
 
@@ -780,6 +872,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
       this._render();
     });
     root.getElementById("fetch")?.addEventListener("click", () => {
+      if (this._fetching) {
+        void this._cancelFetch();
+        return;
+      }
       void this._fetchAlarms();
     });
   }
@@ -795,5 +891,6 @@ if (!window.customCards.some((card) => card.type === "solax-alarm-viewer")) {
     type: "solax-alarm-viewer",
     name: "SolaX Alarm Viewer",
     description: "Manual SolaX Developer API alarm viewer.",
+    preview: true,
   });
 }

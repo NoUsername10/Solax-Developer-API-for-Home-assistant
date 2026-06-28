@@ -50,6 +50,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
     this._customHistoryRange = undefined;
     this._metadataRetryTimer = undefined;
     this._fetching = false;
+    this._activeFetchRequestId = undefined;
     this._lastError = undefined;
     this._lastFetchAt = undefined;
     this._rows = [];
@@ -184,6 +185,14 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _servicePayload(extra = {}) {
     return this._entryId ? { entry_id: this._entryId, ...extra } : extra;
+  }
+
+  _newRequestId(prefix) {
+    const random =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    return `${prefix}-${random}`;
   }
 
   _clearMetadataRetry() {
@@ -363,6 +372,10 @@ class SolaxHistoryViewerCard extends HTMLElement {
   }
 
   async _fetchCurrentMode() {
+    if (this._fetching) {
+      await this._cancelFetch();
+      return;
+    }
     if (this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS) {
       await this._fetchPlantStatistics();
       return;
@@ -387,6 +400,8 @@ class SolaxHistoryViewerCard extends HTMLElement {
       return;
     }
 
+    const requestId = this._newRequestId("history");
+    this._activeFetchRequestId = requestId;
     this._fetching = true;
     this._lastError = undefined;
     this._render();
@@ -397,6 +412,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
     try {
       for (const group of groups) {
+        if (this._activeFetchRequestId !== requestId) {
+          return;
+        }
         const payload = {
           sn_list: group.devices.map((device) => device.device_sn),
           device_type: group.deviceType,
@@ -404,11 +422,15 @@ class SolaxHistoryViewerCard extends HTMLElement {
           start_time: Math.floor(range.start),
           end_time: Math.floor(range.end),
           time_interval: interval,
+          request_id: requestId,
         };
         if (group.entryId || this._entryId) {
           payload.entry_id = group.entryId || this._entryId;
         }
         const response = await this._callService("fetch_device_history", payload);
+        if (this._activeFetchRequestId !== requestId || response?.cancelled) {
+          return;
+        }
         requestCount += Number(response?.window_summary?.requestCount || 1);
         if (Array.isArray(response?.result)) {
           allRows.push(...response.result);
@@ -421,13 +443,19 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._lastFetchAt = new Date();
       this._processHistoryRows(allRows, interval, range.start);
     } catch (err) {
+      if (this._activeFetchRequestId !== requestId) {
+        return;
+      }
       this._lastError = err?.message || String(err);
       this._rows = [];
       this._fields = [];
       this._selectedFields = new Set();
     } finally {
-      this._fetching = false;
-      this._render();
+      if (this._activeFetchRequestId === requestId) {
+        this._activeFetchRequestId = undefined;
+        this._fetching = false;
+        this._render();
+      }
     }
   }
 
@@ -465,6 +493,12 @@ class SolaxHistoryViewerCard extends HTMLElement {
       return;
     }
 
+    const requestId = this._newRequestId(
+      this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH
+        ? "plant-month"
+        : "plant-year"
+    );
+    this._activeFetchRequestId = requestId;
     this._fetching = true;
     this._lastError = undefined;
     this._render();
@@ -472,6 +506,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
       plant_id: plant.plant_id,
       business_type: Number(plant.business_type),
       year: Number(this._selectedYear),
+      request_id: requestId,
     };
     if (plant.entry_id || this._entryId) {
       payload.entry_id = plant.entry_id || this._entryId;
@@ -486,6 +521,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
         payload.month = Number(this._selectedMonth);
       }
       const response = await this._callService(service, payload);
+      if (this._activeFetchRequestId !== requestId || response?.cancelled) {
+        return;
+      }
       const rows = Array.isArray(response?.rows) ? response.rows : [];
       this._lastResultMeta = {
         requestCount: response?.api_calls_made,
@@ -497,13 +535,35 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._lastFetchAt = new Date();
       this._processPlantRows(rows);
     } catch (err) {
+      if (this._activeFetchRequestId !== requestId) {
+        return;
+      }
       this._lastError = err?.message || String(err);
       this._rows = [];
       this._fields = [];
       this._selectedFields = new Set();
     } finally {
-      this._fetching = false;
-      this._render();
+      if (this._activeFetchRequestId === requestId) {
+        this._activeFetchRequestId = undefined;
+        this._fetching = false;
+        this._render();
+      }
+    }
+  }
+
+  async _cancelFetch() {
+    if (!this._hass || !this._fetching || !this._activeFetchRequestId) {
+      return;
+    }
+    const requestId = this._activeFetchRequestId;
+    this._activeFetchRequestId = undefined;
+    this._fetching = false;
+    this._lastError = undefined;
+    this._render();
+    try {
+      await this._callService("cancel_fetch", this._servicePayload({ request_id: requestId }));
+    } catch (_err) {
+      // The card is already locally cancelled; late service responses are ignored.
     }
   }
 
@@ -1429,7 +1489,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
           <label class="${this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? "" : "hidden"}">Month
             <select id="month">${this._renderMonthOptions()}</select>
           </label>
-          <button type="button" class="fetch" id="fetch" ${this._fetching || !selectedPlant ? "disabled" : ""}>${this._fetching ? "Fetching..." : "Fetch Statistics"}</button>
+          <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !selectedPlant ? "disabled" : ""}>${this._fetching ? "Cancel Fetch" : "Fetch Statistics"}</button>
         </div>
       `;
     }
@@ -1448,7 +1508,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
         <label>Resolution
           <div class="readonly-control">${this._recommendedInterval(this._rangeHours)} min</div>
         </label>
-        <button type="button" class="fetch" id="fetch" ${this._fetching || !this._selectedDevices().length ? "disabled" : ""}>${this._fetching ? "Fetching..." : "Fetch History"}</button>
+        <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !this._selectedDevices().length ? "disabled" : ""}>${this._fetching ? "Cancel Fetch" : "Fetch History"}</button>
       </div>
       <div class="device-panel">${this._renderDeviceSelector()}</div>
     `;
@@ -1606,7 +1666,22 @@ class SolaxHistoryViewerCard extends HTMLElement {
           padding: 0 12px;
           width: 100%;
         }
-        select { overflow: hidden; text-overflow: ellipsis; }
+        select {
+          appearance: none;
+          -webkit-appearance: none;
+          background:
+            linear-gradient(45deg, transparent 50%, var(--secondary-text-color) 50%) calc(100% - 18px) 50% / 6px 6px no-repeat,
+            linear-gradient(135deg, var(--secondary-text-color) 50%, transparent 50%) calc(100% - 13px) 50% / 6px 6px no-repeat,
+            var(--card-background-color, #fff);
+          overflow: hidden;
+          padding-right: 36px;
+          text-overflow: ellipsis;
+        }
+        select:focus {
+          border-color: rgba(21, 101, 192, 0.62);
+          box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.18);
+          outline: none;
+        }
         .readonly-control { align-items: center; display: flex; font-weight: 800; justify-content: center; }
         button.fetch {
           align-self: end;
@@ -1618,6 +1693,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
           min-width: 0;
           padding: 0 16px;
           white-space: nowrap;
+        }
+        button.fetch.cancel {
+          background: linear-gradient(135deg, #c24135, #8b1e18);
         }
         button.fetch:disabled { cursor: wait; opacity: 0.65; }
         .device-panel, .day-panel {
@@ -1736,7 +1814,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
               <div class="icon-wrap"><ha-icon icon="mdi:chart-line"></ha-icon></div>
               <div>
                 <h2 class="title" data-role="title">${this._escape(this._name)}</h2>
-                <div class="subtitle">Display-only Developer API history and plant statistics. Fetch manually; nothing is written to Home Assistant Recorder.</div>
+                <div class="subtitle">Get SolaX account history and statistics from your SolaX account.</div>
               </div>
             </div>
             <div class="status ${statusClass}" data-role="status">

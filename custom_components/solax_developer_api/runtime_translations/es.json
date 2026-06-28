@@ -10,7 +10,14 @@
       "manual_meter_skipped_discovered_body": "No se añadieron una o más series porque ya son dispositivos detectados automáticamente: {serials}",
       "manual_meter_options_result_body": "La configuración del contador manual se guardó.\nOmitidos (ya detectados automáticamente): {skipped_serials}\nEliminados: {removed_serials}",
       "manual_ems_title": "API de desarrollador de SolaX - Sistemas EMS manuales",
-      "manual_ems_options_result_body": "La configuración del EMS manual se guardó.\nOmitidos (ya detectados automáticamente): {skipped_serials}\nEliminados: {removed_serials}"
+      "manual_ems_options_result_body": "La configuración del EMS manual se guardó.\nOmitidos (ya detectados automáticamente): {skipped_serials}\nEliminados: {removed_serials}",
+      "alarm_active_title": "SolaX active alarm detected",
+      "alarm_active_body": "SolaX reports {count} active alarm(s).\n{alarm_details}\nOpen the SolaX Alarm Viewer card for full details.",
+      "alarm_active_detail_line": "- {plant}: {alarm_name} (code: {error_code}, type: {alarm_type})",
+      "alarm_active_more_line": "- and {count} more active alarm(s)",
+      "alarm_active_no_details": "- No detailed alarm records were returned by SolaX.",
+      "alarm_cleared_title": "SolaX alarms cleared",
+      "alarm_cleared_body": "SolaX reports no active alarms now.\nThe previous active alarm notification has cleared."
     },
     "messages": {
       "dry_run_block_reason": "Ruta de escritura bloqueada durante la fase de desarrollo"
