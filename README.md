@@ -21,7 +21,7 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 ## ✨ Features in short
 
 - ⚡ **Inverter, battery, meter, EV charger, and EMS support** 
-- 📊 **Automatic plant, device, and system-wide total sensors**
+- 📊 **Automatic plant, device, and system-wide total sensors, including SolaX alarm support**
 - 🧠 **Dynamic sensors** based on real Developer API data received
 - 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
 - 🔌 **Works with residential and C&I SolaX systems**
