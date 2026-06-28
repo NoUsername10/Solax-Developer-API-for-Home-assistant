@@ -45,6 +45,8 @@ from .const import (
     SERVICE_FETCH_PLANT_MONTH_STATISTICS,
     SERVICE_FETCH_PLANT_YEAR_STATISTICS,
     SERVICE_FETCH_DEVICE_HISTORY,
+    SERVICE_FETCH_ALARM_INFORMATION,
+    SERVICE_LIST_ALARM_TARGETS,
     SERVICE_LIST_HISTORY_DEVICES,
     SERVICE_LIST_PLANT_STATISTICS_TARGETS,
     SERVICE_MANUAL_REFRESH,
@@ -380,6 +382,34 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             "plants": plants,
         }
 
+    async def _handle_list_alarm_targets(call: ServiceCall):
+        explicit_entry_id = str(call.data.get("entry_id", "")).strip()
+        plants: list[dict[str, Any]] = []
+        devices: list[dict[str, Any]] = []
+        entry_ids: list[str] = []
+
+        for config_entry in hass.config_entries.async_entries(DOMAIN):
+            entry_id = config_entry.entry_id
+            if explicit_entry_id and entry_id != explicit_entry_id:
+                continue
+            runtime = _loaded_runtime_for_entry(hass, entry_id)
+            if runtime is None:
+                continue
+            targets = runtime.coordinator.list_alarm_targets()
+            plants.extend({**plant, "entry_id": entry_id} for plant in targets["plants"])
+            devices.extend({**device, "entry_id": entry_id} for device in targets["devices"])
+            entry_ids.append(entry_id)
+
+        return {
+            "ok": True,
+            "entry_id": explicit_entry_id or (entry_ids[0] if len(entry_ids) == 1 else None),
+            "entries": entry_ids,
+            "plant_count": len(plants),
+            "device_count": len(devices),
+            "plants": plants,
+            "devices": devices,
+        }
+
     async def _handle_fetch_history(call: ServiceCall):
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
         start_time = int(call.data["start_time"])
@@ -443,6 +473,20 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             month=month,
         )
 
+    async def _handle_fetch_alarm_information(call: ServiceCall):
+        _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
+        return await coordinator.async_fetch_alarm_information(
+            plant_id=str(call.data.get("plant_id") or "").strip() or None,
+            business_type=(
+                int(call.data["business_type"])
+                if call.data.get("business_type") is not None
+                else None
+            ),
+            alarm_state=call.data.get("alarm_state", "all"),
+            device_sn=str(call.data.get("device_sn") or "").strip() or None,
+            max_pages=int(call.data.get("max_pages") or 20),
+        )
+
     async def _handle_query_request_result(call: ServiceCall):
         _entry_id, coordinator = _resolve_coordinator_for_service(hass, call)
         payload = await coordinator.async_query_request_result(
@@ -500,6 +544,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
 
     list_history_devices_schema = vol.Schema({vol.Optional("entry_id"): str})
     list_plant_statistics_targets_schema = vol.Schema({vol.Optional("entry_id"): str})
+    list_alarm_targets_schema = vol.Schema({vol.Optional("entry_id"): str})
 
     history_schema = vol.Schema(
         {
@@ -541,6 +586,22 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             ),
             vol.Required("year"): vol.Coerce(int),
             vol.Required("month"): vol.Coerce(int),
+        }
+    )
+    alarm_information_schema = vol.Schema(
+        {
+            vol.Optional("entry_id"): str,
+            vol.Optional("plant_id"): str,
+            vol.Optional("business_type"): vol.All(
+                vol.Coerce(int), vol.In([1, 4])
+            ),
+            vol.Optional("alarm_state", default="all"): vol.All(
+                vol.Coerce(str), vol.In(["all", "ongoing", "closed", "0", "1"])
+            ),
+            vol.Optional("device_sn"): str,
+            vol.Optional("max_pages", default=20): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=100)
+            ),
         }
     )
 
@@ -605,6 +666,11 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             SERVICE_LIST_PLANT_STATISTICS_TARGETS,
             _handle_list_plant_statistics_targets,
             schema=list_plant_statistics_targets_schema,
+        )
+        _register_service(
+            SERVICE_LIST_ALARM_TARGETS,
+            _handle_list_alarm_targets,
+            schema=list_alarm_targets_schema,
         )
         _register_service(
             SERVICE_START_LIVE_VIEW,
@@ -738,6 +804,7 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         if any(coordinator.list_plant_statistics_targets() for coordinator in coordinators):
             desired.add(SERVICE_FETCH_PLANT_YEAR_STATISTICS)
             desired.add(SERVICE_FETCH_PLANT_MONTH_STATISTICS)
+            desired.add(SERVICE_FETCH_ALARM_INFORMATION)
         if any(coordinator.has_ci_devices for coordinator in coordinators):
             desired.add(SERVICE_QUERY_MASTER_CONTROL_DEVICE)
 
@@ -757,6 +824,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
             SERVICE_FETCH_PLANT_MONTH_STATISTICS: (
                 _handle_fetch_plant_month_statistics,
                 plant_month_statistics_schema,
+            ),
+            SERVICE_FETCH_ALARM_INFORMATION: (
+                _handle_fetch_alarm_information,
+                alarm_information_schema,
             ),
             SERVICE_QUERY_REQUEST_RESULT: (
                 _handle_query_request_result,

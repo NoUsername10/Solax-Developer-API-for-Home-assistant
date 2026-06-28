@@ -44,6 +44,8 @@ from .const import (
     DEFAULT_NIGHT_SCAN_INTERVAL,
     DEFAULT_NIGHT_START_HOUR,
     DEVICE_TYPES,
+    DEVICE_MODEL_MAP,
+    DEVICE_MODEL_MAP_BY_CONTEXT,
     DEVICE_TYPE_NAMES,
     DEVICE_HISTORY_SAFE_WINDOW_MS,
     DOMAIN,
@@ -1171,6 +1173,112 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 str(item["label"]).casefold(),
                 str(item["plant_id"]).casefold(),
             ),
+        )
+
+    def list_alarm_targets(self) -> dict[str, list[dict[str, Any]]]:
+        """Return loaded plants and devices usable by the alarm endpoint."""
+        plants = self.list_plant_statistics_targets()
+        plant_business_types = {
+            str(plant["plant_id"]): int(plant["business_type"]) for plant in plants
+        }
+        devices: list[dict[str, Any]] = []
+
+        for serial, payload in (self.data.get("devices") or {}).items():
+            if not isinstance(payload, Mapping):
+                continue
+
+            serial_text = str(payload.get("deviceSn") or serial).strip()
+            plant_id = str(payload.get("plantId") or "").strip()
+            if not serial_text or not plant_id:
+                continue
+
+            device_type = self._coerce_int(payload.get("deviceType"))
+            business_type = self._coerce_int(payload.get("businessType"))
+            if business_type not in BUSINESS_TYPES:
+                business_type = plant_business_types.get(plant_id, 1)
+
+            device_type_name = translate(
+                self.hass,
+                f"runtime.labels.device_type.{device_type}",
+                fallback=DEVICE_TYPE_NAMES.get(device_type, "Device"),
+            )
+            devices.append(
+                {
+                    "device_sn": serial_text,
+                    "plant_id": plant_id,
+                    "device_type": device_type,
+                    "device_type_name": device_type_name,
+                    "business_type": business_type,
+                    "label": f"{device_type_name} {serial_text}",
+                    "source": (
+                        "manual"
+                        if bool(payload.get("manualSerial"))
+                        else str(payload.get("discoverySource") or "inventory")
+                    ),
+                }
+            )
+
+        return {
+            "plants": plants,
+            "devices": sorted(
+                devices,
+                key=lambda item: (
+                    str(item["plant_id"]).casefold(),
+                    int(item["device_type"] or 0),
+                    str(item["label"]).casefold(),
+                    str(item["device_sn"]).casefold(),
+                ),
+            ),
+        }
+
+    def _device_type_text(self, value: Any) -> str:
+        """Return translated Developer API deviceType label."""
+        try:
+            device_type = int(value)
+        except (TypeError, ValueError):
+            return str(value)
+        fallback = DEVICE_TYPE_NAMES.get(device_type, str(value))
+        return translate(
+            self.hass,
+            f"runtime.labels.device_type.{device_type}",
+            fallback=fallback,
+        )
+
+    def _device_model_text(
+        self,
+        value: Any,
+        *,
+        business_type: Any = None,
+        device_type: Any = None,
+    ) -> Any:
+        """Return translated contextual Developer API deviceModel label."""
+        try:
+            model_id = int(value)
+        except (TypeError, ValueError):
+            return value
+        try:
+            context_key = (int(business_type), int(device_type), model_id)
+        except (TypeError, ValueError):
+            context_key = None
+        contextual = (
+            DEVICE_MODEL_MAP_BY_CONTEXT.get(context_key)
+            if context_key is not None
+            else None
+        )
+        fallback = str(contextual or DEVICE_MODEL_MAP.get(model_id, value))
+        if contextual is not None and context_key is not None:
+            return translate(
+                self.hass,
+                (
+                    "runtime.device_model.context."
+                    f"{context_key[0]}.{context_key[1]}.{model_id}"
+                ),
+                fallback=fallback,
+            )
+        return translate(
+            self.hass,
+            f"runtime.device_model.code.{model_id}",
+            fallback=fallback,
         )
 
     @property
@@ -2354,8 +2462,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 / DEVICE_HISTORY_SAFE_WINDOW_MS
             ),
         )
-        sn_chunk_count = max(1, math.ceil(len(normalized_sn) / MAX_SN_PER_REQUEST))
-        estimated_request_count = window_count * sn_chunk_count
+        # Device history is intentionally fetched one serial per request because
+        # live API responses for multi-SN history calls omit per-device rows.
+        sn_request_count = max(1, len(normalized_sn))
+        estimated_request_count = window_count * sn_request_count
         request_delay_seconds = (
             60 / HISTORY_TARGET_CALLS_PER_MINUTE
             if estimated_request_count > HISTORY_PACING_THRESHOLD_REQUESTS
@@ -2396,6 +2506,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 "requestSnType": request_sn_type,
                 "estimatedRequestCount": estimated_request_count,
                 "requestDelaySeconds": request_delay_seconds,
+                "serialIsolatedRequests": True,
             },
             "window_summary": window_summary,
             "response": payload,
@@ -2412,6 +2523,182 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "message": payload.get("message"),
             "window_summary": window_summary,
         }
+
+    async def async_fetch_alarm_information(
+        self,
+        *,
+        plant_id: str | None = None,
+        business_type: int | None = None,
+        alarm_state: str | int = "all",
+        device_sn: str | None = None,
+        max_pages: int = 20,
+    ) -> dict[str, Any]:
+        """Fetch paged plant alarm information on demand."""
+        targets = self.list_alarm_targets()
+        plants = targets["plants"]
+        target_plants: list[dict[str, Any]] = []
+        normalized_plant_id = str(plant_id or "").strip()
+        normalized_device_sn = str(device_sn or "").strip()
+
+        if normalized_plant_id:
+            target_plants = [
+                dict(plant)
+                for plant in plants
+                if str(plant["plant_id"]) == normalized_plant_id
+            ]
+            if not target_plants and business_type in BUSINESS_TYPES:
+                target_plants.append(
+                    {
+                        "plant_id": normalized_plant_id,
+                        "plant_name": "",
+                        "business_type": int(business_type),
+                        "label": normalized_plant_id,
+                    }
+                )
+        elif normalized_device_sn:
+            device_plants = {
+                str(device["plant_id"])
+                for device in targets["devices"]
+                if str(device["device_sn"]) == normalized_device_sn
+            }
+            target_plants = [
+                dict(plant) for plant in plants if str(plant["plant_id"]) in device_plants
+            ]
+        else:
+            target_plants = [dict(plant) for plant in plants]
+
+        if not target_plants:
+            return {
+                "ok": True,
+                "records": [],
+                "count": 0,
+                "api_calls_made": 0,
+                "targets": [],
+                "available_fields": [],
+                "state_counts": {"ongoing": 0, "closed": 0},
+                "page_summaries": [],
+            }
+
+        states = self._normalize_alarm_states(alarm_state)
+        bounded_max_pages = max(1, min(int(max_pages or 20), 100))
+        records: list[dict[str, Any]] = []
+        page_summaries: list[dict[str, Any]] = []
+        seen: set[tuple[Any, ...]] = set()
+        api_calls_made = 0
+
+        for plant in target_plants:
+            plant_id_text = str(plant["plant_id"])
+            plant_business_type = int(plant.get("business_type") or business_type or 1)
+            for state in states:
+                page_no = 1
+                while page_no <= bounded_max_pages:
+                    payload = await self.client.page_alarm_info(
+                        plant_id=plant_id_text,
+                        business_type=plant_business_type,
+                        alarm_state=state,
+                        page_no=page_no,
+                        device_sn=normalized_device_sn or None,
+                    )
+                    api_calls_made += 1
+                    result = payload.get("result") or {}
+                    if not isinstance(result, Mapping):
+                        result = {}
+                    raw_records = result.get("records") or []
+                    if not isinstance(raw_records, list):
+                        raw_records = []
+
+                    page_summaries.append(
+                        {
+                            "plant_id": plant_id_text,
+                            "business_type": plant_business_type,
+                            "alarm_state": state,
+                            "page_no": page_no,
+                            "code": payload.get("code"),
+                            "message": payload.get("message"),
+                            "total": result.get("total"),
+                            "pages": result.get("pages"),
+                            "current": result.get("current"),
+                            "size": result.get("size"),
+                            "record_count": len(raw_records),
+                        }
+                    )
+
+                    for row in raw_records:
+                        if not isinstance(row, Mapping):
+                            continue
+                        enriched = dict(row)
+                        enriched.setdefault("plantId", result.get("plantId") or plant_id_text)
+                        enriched.setdefault("businessType", plant_business_type)
+                        enriched.setdefault("queriedAlarmState", state)
+                        if enriched.get("deviceType") is not None:
+                            enriched["deviceTypeName"] = self._device_type_text(
+                                enriched.get("deviceType")
+                            )
+                        if enriched.get("deviceModel") is not None:
+                            enriched["deviceModelName"] = self._device_model_text(
+                                enriched.get("deviceModel"),
+                                business_type=plant_business_type,
+                                device_type=enriched.get("deviceType"),
+                            )
+                        dedupe_key = (
+                            enriched.get("plantId"),
+                            enriched.get("deviceSn"),
+                            enriched.get("errorCode"),
+                            enriched.get("alarmName"),
+                            enriched.get("alarmStartTime"),
+                            enriched.get("alarmState"),
+                        )
+                        if dedupe_key in seen:
+                            continue
+                        seen.add(dedupe_key)
+                        records.append(enriched)
+
+                    pages = self._coerce_int(result.get("pages")) or 1
+                    current = self._coerce_int(result.get("current")) or page_no
+                    if current >= pages or not raw_records:
+                        break
+                    page_no += 1
+
+        records.sort(
+            key=lambda item: (
+                self._coerce_int(item.get("alarmState")),
+                str(item.get("alarmStartTime") or ""),
+                str(item.get("deviceSn") or ""),
+                str(item.get("alarmName") or ""),
+            ),
+            reverse=True,
+        )
+        available_fields = sorted({key for row in records for key in row})
+        state_counts = {
+            "ongoing": sum(
+                1 for row in records if self._coerce_int(row.get("alarmState")) == 1
+            ),
+            "closed": sum(
+                1 for row in records if self._coerce_int(row.get("alarmState")) == 0
+            ),
+        }
+        return {
+            "ok": True,
+            "records": records,
+            "count": len(records),
+            "api_calls_made": api_calls_made,
+            "targets": target_plants,
+            "available_fields": available_fields,
+            "state_counts": state_counts,
+            "page_summaries": page_summaries,
+        }
+
+    @staticmethod
+    def _normalize_alarm_states(alarm_state: str | int) -> list[int]:
+        """Normalize service/card alarm-state filters to Developer API values."""
+        if isinstance(alarm_state, int):
+            return [alarm_state] if alarm_state in (0, 1) else [1, 0]
+        normalized = str(alarm_state or "all").strip().casefold()
+        if normalized in {"1", "ongoing", "active", "open"}:
+            return [1]
+        if normalized in {"0", "closed", "cleared", "resolved"}:
+            return [0]
+        return [1, 0]
 
     async def async_fetch_plant_year_statistics(
         self,

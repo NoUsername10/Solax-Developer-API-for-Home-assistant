@@ -3,6 +3,8 @@ class SolaxHistoryViewerCard extends HTMLElement {
   static MODE_PLANT_STATISTICS = "plant_statistics";
   static PLANT_VIEW_YEAR = "year";
   static PLANT_VIEW_MONTH = "month";
+  static CHART_SCALE_ZERO = "zero";
+  static CHART_SCALE_AUTO = "auto";
   static RANGE_PRESETS = [
     { hours: 1, label: "Last 1h", interval: 5 },
     { hours: 3, label: "Last 3h", interval: 5 },
@@ -44,6 +46,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
     this._selectedDeviceKeys = new Set();
     this._selectedPlantKey = undefined;
     this._showDeviceBreakdown = true;
+    this._chartScaleMode = SolaxHistoryViewerCard.CHART_SCALE_ZERO;
     this._customHistoryRange = undefined;
     this._metadataRetryTimer = undefined;
     this._fetching = false;
@@ -74,6 +77,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._toInt(cfg.default_range_hours, 6, 1, 168)
     ).hours;
     this._maxSelectedFields = this._toInt(cfg.max_selected_fields, 6, 1, 12);
+    this._chartScaleMode = this._normalizeChartScaleMode(cfg.default_scale_mode);
     this._rangeHours = this._defaultRangeHours;
     this._selectedYear = this._currentYear();
     this._selectedMonth = new Date().getMonth() + 1;
@@ -113,6 +117,12 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _cleanString(raw) {
     return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
+  }
+
+  _normalizeChartScaleMode(raw) {
+    return raw === SolaxHistoryViewerCard.CHART_SCALE_AUTO
+      ? SolaxHistoryViewerCard.CHART_SCALE_AUTO
+      : SolaxHistoryViewerCard.CHART_SCALE_ZERO;
   }
 
   _toInt(raw, fallback, min, max) {
@@ -650,16 +660,52 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _historyBucketTimestamp(timestamp, intervalMinutes, rangeStart) {
     const intervalMs = Math.max(60000, Number(intervalMinutes || 5) * 60 * 1000);
-    const anchor = Number.isFinite(rangeStart) ? rangeStart : timestamp;
-    const slot = Math.max(0, Math.floor((timestamp - anchor) / intervalMs));
-    return anchor + slot * intervalMs;
+    return Math.round(timestamp / intervalMs) * intervalMs;
   }
 
-  _mergeHistoryValues(existing, next) {
-    if (!existing) {
-      return { ...next };
+  _isCumulativeHistoryField(field) {
+    const normalized = String(field).toLowerCase().replaceAll(".", "");
+    return (
+      normalized.includes("energy") ||
+      normalized.includes("yield") ||
+      normalized.includes("earnings") ||
+      normalized.includes("total")
+    );
+  }
+
+  _addHistoryAggregate(accumulator, field, value, timestamp) {
+    const stat = accumulator[field] || {
+      sum: 0,
+      count: 0,
+      lastTimestamp: Number.NEGATIVE_INFINITY,
+      lastValue: undefined,
+    };
+    stat.sum += value;
+    stat.count += 1;
+    if (timestamp >= stat.lastTimestamp) {
+      stat.lastTimestamp = timestamp;
+      stat.lastValue = value;
     }
-    return { ...existing, ...next };
+    accumulator[field] = stat;
+  }
+
+  _finalizeHistoryAggregates(bucket) {
+    const deviceValues = {};
+    for (const [serial, fields] of Object.entries(bucket.deviceAggregates || {})) {
+      const values = {};
+      for (const [field, stat] of Object.entries(fields || {})) {
+        if (!stat || !stat.count) {
+          continue;
+        }
+        values[field] = this._isCumulativeHistoryField(field)
+          ? stat.lastValue
+          : stat.sum / stat.count;
+      }
+      if (Object.keys(values).length) {
+        deviceValues[serial] = values;
+      }
+    }
+    return { timestamp: bucket.timestamp, deviceValues };
   }
 
   _processHistoryRows(rows, intervalMinutes, rangeStart) {
@@ -684,7 +730,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
         rangeStart
       );
       const bucket =
-        grouped.get(bucketTimestamp) || { timestamp: bucketTimestamp, deviceValues: {} };
+        grouped.get(bucketTimestamp) || { timestamp: bucketTimestamp, deviceAggregates: {} };
       const flat = this._flatten(rawRow);
       const values = {};
       for (const [field, valueRaw] of Object.entries(flat)) {
@@ -698,15 +744,22 @@ class SolaxHistoryViewerCard extends HTMLElement {
         values[field] = value;
       }
       if (Object.keys(values).length) {
-        bucket.deviceValues[serial] = this._mergeHistoryValues(
-          bucket.deviceValues[serial],
-          values
-        );
+        bucket.deviceAggregates[serial] = bucket.deviceAggregates[serial] || {};
+        for (const [field, value] of Object.entries(values)) {
+          this._addHistoryAggregate(
+            bucket.deviceAggregates[serial],
+            field,
+            value,
+            timestamp
+          );
+        }
         grouped.set(bucketTimestamp, bucket);
       }
     }
 
-    this._rows = Array.from(grouped.values()).sort((a, b) => a.timestamp - b.timestamp);
+    this._rows = Array.from(grouped.values())
+      .map((bucket) => this._finalizeHistoryAggregates(bucket))
+      .sort((a, b) => a.timestamp - b.timestamp);
     const fieldStats = this._historyFieldStats(this._rows);
     this._setFieldsFromStats(fieldStats);
   }
@@ -978,40 +1031,53 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
     const devices = this._selectedDevices();
     for (const field of selectedFields) {
-      if (devices.length > 1) {
+      for (const device of devices) {
         series.push({
-          key: `total|${field}`,
-          label: `Total ${this._humanizeField(field)}`,
+          key: `${device.device_sn}|${field}`,
+          label:
+            devices.length === 1
+              ? this._humanizeField(field)
+              : `${this._deviceShortLabel(device)} ${this._humanizeField(field)}`,
           color: colors[colorIndex++ % colors.length],
-          value: (row) => {
-            let total = 0;
-            let seen = false;
-            for (const device of devices) {
-              const value = row.deviceValues?.[device.device_sn]?.[field];
-              if (Number.isFinite(value)) {
-                total += value;
-                seen = true;
-              }
-            }
-            return seen ? total : undefined;
-          },
+          value: (row) => row.deviceValues?.[device.device_sn]?.[field],
         });
-      }
-      if (this._showDeviceBreakdown || devices.length === 1) {
-        for (const device of devices) {
-          series.push({
-            key: `${device.device_sn}|${field}`,
-            label:
-              devices.length === 1
-                ? this._humanizeField(field)
-                : `${this._deviceShortLabel(device)} ${this._humanizeField(field)}`,
-            color: colors[colorIndex++ % colors.length],
-            value: (row) => row.deviceValues?.[device.device_sn]?.[field],
-          });
-        }
       }
     }
     return series.slice(0, 36);
+  }
+
+  _chartYDomain(values) {
+    let minY = Math.min(...values);
+    let maxY = Math.max(...values);
+    const autoZoom =
+      this._mode === SolaxHistoryViewerCard.MODE_DEVICE_HISTORY &&
+      this._chartScaleMode === SolaxHistoryViewerCard.CHART_SCALE_AUTO;
+
+    if (!autoZoom) {
+      if (minY > 0) {
+        minY = 0;
+      }
+      if (maxY < 0) {
+        maxY = 0;
+      }
+    }
+
+    if (minY === maxY) {
+      const centeredPadding = Math.max(Math.abs(maxY) * 0.01, 1);
+      return {
+        minY: minY - centeredPadding,
+        maxY: maxY + centeredPadding,
+      };
+    }
+
+    if (autoZoom) {
+      const span = maxY - minY;
+      const padding = Math.max(span * 0.08, Math.abs(maxY) * 0.001, 0.01);
+      minY -= padding;
+      maxY += padding;
+    }
+
+    return { minY, maxY };
   }
 
   _renderChart() {
@@ -1043,18 +1109,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._chartModel = undefined;
       return `<div class="chart-empty">Selected fields have no numeric values in this result.</div>`;
     }
-    let minY = Math.min(...values);
-    let maxY = Math.max(...values);
-    if (minY > 0) {
-      minY = 0;
-    }
-    if (maxY < 0) {
-      maxY = 0;
-    }
-    if (minY === maxY) {
-      minY -= 1;
-      maxY += 1;
-    }
+    const { minY, maxY } = this._chartYDomain(values);
     const xScale = (timestamp) =>
       pad.left +
       ((timestamp - minX) / Math.max(1, maxX - minX)) *
@@ -1299,6 +1354,33 @@ class SolaxHistoryViewerCard extends HTMLElement {
       .join("");
   }
 
+  _renderScaleControls() {
+    if (this._mode !== SolaxHistoryViewerCard.MODE_DEVICE_HISTORY) {
+      return "";
+    }
+    const autoZoom = this._chartScaleMode === SolaxHistoryViewerCard.CHART_SCALE_AUTO;
+    return `
+      <div class="scale-panel">
+        <div>
+          <div class="field-title">Chart Scale</div>
+          <div class="scale-helper">
+            ${autoZoom
+              ? "Auto zoom uses the selected data range so stable values like grid frequency show small changes."
+              : "Zero baseline keeps power and energy graphs anchored to 0."}
+          </div>
+        </div>
+        <div class="scale-buttons" role="group" aria-label="Chart scale">
+          <button type="button" class="scale-button ${!autoZoom ? "active" : ""}" data-scale="${SolaxHistoryViewerCard.CHART_SCALE_ZERO}">
+            Zero baseline
+          </button>
+          <button type="button" class="scale-button ${autoZoom ? "active" : ""}" data-scale="${SolaxHistoryViewerCard.CHART_SCALE_AUTO}">
+            Auto zoom
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
   _renderDayDrilldowns() {
     if (this._mode !== SolaxHistoryViewerCard.MODE_DEVICE_HISTORY || this._rows.length < 2) {
       return "";
@@ -1365,11 +1447,6 @@ class SolaxHistoryViewerCard extends HTMLElement {
         </label>
         <label>Resolution
           <div class="readonly-control">${this._recommendedInterval(this._rangeHours)} min</div>
-        </label>
-        <label>Breakdown
-          <button type="button" class="toggle-button ${this._showDeviceBreakdown ? "active" : ""}" id="breakdown-toggle">
-            ${this._showDeviceBreakdown ? "Total + devices" : "Total only"}
-          </button>
         </label>
         <button type="button" class="fetch" id="fetch" ${this._fetching || !this._selectedDevices().length ? "disabled" : ""}>${this._fetching ? "Fetching..." : "Fetch History"}</button>
       </div>
@@ -1502,7 +1579,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
           gap: 10px;
           margin: 14px 0;
         }
-        .history-controls { grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.8fr) minmax(130px, 0.8fr) minmax(150px, 0.9fr) minmax(170px, 0.9fr); }
+        .history-controls { grid-template-columns: minmax(150px, 1fr) minmax(130px, 0.8fr) minmax(130px, 0.8fr) minmax(170px, 0.9fr); }
         .plant-controls { grid-template-columns: minmax(150px, 0.8fr) minmax(220px, 1.4fr) minmax(120px, 0.7fr) minmax(150px, 0.8fr) minmax(170px, 0.9fr); }
         .controls > *, .metrics > *, .mode-switch > *, .small-switch > * { min-width: 0; }
         label {
@@ -1599,6 +1676,36 @@ class SolaxHistoryViewerCard extends HTMLElement {
         .chips-empty, .chart-empty { align-items: center; box-sizing: border-box; color: var(--secondary-text-color); display: flex; font-size: 0.88rem; justify-content: center; line-height: 1.45; padding: 18px; text-align: center; }
         .chips-empty.compact { min-height: 44px; padding: 8px; }
         .chart-empty { min-height: 420px; }
+        .scale-panel {
+          align-items: center;
+          background: rgba(127, 127, 127, 0.06);
+          border: 1px solid var(--divider-color);
+          border-radius: 16px;
+          box-sizing: border-box;
+          display: flex;
+          gap: 12px;
+          justify-content: space-between;
+          margin-bottom: 14px;
+          padding: 12px;
+        }
+        .scale-helper { color: var(--secondary-text-color); font-size: 0.76rem; line-height: 1.35; }
+        .scale-buttons { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+        .scale-button {
+          background: var(--secondary-background-color);
+          border: 1px solid var(--divider-color);
+          border-radius: 999px;
+          color: var(--primary-text-color);
+          cursor: pointer;
+          font: inherit;
+          font-size: 0.78rem;
+          font-weight: 800;
+          min-height: 34px;
+          padding: 0 12px;
+        }
+        .scale-button.active {
+          background: rgba(21, 101, 192, 0.14);
+          border-color: rgba(21, 101, 192, 0.42);
+        }
         .chart-wrap { background: rgba(127, 127, 127, 0.06); border: 1px solid var(--divider-color); border-radius: 18px; box-sizing: border-box; min-height: 420px; overflow: hidden; padding: 10px; position: relative; }
         svg { display: block; height: auto; max-width: 100%; width: 100%; }
         .axis { stroke: var(--secondary-text-color); stroke-opacity: 0.55; stroke-width: 1; }
@@ -1619,8 +1726,8 @@ class SolaxHistoryViewerCard extends HTMLElement {
         .error-text { background: rgba(219, 68, 55, 0.1); border: 1px solid rgba(219, 68, 55, 0.22); border-radius: 12px; color: var(--error-color, #db4437); font-size: 0.84rem; font-weight: 700; margin-top: 12px; padding: 10px 12px; }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.35); } }
         @container (max-width: 940px) { .history-controls, .plant-controls { grid-template-columns: repeat(2, minmax(0, 1fr)); } button.fetch { grid-column: 1 / -1; } .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-        @container (max-width: 560px) { .history-controls, .plant-controls, .metrics, .mode-switch { grid-template-columns: 1fr; } button.fetch { grid-column: auto; } .header { align-items: stretch; flex-direction: column; } .status { justify-content: center; } }
-        @media (max-width: 720px) { .history-controls, .plant-controls, .metrics, .mode-switch { grid-template-columns: 1fr; } .header { align-items: stretch; flex-direction: column; } .status { justify-content: center; } }
+        @container (max-width: 560px) { .history-controls, .plant-controls, .metrics, .mode-switch { grid-template-columns: 1fr; } button.fetch { grid-column: auto; } .header { align-items: stretch; flex-direction: column; } .status { justify-content: center; } .scale-panel { align-items: stretch; flex-direction: column; } .scale-buttons { justify-content: stretch; } .scale-button { flex: 1; } }
+        @media (max-width: 720px) { .history-controls, .plant-controls, .metrics, .mode-switch { grid-template-columns: 1fr; } .header { align-items: stretch; flex-direction: column; } .status { justify-content: center; } .scale-panel { align-items: stretch; flex-direction: column; } .scale-buttons { justify-content: stretch; } .scale-button { flex: 1; } }
       </style>
       <ha-card>
         <div class="card">
@@ -1648,6 +1755,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
             <div class="chips" data-section="chips">${this._renderFieldChips()}</div>
           </div>
 
+          <div data-section="scale">${this._renderScaleControls()}</div>
           <div data-section="chart">${this._renderChart()}</div>
           <div data-section="error">${this._lastError ? `<div class="error-text">${this._escape(this._lastError)}</div>` : ""}</div>
         </div>
@@ -1711,6 +1819,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
     this._setSectionHTML("metrics", this._renderMetrics());
     this._setSectionHTML("days", this._renderDayDrilldowns());
     this._setSectionHTML("chips", this._renderFieldChips());
+    this._setSectionHTML("scale", this._renderScaleControls());
     this._setSectionHTML("chart", this._renderChart());
     this._setSectionHTML(
       "error",
@@ -1818,6 +1927,12 @@ class SolaxHistoryViewerCard extends HTMLElement {
         this._toggleField(button.dataset.field);
         return;
       }
+      if (button.classList.contains("scale-button")) {
+        this._chartScaleMode = this._normalizeChartScaleMode(button.dataset.scale);
+        this._hideTooltip();
+        this._render();
+        return;
+      }
       if (button.classList.contains("device-chip")) {
         this._toggleDevice(button.dataset.deviceKey);
         return;
@@ -1835,11 +1950,6 @@ class SolaxHistoryViewerCard extends HTMLElement {
       }
       if (button.id === "select-no-devices") {
         this._selectNoDevices();
-        return;
-      }
-      if (button.id === "breakdown-toggle") {
-        this._showDeviceBreakdown = !this._showDeviceBreakdown;
-        this._render();
         return;
       }
       if (button.id === "fetch") {

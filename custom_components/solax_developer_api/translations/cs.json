@@ -1399,6 +1399,46 @@
           "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
         }
       }
+    },
+    "list_alarm_targets": {
+      "name": "List Alarm Targets",
+      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id. If omitted, all loaded entries are included."
+        }
+      }
+    },
+    "fetch_alarm_information": {
+      "name": "Fetch Alarm Information",
+      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "fields": {
+        "entry_id": {
+          "name": "Entry ID",
+          "description": "Optional config entry id."
+        },
+        "plant_id": {
+          "name": "Plant ID",
+          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+        },
+        "business_type": {
+          "name": "Business Type",
+          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+        },
+        "alarm_state": {
+          "name": "Alarm State",
+          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+        },
+        "device_sn": {
+          "name": "Device SN",
+          "description": "Optional device serial filter."
+        },
+        "max_pages": {
+          "name": "Maximum Pages",
+          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+        }
+      }
     }
   },
   "exceptions": {

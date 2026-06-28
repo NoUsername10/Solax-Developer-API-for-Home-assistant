@@ -557,6 +557,7 @@ class SolaxDeveloperApiClient:
                     "requestDelaySeconds": 0.0,
                     "requestStartTime": int(start_time),
                     "requestEndTime": int(end_time),
+                    "serialIsolatedRequests": True,
                 },
             }
 
@@ -564,7 +565,11 @@ class SolaxDeveloperApiClient:
         combined_rows: list[Any] = []
         seen_identity: set[tuple[str, str]] = set()
         request_count = 0
-        sn_chunks = chunked(normalized_sn, MAX_SN_PER_REQUEST)
+        # Live API validation shows history multi-SN requests return one row per
+        # interval across the SN list, not one row per interval per device.
+        # Query serials individually so multi-device history charts receive the
+        # complete per-device dataset. Realtime endpoints still use max-10 SN batching.
+        sn_chunks = [[sn] for sn in normalized_sn]
         total_requests = len(windows) * len(sn_chunks)
         safe_delay = max(0.0, float(request_delay_seconds or 0.0))
 
@@ -606,6 +611,7 @@ class SolaxDeveloperApiClient:
                 "requestDelaySeconds": safe_delay,
                 "requestStartTime": int(start_time),
                 "requestEndTime": int(end_time),
+                "serialIsolatedRequests": True,
             },
         }
 
