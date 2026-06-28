@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.72%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-96.07%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -22,6 +22,8 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 
 - 📊 **Automatic plant, device, and system-wide total sensors**
 - 🧠 **Dynamic sensors** based on real Developer API data
+- 📈 **Built-in SolaX History Viewer Card** to fetch and view SolaX Developer API history directly, not Home Assistant Recorder history
+- 🚨 **Built-in SolaX Alarm Viewer Card** for manual ongoing/closed alarm lookup from the SolaX Developer API
 - ⚡ **Inverter, battery, meter, EV charger, and EMS support** where available
 - 🚀 **Live View polling and optional Built-in Card-Aware Live View** with API budget protection if your system supports it
 - 🔌 **Works with residential and C&I SolaX systems**
@@ -49,8 +51,8 @@ Contributions, issues, and pull requests are welcome.
 This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
 - **Gold-standard aligned:** Quality-scale requirements are implemented and tracked for this custom integration.
-- **Test coverage:** `95.72%`, enforced by CI with a minimum threshold of `95%`.
-- **Automated tests:** `150` credential-free tests.
+- **Test coverage:** `96.07%`, enforced by CI with a minimum threshold of `95%`.
+- **Automated tests:** `157` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -96,6 +98,7 @@ This custom integration is built and validated as a **🥇 Gold-standard aligned
 - **Capability-Gated Services** - Device-specific services are registered only when matching equipment is present.
 - **On-Demand History Reads** - Device history requests are split into API-safe serial and time-range chunks.
 - **Built-in Live View Controller** - Optional Lovelace card renews Live View while its dashboard view is open.
+- **Built-in Alarm Viewer** - Optional Lovelace card fetches ongoing or closed plant/device alarm records on demand.
 - **Official Diagnostics Export** - Includes raw API envelopes, filtered entity-driving data, and raw-versus-filtered field summaries.
 - **Privacy Redaction** - Credentials, tokens, serials, plant identity, account identity, address, and coordinates are sanitized.
 - **Full Translation Layer** - English (`en`) default/fallback plus German (`de`), Dutch (`nl`), Czech (`cs`), Polish (`pl`), Portuguese (`pt`), Brazilian Portuguese (`pt-BR`), Spanish (`es`), Latin American Spanish (`es-419`), Italian (`it`), French (`fr`), Swedish (`sv`), Danish (`da`), Norwegian Bokmål (`nb`), Finnish (`fi`), Lithuanian (`lt`), Simplified Chinese (`zh-Hans`), Japanese (`ja`), Thai (`th`), Vietnamese (`vi`), Bulgarian (`bg`), Greek (`el`), Hungarian (`hu`), Romanian (`ro`), Turkish (`tr`), and Ukrainian (`uk`).
@@ -542,6 +545,8 @@ Universal polling services are always registered. Capability-specific read servi
 - `solax_developer_api.stop_live_view`
 - `solax_developer_api.list_history_devices`
 - `solax_developer_api.fetch_device_history`
+- `solax_developer_api.list_alarm_targets`
+- `solax_developer_api.fetch_alarm_information`
 - `solax_developer_api.list_plant_statistics_targets`
 - `solax_developer_api.fetch_plant_year_statistics`
 - `solax_developer_api.fetch_plant_month_statistics`
@@ -562,7 +567,8 @@ Use the optional `entry_id` field to target a specific config entry.
 `fetch_device_history` is an on-demand read service. It:
 
 - Accepts 1-200 serial numbers
-- Splits serials into API batches
+- Fetches history one serial at a time because live SolaX API validation showed
+  multi-serial history calls can return incomplete per-device rows
 - Splits long time ranges into safe windows
 - Merges and deduplicates returned history rows
 - Caches the latest result for diagnostics
@@ -781,6 +787,7 @@ Optional advanced config:
 type: custom:solax-history-viewer
 default_range_hours: 6
 max_selected_fields: 6
+default_scale_mode: zero # optional: zero or auto
 ```
 
 Only add `entry_id` if you have multiple SolaX Developer API config entries and want this card pinned to one exact entry. If `entry_id` is wrong or copied as a placeholder, the card cannot list devices or plants.
@@ -792,7 +799,7 @@ Only add `entry_id` if you have multiple SolaX Developer API config entries and 
 3. You press **Fetch History**.
 4. The card calls `solax_developer_api.fetch_device_history`.
 5. Numeric fields actually returned by the API appear as selectable chips.
-6. Selected fields are charted as total selected devices plus optional per-device breakdown lines.
+6. Selected fields are charted per device. Synthetic calculated total lines are intentionally not drawn because device history timestamps can differ between inverters.
 
 Device history is capped at **Week** in the UI. Longer yearly-style views use Plant Statistics mode instead.
 
@@ -803,9 +810,14 @@ Device history resolution is automatic so long ranges do not use short 5-minute 
 - `2 days`, `3 days`: `30 min`
 - `Week`: `60 min`
 
-The SolaX device history API accepts a maximum of 12 hours per request. The integration automatically splits longer device-history ranges into safe windows, and the backend still paces very large direct service requests as a safety net.
+The SolaX device history API accepts a maximum of 12 hours per request. The integration automatically splits longer device-history ranges into safe windows and fetches selected devices one serial at a time so multi-inverter charts receive complete per-device rows. The backend still paces very large direct service requests as a safety net.
 
 For multi-day and week results, the card shows day drilldown chips. Clicking a day fetches that exact day through Device History without writing anything to Recorder.
+
+Device History charts include a **Chart Scale** selector:
+
+- **Zero baseline** keeps power, energy, current, import/export, and similar values anchored to `0`.
+- **Auto zoom** uses the visible selected data range with padding, which makes stable values such as grid frequency or voltage changes easier to see.
 
 ### Plant Statistics mode
 
@@ -823,6 +835,48 @@ Clicking a month in Year view fetches that month. Clicking a day in Month view s
 The chart includes pointer/touch tooltips with the timestamp or period and visible series values, so multi-field and multi-device graphs can be read directly.
 
 Fields are intentionally discovered from the fetched API response, not from a static list, because SolaX history and statistics fields vary by model, firmware, topology, business type, and account permissions.
+
+## 🚨 Built-in Alarm Viewer Card
+
+The integration includes a separate display-only Lovelace card for manual alarm lookup from the documented Developer API endpoint:
+
+`GET /openapi/v2/alarm/page_alarm_info`
+
+This card does **not** poll automatically and does **not** write anything to Home Assistant Recorder. It loads local integration targets from Home Assistant, then only calls SolaX when you press **Fetch Alarms**.
+
+### Add the resource
+
+- URL: `/api/solax_developer_api/frontend/solax-alarm-viewer.js`
+- Type: `module`
+
+### Add the card
+
+Recommended default config:
+
+```yaml
+type: custom:solax-alarm-viewer
+```
+
+Optional advanced config:
+
+```yaml
+type: custom:solax-alarm-viewer
+entry_id: YOUR_CONFIG_ENTRY_ID   # optional
+max_pages: 20                    # optional, 1-100 per plant/state
+```
+
+Only add `entry_id` if you have multiple SolaX Developer API config entries and want this card pinned to one exact entry.
+
+### Alarm lookup behavior
+
+1. The card lists discovered plants and devices already loaded by the integration.
+2. You choose all plants, one plant, or one device.
+3. You choose **All**, **Ongoing**, or **Closed** alarms.
+4. You press **Fetch Alarms**.
+5. The card calls `solax_developer_api.fetch_alarm_information`.
+6. Returned alarm records are shown with summary fields and expandable full returned fields.
+
+The alarm endpoint is plant-scoped. When you choose **All**, the integration queries each loaded plant and the selected alarm state(s), paging through results up to `max_pages`.
 
 ## 🩺 Diagnostics and Privacy
 
@@ -1007,8 +1061,8 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Gold-standard aligned custom integration
-- **Automated test coverage:** 95.72%
-- **Credential-free automated tests:** 150
+- **Automated test coverage:** 96.07%
+- **Credential-free automated tests:** 157
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

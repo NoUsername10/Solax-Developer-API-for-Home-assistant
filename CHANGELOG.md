@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.3.1] - 2026-06-28
+
+### Added
+- Added a display-only SolaX alarm Lovelace card for manual ongoing/closed
+  alarm lookup through `alarm/page_alarm_info`, including plant/device target
+  selectors, API-call summaries, and expandable returned alarm fields.
+- Added `solax_developer_api.list_alarm_targets` and
+  `solax_developer_api.fetch_alarm_information` services for alarm-card
+  metadata and paged manual alarm reads.
+- Added a Device History chart-scale control with `Zero baseline` and
+  `Auto zoom` modes, making stable values such as grid frequency easier to
+  read without changing the fetched API data.
+- Added focused helper and validation tests, raising the Home Assistant stable
+  validation run to `157` credential-free tests with `96.07%` measured
+  coverage.
+
+### Fixed
+- Alarm viewer rows now resolve `deviceType` and contextual `deviceModel`
+  values through the Developer API appendix mappings instead of showing only
+  raw numeric codes.
+- History viewer Device History graphs no longer draw synthetic calculated
+  total lines. Per-device rows are now grouped into clock-aligned requested
+  intervals and summarized per device/field before charting, avoiding false
+  zero-to-value jumps when inverter timestamps differ.
+- Device history fetches now query one serial per request. Live Developer API
+  validation showed multi-serial history calls return incomplete per-device
+  rows, so serial-isolated reads are required for correct multi-inverter
+  history graphs.
+
 ## [v0.3.0] - 2026-06-27
 
 ### Added
