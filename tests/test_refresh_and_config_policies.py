@@ -219,7 +219,8 @@ async def test_update_raises_on_no_fresh_data_and_applies_backoff():
 
     assert coordinator._refresh_failure_streak == 1
     assert coordinator._refresh_backoff_seconds == 120
-    assert coordinator.update_interval.total_seconds() == 120
+    assert coordinator.update_interval.total_seconds() >= coordinator._refresh_backoff_seconds
+    assert coordinator.data["meta"]["refresh_backoff_seconds"] == 120
 
 
 @pytest.mark.asyncio

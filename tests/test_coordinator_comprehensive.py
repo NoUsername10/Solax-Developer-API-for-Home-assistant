@@ -342,6 +342,127 @@ def test_list_plant_statistics_targets_sorts_loaded_plants():
     assert plants[1]["business_type"] == 4
 
 
+def test_list_alarm_targets_returns_loaded_plants_and_devices():
+    instance = _make()
+    instance.data["plants"] = {
+        "P1": {"plantId": "P1", "plantName": "Alpha", "businessType": 1},
+    }
+    instance.data["devices"] = {
+        "INV1": {
+            "deviceSn": "INV1",
+            "plantId": "P1",
+            "deviceType": 1,
+            "businessType": 1,
+        },
+        "METER1": {
+            "deviceSn": "METER1",
+            "plantId": "P1",
+            "deviceType": 3,
+            "manualSerial": True,
+        },
+        "NO_PLANT": {
+            "deviceSn": "NO_PLANT",
+            "deviceType": 1,
+        },
+    }
+
+    targets = instance.list_alarm_targets()
+
+    assert [plant["plant_id"] for plant in targets["plants"]] == ["P1"]
+    assert [device["device_sn"] for device in targets["devices"]] == ["INV1", "METER1"]
+    assert targets["devices"][1]["source"] == "manual"
+    assert targets["devices"][1]["business_type"] == 1
+
+
+class _AlarmClient:
+    def __init__(self):
+        self.calls = []
+
+    async def page_alarm_info(self, **kwargs):
+        self.calls.append(kwargs)
+        state = kwargs["alarm_state"]
+        page_no = kwargs["page_no"]
+        if state == 1 and page_no == 1:
+            records = [
+                {
+                    "alarmStartTime": "2026-06-27 10:00:00",
+                    "alarmName": "Grid Fault",
+                    "errorCode": "60",
+                    "alarmState": 1,
+                    "deviceModel": "2",
+                    "deviceType": 1,
+                    "deviceSn": kwargs.get("device_sn") or "INV1",
+                }
+            ]
+            pages = 2
+        elif state == 1 and page_no == 2:
+            records = [
+                {
+                    "alarmStartTime": "2026-06-27 11:00:00",
+                    "alarmName": "Temperature",
+                    "errorCode": "70",
+                    "alarmState": 1,
+                    "deviceModel": "14",
+                    "deviceType": 1,
+                    "deviceSn": kwargs.get("device_sn") or "INV1",
+                }
+            ]
+            pages = 2
+        else:
+            records = [
+                {
+                    "alarmStartTime": "2026-06-26 10:00:00",
+                    "alarmName": "Recovered",
+                    "errorCode": "80",
+                    "alarmState": 0,
+                    "deviceModel": "50",
+                    "deviceType": 3,
+                    "deviceSn": kwargs.get("device_sn") or "INV1",
+                }
+            ]
+            pages = 1
+        return {
+            "code": 10000,
+            "result": {
+                "plantId": kwargs["plant_id"],
+                "records": records,
+                "total": len(records),
+                "current": page_no,
+                "pages": pages,
+                "size": 10,
+            },
+        }
+
+
+@pytest.mark.asyncio
+async def test_fetch_alarm_information_paginates_states_and_device_filter():
+    client = _AlarmClient()
+    instance = _make(client)
+    instance.data["plants"] = {
+        "P1": {"plantId": "P1", "plantName": "Alpha", "businessType": 1},
+    }
+
+    result = await instance.async_fetch_alarm_information(
+        plant_id="P1",
+        business_type=1,
+        alarm_state="all",
+        device_sn="INV1",
+        max_pages=5,
+    )
+
+    assert [call["alarm_state"] for call in client.calls] == [1, 1, 0]
+    assert all(call["device_sn"] == "INV1" for call in client.calls)
+    assert result["count"] == 3
+    assert result["api_calls_made"] == 3
+    assert result["state_counts"] == {"ongoing": 2, "closed": 1}
+    assert "alarmName" in result["available_fields"]
+    assert result["records"][0]["plantId"] == "P1"
+    assert result["records"][0]["deviceTypeName"] == "Inverter"
+    assert result["records"][0]["deviceModelName"] == "X3-Hybrid-G4"
+    assert result["records"][2]["deviceTypeName"] == "Meter"
+    assert result["records"][2]["deviceModelName"] == "Meter X"
+
+
 class _PlantYearClient:
     def __init__(self):
         self.calls = []
@@ -586,6 +707,67 @@ def test_normalization_lookup_and_known_devices():
     assert instance.get_known_ems_serial("missing") is None
 
 
+def test_normalization_and_lookup_edge_branches():
+    instance = _make()
+
+    assert instance._normalize_manual_meter_entries(123) == []
+    assert instance._normalize_manual_meter_entries('{"serial":"JSONM","businessType":"bad"}') == [
+        {"serial": "JSONM", "business_type": 1, "source": "manual"}
+    ]
+    assert instance._normalize_manual_meter_entries(
+        [{"deviceSn": "ALT", "businessType": 9, "realtimeFields": ["b", "", "A"]}]
+    ) == [
+        {
+            "serial": "ALT",
+            "business_type": 1,
+            "source": "manual",
+            "realtime_fields": ["A", "b"],
+        }
+    ]
+    assert instance._normalize_manual_meter_entries("\n,VALID|4,,BAD|x") == [
+        {"serial": "VALID", "business_type": 4, "source": "manual"}
+    ]
+
+    assert instance._normalize_manual_ems_entries(123) == []
+    assert instance._normalize_manual_ems_entries('{"registerNo":"EMSJSON","stationId":"P4"}') == [
+        {
+            "serial": "EMSJSON",
+            "plant_id": "P4",
+            "business_type": 4,
+            "source": "manual",
+        }
+    ]
+    assert instance._normalize_manual_ems_entries(
+        ("EMS1|P1", {"registerNo": "EMS2", "plantId": "P2"}, "bad")
+    ) == [
+        {
+            "serial": "EMS2",
+            "plant_id": "P2",
+            "business_type": 4,
+            "source": "manual",
+        }
+    ]
+    assert instance._normalize_manual_ems_entries(
+        [{"serial": "", "plant_id": "P"}, {"serial": "EMS", "plant_id": ""}]
+    ) == []
+
+    instance.set_manual_meter_entries(
+        [{"serial": "MRT", "business_type": 4, "realtime_fields": ["power"]}]
+    )
+    instance.data["devices"] = {
+        "BADTYPE": {"deviceType": "bad", "businessType": 1},
+        "EV": {"deviceType": 4, "businessType": 4, "deviceSn": "EV"},
+        "EMS_BADTYPE": {"deviceType": "bad", "plantId": "P4"},
+    }
+    known = instance.get_known_meter_serial("MRT")
+    assert known["source"] == "manual"
+    assert known["realtime_fields"] == ["power"]
+    assert instance.get_known_meter_serial("BADTYPE") is None
+    assert instance.get_known_ev_charger_serial("") is None
+    assert instance.get_known_ev_charger_serial("EV")["business_type"] == 4
+    assert instance.get_known_ems_serial("EMS_BADTYPE") is None
+
+
 @pytest.mark.asyncio
 async def test_manual_ems_probe_failure_shapes():
     instance = _make()
@@ -663,6 +845,45 @@ def test_capability_families_history_ci_and_backoff_helpers(monkeypatch):
         "bad",
     )
     assert instance._select_refresh_failure_signal([], {})[1] == "refresh"
+
+
+def test_raw_error_selection_and_rate_limit_merge_helpers():
+    instance = _make()
+    raw = instance._new_raw_api_response_snapshot()
+    raw[RAW_ENDPOINT_PAGE_PLANT_INFO].extend(
+        [
+            "invalid",
+            {"error": "not-a-mapping"},
+            {
+                "error": {
+                    "classification": "rate_limit",
+                    "code": 10406,
+                    "message": "limited",
+                }
+            },
+            {
+                "error": {
+                    "classification": "timeout",
+                    "code": None,
+                    "message": "",
+                }
+            },
+        ]
+    )
+
+    errors = instance._raw_cycle_error_items(raw)
+    assert len(errors) == 2
+    assert instance._select_refresh_failure_signal([], raw) == (
+        "timeout",
+        RAW_ENDPOINT_PAGE_PLANT_INFO,
+        "refresh failed",
+    )
+
+    merged: list[dict] = []
+    instance._merge_raw_errors_into_errors(merged, raw)
+    assert len(merged) == 2
+    assert instance.rate_limited is True
+    assert RAW_ENDPOINT_PAGE_PLANT_INFO in instance.rate_limited_context
 
 
 def test_live_view_profiles_and_meta(monkeypatch):

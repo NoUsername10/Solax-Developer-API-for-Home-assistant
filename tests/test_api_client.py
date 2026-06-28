@@ -321,6 +321,80 @@ async def test_device_history_windowed_splits_and_dedupes_rows():
 
 
 @pytest.mark.asyncio
+async def test_device_history_windowed_queries_each_serial_separately():
+    session = FakeSession(
+        [
+            FakeResponse(200, {"code": 0, "result": {"access_token": "token-1", "expires_in": 3600}}),
+            FakeResponse(
+                200,
+                {
+                    "code": 10000,
+                    "result": [
+                        {"deviceSn": "SN1", "dataTime": "2026-01-01 00:00:00", "value": 1}
+                    ],
+                },
+            ),
+            FakeResponse(
+                200,
+                {
+                    "code": 10000,
+                    "result": [
+                        {"deviceSn": "SN1", "dataTime": "2026-01-01 00:15:00", "value": 2}
+                    ],
+                },
+            ),
+            FakeResponse(
+                200,
+                {
+                    "code": 10000,
+                    "result": [
+                        {"deviceSn": "SN2", "dataTime": "2026-01-01 00:00:00", "value": 3}
+                    ],
+                },
+            ),
+            FakeResponse(
+                200,
+                {
+                    "code": 10000,
+                    "result": [
+                        {"deviceSn": "SN2", "dataTime": "2026-01-01 00:15:00", "value": 4}
+                    ],
+                },
+            ),
+        ]
+    )
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+
+    payload = await client.device_history_data_windowed(
+        sn_list=["SN1", "SN2"],
+        device_type=1,
+        business_type=1,
+        start_time=0,
+        end_time=2000,
+        time_interval=15,
+        max_window_ms=1000,
+    )
+
+    history_calls = session.calls[1:]
+    assert [call["params"]["snList"] for call in history_calls] == [
+        "SN1",
+        "SN1",
+        "SN2",
+        "SN2",
+    ]
+    assert payload["windowSummary"]["windowCount"] == 2
+    assert payload["windowSummary"]["snChunkCount"] == 2
+    assert payload["windowSummary"]["requestCount"] == 4
+    assert payload["windowSummary"]["serialIsolatedRequests"] is True
+    assert [row["value"] for row in payload["result"]] == [1, 2, 3, 4]
+
+
+@pytest.mark.asyncio
 async def test_device_history_windowed_paces_long_requests(monkeypatch):
     session = FakeSession(
         [

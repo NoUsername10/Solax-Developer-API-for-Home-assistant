@@ -161,6 +161,25 @@ class _Coordinator:
             }
         ]
 
+    def list_alarm_targets(self):
+        return {
+            "plants": self.list_plant_statistics_targets(),
+            "devices": [
+                {
+                    "device_sn": "INV",
+                    "plant_id": "P1",
+                    "device_type": 1,
+                    "device_type_name": "Inverter",
+                    "business_type": 1,
+                    "source": "inventory",
+                    "label": "Inverter INV",
+                }
+            ],
+        }
+
+    async def async_fetch_alarm_information(self, **kwargs):
+        return {"alarms": kwargs}
+
     async def async_query_request_result(self, request_id):
         return {"request_id": request_id}
 
@@ -350,6 +369,8 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     assert hass.services.has_service(DOMAIN, "list_plant_statistics_targets")
     assert hass.services.has_service(DOMAIN, "fetch_plant_year_statistics")
     assert hass.services.has_service(DOMAIN, "fetch_plant_month_statistics")
+    assert hass.services.has_service(DOMAIN, "list_alarm_targets")
+    assert hass.services.has_service(DOMAIN, "fetch_alarm_information")
     assert hass.services.has_service(DOMAIN, "set_export_control")
 
     manual = await hass.services.handler("manual_refresh")(_call())
@@ -375,6 +396,17 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     assert plant_targets["plants"][0]["entry_id"] == "entry-1"
     assert (
         await hass.services.handler("list_plant_statistics_targets")(
+            _call(entry_id="missing")
+        )
+    )["plants"] == []
+
+    alarm_targets = await hass.services.handler("list_alarm_targets")(_call())
+    assert alarm_targets["plant_count"] == 1
+    assert alarm_targets["device_count"] == 1
+    assert alarm_targets["plants"][0]["entry_id"] == "entry-1"
+    assert alarm_targets["devices"][0]["device_sn"] == "INV"
+    assert (
+        await hass.services.handler("list_alarm_targets")(
             _call(entry_id="missing")
         )
     )["plants"] == []
@@ -410,6 +442,17 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
         _call(plant_id="P1", business_type=1, year=datetime.now().year, month=1)
     )
     assert plant_month["plant_month"]["month"] == 1
+    alarms = await hass.services.handler("fetch_alarm_information")(
+        _call(
+            plant_id="P1",
+            business_type=1,
+            alarm_state="ongoing",
+            device_sn="INV",
+            max_pages=2,
+        )
+    )
+    assert alarms["alarms"]["alarm_state"] == "ongoing"
+    assert alarms["alarms"]["device_sn"] == "INV"
     with pytest.raises(ServiceValidationError):
         await hass.services.handler("fetch_plant_year_statistics")(
             _call(plant_id="P1", business_type=1, year=datetime.now().year + 1)
@@ -514,6 +557,16 @@ async def test_list_history_devices_empty_without_loaded_entries(monkeypatch):
         "entries": [],
         "count": 0,
         "plants": [],
+    }
+    alarm_payload = await hass.services.handler("list_alarm_targets")(_call())
+    assert alarm_payload == {
+        "ok": True,
+        "entry_id": None,
+        "entries": [],
+        "plant_count": 0,
+        "device_count": 0,
+        "plants": [],
+        "devices": [],
     }
 
 

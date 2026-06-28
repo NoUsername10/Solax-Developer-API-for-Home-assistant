@@ -273,6 +273,40 @@ def test_diagnostics_sanitizer_and_extractors_cover_nested_keys():
     )
 
 
+def test_diagnostics_malformed_raw_and_value_match_redaction_edges():
+    sanitized = diagnostics._sanitize_for_diagnostics(
+        {
+            "normal_secret_value": "secret-value",
+            "normal_serial_value": "INV123456789",
+            "headers": {"Authorization": "bearer token-value"},
+            "raw_api_token_length": 23,
+        },
+        known_secrets={"secret-value", "token-value"},
+        known_serials={"inv123456789"},
+    )
+    assert sanitized["normal_secret_value"] != "secret-value"
+    assert sanitized["normal_serial_value"] != "INV123456789"
+    assert sanitized["headers"]["Authorization"].startswith("bearer ")
+    assert sanitized["raw_api_token_length"] == 23
+
+    raw = {
+        "page_device_info": [
+            {"response": {"result": {"records": "not-a-list"}}},
+        ],
+        "device_realtime_data": [
+            "invalid",
+            {"request": {"snList": "not-a-list"}, "response": {"result": "not-a-list"}},
+        ],
+        "ems_summary_data": [
+            "invalid",
+            {"response": "not-a-mapping"},
+            {"response": {"result": ["bad-row"]}},
+        ],
+    }
+    assert diagnostics._collect_known_serials_from_raw(raw) == set()
+    assert diagnostics._extract_raw_device_realtime(raw) == {}
+
+
 @pytest.mark.asyncio
 async def test_loaded_diagnostics_empty_refresh_success_and_failure():
     class _Client:

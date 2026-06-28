@@ -243,6 +243,76 @@ def test_evc_control_payload_validates_documented_enums_and_ranges():
         assert err.value.key == "runtime.errors.control_field_value_invalid"
 
 
+def test_optional_control_fields_validate_types_and_text_lengths():
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_charge_scene",
+            {
+                "sn_list": ["C1"],
+                "charger_scene": 1,
+                "ocpp_url": 123,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_type_mismatch"
+
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_charge_scene",
+            {
+                "sn_list": ["C1"],
+                "charger_scene": 1,
+                "ocpp_url": "x" * 129,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_value_invalid"
+
+    assert validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1"],
+            "work_mode": 2,
+            "business_type": 1,
+        },
+    )["workMode"] == 2
+
+    assert validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1"],
+            "work_mode": 3,
+            "current_gear": 6,
+            "business_type": 1,
+        },
+    )["currentGear"] == 6
+
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_evc_work_mode",
+            {
+                "sn_list": ["C1"],
+                "work_mode": 3,
+                "current_gear": 10,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_value_invalid"
+
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_export_control",
+            {
+                "sn_list": ["INV"],
+                "device_type": "bad",
+                "is_enable": 1,
+                "limit_value": 1.0,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_type_mismatch"
+
+
 def test_battery_heating_enforces_conditional_fields():
     with pytest.raises(ControlValidationError) as err:
         validate_control_payload(
@@ -254,6 +324,17 @@ def test_battery_heating_enforces_conditional_fields():
             },
         )
     assert err.value.key == "runtime.errors.control_missing_required_field"
+
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_battery_heating",
+            {
+                "sn_list": ["X3******01"],
+                "heating_enable": 9,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_value_invalid"
 
     validated = validate_control_payload(
         "set_battery_heating",
