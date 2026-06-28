@@ -20,20 +20,25 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 
 ## ✨ Features in short
 
+- ⚡ **Inverter, battery, meter, EV charger, and EMS support** 
 - 📊 **Automatic plant, device, and system-wide total sensors**
-- 🧠 **Dynamic sensors** based on real Developer API data
-- 📈 **Built-in SolaX History Viewer Card** to fetch and view SolaX Developer API history directly, not Home Assistant Recorder history
-- 🚨 **Built-in SolaX Alarm Viewer Card** for manual ongoing/closed alarm lookup from the SolaX Developer API
-- ⚡ **Inverter, battery, meter, EV charger, and EMS support** where available
-- 🚀 **Live View polling and optional Built-in Card-Aware Live View** with API budget protection if your system supports it
-- 🔌 **Works with residential and C&I SolaX systems**
+- 🧠 **Dynamic sensors** based on real Developer API data received
 - 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
-- ⚠️ **Built-in API error, permission, quota, and rate-limit reporting**
-- 🧰 **Privacy-safe diagnostics** with raw and filtered API response views
+- 🔌 **Works with residential and C&I SolaX systems**
 - 🛠️ **No YAML or template sensors required**
 - 🌍 **26-language translation layer**
-  - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
+- 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
 - 🥇 **Home Assistant Gold-standard aligned**
+    
+**Cards included**
+- 📈 **Built-in SolaX History Viewer Card** to fetch and view from history SolaX, not Home Assistant Recorder history
+- 🚨 **Built-in SolaX Alarm Viewer Card** for manual ongoing/closed alarm lookup from SolaX
+- 🚀 **Built-in Card-Aware Live View polling** with API budget protection if your system supports live view.
+
+**Diagnostics**
+- ⚠️ **Built-in API error, permission, quota, and rate-limit reporting**
+- 🧰 **Privacy-safe diagnostics** with raw and filtered API response views
+
 
 This integration is developed and tested against real SolaX Developer API responses and Home Assistant installations.
 Contributions, issues, and pull requests are welcome.
@@ -50,7 +55,7 @@ Contributions, issues, and pull requests are welcome.
 
 This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
-- **Gold-standard aligned:** Quality-scale requirements are implemented and tracked for this custom integration.
+- **Gold-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Test coverage:** `96.07%`, enforced by CI with a minimum threshold of `95%`.
 - **Automated tests:** `157` credential-free tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
