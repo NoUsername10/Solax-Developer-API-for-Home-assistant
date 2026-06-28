@@ -731,11 +731,11 @@ The repository includes preview assets for both Live View card layouts. These ca
 
 **Regular view**
 
-![SolaX Live View regular card preview](assets/live-view/regular-light.svg)
+![SolaX Live View regular card preview](https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/live-view/regular-light.svg)
 
 **Compact view**
 
-![SolaX Live View compact card preview](assets/live-view/compact-light.svg)
+![SolaX Live View compact card preview](https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/live-view/compact-light.svg)
 
 ### Add the resource
 
@@ -775,7 +775,7 @@ The integration also includes a display-only Lovelace card for on-demand SolaX D
 
 This card does **not** write fetched API history or plant statistics into Home Assistant Recorder or long-term statistics. It only fetches and charts data inside the card after you press **Fetch History** or **Fetch Statistics**.
 
-![SolaX History Viewer card](assets/history-viewer/solax-history.png)
+![SolaX History Viewer card](https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/history-viewer/solax-history.png)
 
 ### Add the resource
 
@@ -855,7 +855,7 @@ This card does **not** poll automatically and does **not** write anything to Hom
 
 The integration also creates a native Home Assistant persistent notification when normal polling detects active SolaX alarms. The **Active Alarm Count** sensor remains the source of truth for automations, while the notification gives a quick attention-needed summary with up to three returned alarm details.
 
-![SolaX Alarm Viewer card](assets/history-viewer/solax-alarm.png)
+![SolaX Alarm Viewer card](https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/history-viewer/solax-alarm.png)
 
 ### Add the resource
 
