@@ -208,6 +208,8 @@ def _make(client=None):
     instance._last_refresh_failure_at = None
     instance._poll_count = 0
     instance._history_cache = {}
+    instance._active_fetch_request_ids = set()
+    instance._cancelled_fetch_request_ids = set()
     instance._request_result_cache = {}
     instance._master_control_cache = {}
     instance._control_dry_runs = []
@@ -461,6 +463,43 @@ async def test_fetch_alarm_information_paginates_states_and_device_filter():
     assert result["records"][0]["deviceModelName"] == "X3-Hybrid-G4"
     assert result["records"][2]["deviceTypeName"] == "Meter"
     assert result["records"][2]["deviceModelName"] == "Meter X"
+
+
+@pytest.mark.asyncio
+async def test_cancel_fetch_stops_alarm_and_plant_statistics_before_next_call():
+    alarm_client = _AlarmClient()
+    alarm_instance = _make(alarm_client)
+    alarm_instance.data["plants"] = {
+        "P1": {"plantId": "P1", "plantName": "Alpha", "businessType": 1},
+    }
+    assert alarm_instance.cancel_fetch("alarm-1")["cancelled"] is True
+
+    alarm_result = await alarm_instance.async_fetch_alarm_information(
+        plant_id="P1",
+        business_type=1,
+        alarm_state="all",
+        max_pages=5,
+        request_id="alarm-1",
+    )
+
+    assert alarm_result["cancelled"] is True
+    assert alarm_result["api_calls_made"] == 0
+    assert alarm_client.calls == []
+
+    plant_client = _PlantYearClient()
+    plant_instance = _make(plant_client)
+    assert plant_instance.cancel_fetch("plant-year-1")["cancelled"] is True
+
+    plant_result = await plant_instance.async_fetch_plant_year_statistics(
+        plant_id="P1",
+        business_type=1,
+        year=2025,
+        request_id="plant-year-1",
+    )
+
+    assert plant_result["cancelled"] is True
+    assert plant_result["api_calls_made"] == 0
+    assert plant_client.calls == []
 
 
 class _PlantYearClient:

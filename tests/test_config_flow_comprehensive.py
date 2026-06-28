@@ -476,9 +476,10 @@ async def test_options_finish_and_simple_pages(monkeypatch):
     assert handler.hass.config_entries.reloads == ["entry-1"]
 
     advanced = await handler.async_step_advanced(
-        {"rate_limit_notifications": False}
+        {"rate_limit_notifications": False, "alarm_notifications": False}
     )
     assert advanced["data"]["rate_limit_notifications"] is False
+    assert advanced["data"]["alarm_notifications"] is False
 
 
 @pytest.mark.asyncio

@@ -79,6 +79,8 @@ class _ProbeClient:
         time_interval,
         request_sn_type=None,
         max_window_ms=None,
+        request_delay_seconds=0.0,
+        cancellation_check=None,
     ):
         return {
             "code": 10000,
@@ -108,6 +110,8 @@ class _ProbeEmptyClient:
         time_interval,
         request_sn_type=None,
         max_window_ms=None,
+        request_delay_seconds=0.0,
+        cancellation_check=None,
     ):
         return {"code": 10000, "result": [], "windowSummary": {"windowCount": 0}}
 

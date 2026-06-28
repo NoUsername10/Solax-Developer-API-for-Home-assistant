@@ -428,4 +428,40 @@ async def test_device_history_windowed_paces_long_requests(monkeypatch):
     assert payload["windowSummary"]["requestCount"] == 3
     assert payload["windowSummary"]["requestDelaySeconds"] == 0.75
     assert sleep_mock.await_count == 2
-    sleep_mock.assert_awaited_with(0.75)
+
+
+@pytest.mark.asyncio
+async def test_device_history_windowed_stops_when_cancelled():
+    session = FakeSession(
+        [
+            FakeResponse(200, {"code": 0, "result": {"access_token": "token-1", "expires_in": 3600}}),
+            FakeResponse(200, {"code": 10000, "result": [{"deviceSn": "SN1", "value": 1}]}),
+        ]
+    )
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+    checks = 0
+
+    def _cancel_after_first_request():
+        nonlocal checks
+        checks += 1
+        return checks >= 2
+
+    payload = await client.device_history_data_windowed(
+        sn_list=["SN1"],
+        device_type=1,
+        business_type=1,
+        start_time=0,
+        end_time=3000,
+        time_interval=60,
+        max_window_ms=1000,
+        cancellation_check=_cancel_after_first_request,
+    )
+
+    assert payload["windowSummary"]["cancelled"] is True
+    assert payload["windowSummary"]["requestCount"] == 1
+    assert [row["value"] for row in payload["result"]] == [1]

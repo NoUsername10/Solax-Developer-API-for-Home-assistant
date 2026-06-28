@@ -7,6 +7,8 @@ from homeassistant.exceptions import ServiceValidationError
 
 import custom_components.solax_developer_api as integration
 from custom_components.solax_developer_api import (
+    _alarm_notification_id,
+    _alarm_notifications_enabled,
     _async_register_frontend_assets,
     _coordinator_for_entry,
     _loaded_runtime_for_entry,
@@ -18,6 +20,7 @@ from custom_components.solax_developer_api import (
     _resolve_coordinator_for_service,
     _sanitize_dry_run_payload_for_log,
     _translated_service_error,
+    _update_alarm_notification,
     _update_rate_limit_notification,
     async_migrate_entry,
     async_remove_config_entry_device,
@@ -179,6 +182,14 @@ class _Coordinator:
 
     async def async_fetch_alarm_information(self, **kwargs):
         return {"alarms": kwargs}
+
+    def cancel_fetch(self, request_id):
+        return {
+            "ok": True,
+            "cancelled": True,
+            "request_id": request_id,
+            "was_active": True,
+        }
 
     async def async_query_request_result(self, request_id):
         return {"request_id": request_id}
@@ -352,6 +363,119 @@ def test_rate_limit_preferences_and_notifications(monkeypatch):
     assert created
 
 
+def test_alarm_notifications_active_cleared_and_disabled(monkeypatch):
+    coordinator = _Coordinator()
+    entry = _entry(coordinator)
+    hass = _Hass([entry])
+    created = []
+    dismissed = []
+    monkeypatch.setattr(
+        integration.persistent_notification,
+        "async_create",
+        lambda *args, **kwargs: created.append((args, kwargs)),
+    )
+    monkeypatch.setattr(
+        integration.persistent_notification,
+        "async_dismiss",
+        lambda *args, **kwargs: dismissed.append((args, kwargs)),
+    )
+
+    assert _alarm_notification_id("x").endswith("_x")
+    assert _alarm_notifications_enabled(hass, "missing") is True
+
+    coordinator.data = {
+        "alarms": {"P1": {"total": 0, "records": []}},
+        "plants": {"P1": {"plantName": "Home"}},
+        "last_errors": [],
+    }
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+    assert not created
+    assert entry.runtime_data.alarm_notification_state == "none"
+
+    coordinator.data = {
+        "alarms": {
+            "P1": {
+                "total": 4,
+                "records": [
+                    {
+                        "alarmName": "Grid fault",
+                        "errorCode": "E001",
+                        "alarmType": "Grid",
+                    },
+                    {
+                        "alarmName": "Battery warning",
+                        "errorCode": "B002",
+                        "alarmType": "Battery",
+                    },
+                    {
+                        "alarmName": "Meter warning",
+                        "errorCode": "M003",
+                        "alarmType": "Meter",
+                    },
+                ],
+            }
+        },
+        "plants": {"P1": {"plantName": "Home"}},
+        "last_errors": [],
+    }
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+    assert entry.runtime_data.alarm_notification_state == "active"
+    message = created[-1][0][1]
+    assert "4 active alarm" in message
+    assert "Grid fault" in message
+    assert "E001" in message
+    assert "Battery warning" in message
+    assert "Meter warning" in message
+    assert "and 1 more" in message
+
+    coordinator.data = {
+        "alarms": {"P1": {"total": 0, "records": []}},
+        "plants": {"P1": {"plantName": "Home"}},
+        "last_errors": [],
+    }
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+    assert entry.runtime_data.alarm_notification_state == "cleared"
+    assert created[-1][1]["title"] == "SolaX alarms cleared"
+    cleared_count = len(created)
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+    assert len(created) == cleared_count
+
+    entry.options["alarm_notifications"] = False
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+    assert entry.runtime_data.alarm_notification_state == "none"
+    assert dismissed[-1][0][1] == _alarm_notification_id(entry.entry_id)
+
+
+def test_alarm_notification_error_does_not_clear(monkeypatch):
+    coordinator = _Coordinator()
+    entry = _entry(coordinator)
+    entry.runtime_data.alarm_notification_state = "active"
+    hass = _Hass([entry])
+    created = []
+    dismissed = []
+    monkeypatch.setattr(
+        integration.persistent_notification,
+        "async_create",
+        lambda *args, **kwargs: created.append((args, kwargs)),
+    )
+    monkeypatch.setattr(
+        integration.persistent_notification,
+        "async_dismiss",
+        lambda *args, **kwargs: dismissed.append((args, kwargs)),
+    )
+
+    coordinator.data = {
+        "alarms": {"P1": {"total": 0, "records": []}},
+        "plants": {"P1": {"plantName": "Home"}},
+        "last_errors": [{"context": "alarm_page_alarm_info"}],
+    }
+    _update_alarm_notification(hass, entry.entry_id, coordinator)
+
+    assert entry.runtime_data.alarm_notification_state == "active"
+    assert not created
+    assert not dismissed
+
+
 @pytest.mark.asyncio
 async def test_domain_services_all_read_and_control_paths(monkeypatch):
     async def _loaded(hass):
@@ -371,6 +495,7 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     assert hass.services.has_service(DOMAIN, "fetch_plant_month_statistics")
     assert hass.services.has_service(DOMAIN, "list_alarm_targets")
     assert hass.services.has_service(DOMAIN, "fetch_alarm_information")
+    assert hass.services.has_service(DOMAIN, "cancel_fetch")
     assert hass.services.has_service(DOMAIN, "set_export_control")
 
     manual = await hass.services.handler("manual_refresh")(_call())
@@ -453,6 +578,8 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     )
     assert alarms["alarms"]["alarm_state"] == "ongoing"
     assert alarms["alarms"]["device_sn"] == "INV"
+    cancelled = await hass.services.handler("cancel_fetch")(_call(request_id="history-1"))
+    assert cancelled["entries"]["entry-1"]["request_id"] == "history-1"
     with pytest.raises(ServiceValidationError):
         await hass.services.handler("fetch_plant_year_statistics")(
             _call(plant_id="P1", business_type=1, year=datetime.now().year + 1)
@@ -606,6 +733,11 @@ async def test_setup_entry_lifecycle_migration_and_removal(monkeypatch):
     monkeypatch.setattr(
         integration,
         "_update_rate_limit_notification",
+        lambda *args: None,
+    )
+    monkeypatch.setattr(
+        integration,
+        "_update_alarm_notification",
         lambda *args: None,
     )
     monkeypatch.setattr(integration, "_update_repairs", lambda *args: None)
