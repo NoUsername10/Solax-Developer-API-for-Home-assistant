@@ -15,7 +15,9 @@
 Automatically discovers authorized plants and devices, creates per-device sensors, and provides a system-wide overview with total sensors.
 Requires no YAML configuration or template sensors.
 
-Great if you want a feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
+If a local Modbus setup is not an option for your physical layout (or not working), this is the cleanest and reliable cloud-connected implementation available for SolaX hardware that gives you the same amount of sensors.
+
+Great if you want a feature-rich, read-safe SolaX Developer API integration for SolaX residential and C&I systems in Home Assistant.
 Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
 
 ## ✨ Features in short
