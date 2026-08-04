@@ -1,3 +1,10 @@
+import {
+  cardLanguage,
+  loadCardTranslations,
+  localizeCardMetadata,
+  translateCard,
+} from "./solax-card-i18n.js";
+
 class SolaxLiveViewControllerCard extends HTMLElement {
   constructor() {
     super();
@@ -8,7 +15,9 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     this._tickerHandle = undefined;
     this._entryId = undefined;
     this._entityId = undefined;
-    this._name = "SolaX Live View";
+    this._name = undefined;
+    this._translations = {};
+    this._translationLanguage = undefined;
     this._minimal = false;
     this._durationSeconds = 120;
     this._intervalSeconds = undefined;
@@ -23,7 +32,7 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     const cfg = config || {};
     this._entryId = this._cleanString(cfg.entry_id);
     this._entityId = this._cleanString(cfg.entity || cfg.live_view_entity);
-    this._name = this._cleanString(cfg.name) || "SolaX Live View";
+    this._name = this._cleanString(cfg.name);
     this._minimal =
       this._toBool(cfg.minimal, false) ||
       ["minimal", "compact"].includes(
@@ -44,6 +53,7 @@ class SolaxLiveViewControllerCard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    void this._loadTranslations();
     if (this._connected && !this._heartbeatHandle) {
       this._startHeartbeat();
     }
@@ -55,6 +65,7 @@ class SolaxLiveViewControllerCard extends HTMLElement {
 
   connectedCallback() {
     this._connected = true;
+    void this._loadTranslations();
     this._startHeartbeat();
     this._startTicker();
     this._render();
@@ -68,6 +79,29 @@ class SolaxLiveViewControllerCard extends HTMLElement {
 
   getCardSize() {
     return this._minimal ? 1 : 3;
+  }
+
+  async _loadTranslations() {
+    const language = cardLanguage(this._hass);
+    if (!this._hass || language === this._translationLanguage) return;
+    this._translationLanguage = language;
+    this._translations = await loadCardTranslations(this._hass);
+    localizeCardMetadata(
+      "solax-live-view-controller",
+      this._translations,
+      "live",
+      "SolaX Live View Controller",
+      "Keeps SolaX Developer API Live View active while a dashboard is open."
+    );
+    if (this._connected) this._render();
+  }
+
+  _t(key, fallback, placeholders = {}) {
+    return translateCard(this._translations, `live.${key}`, fallback, placeholders);
+  }
+
+  _displayName() {
+    return this._name || this._t("title", "SolaX Live View");
   }
 
   _cleanString(raw) {
@@ -340,29 +374,32 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     if (value >= 3600) {
       const hours = Math.floor(value / 3600);
       const minutes = Math.floor((value % 3600) / 60);
-      return `${hours}h ${minutes}m`;
+      return this._t("duration_hours_minutes", "{hours}h {minutes}m", { hours, minutes });
     }
     if (value >= 60) {
       const minutes = Math.floor(value / 60);
       const remainder = value % 60;
-      return `${minutes}m ${remainder}s`;
+      return this._t("duration_minutes_seconds", "{minutes}m {seconds}s", {
+        minutes,
+        seconds: remainder,
+      });
     }
-    return `${value}s`;
+    return this._t("duration_seconds", "{seconds}s", { seconds: value });
   }
 
   _formatValue(value, suffix = "") {
     if (value === undefined || value === null || value === "") {
-      return "Unknown";
+      return this._t("unknown", "Unknown");
     }
     return `${value}${suffix}`;
   }
 
   _formatHeartbeatAge() {
     if (!this._lastHeartbeatAt) {
-      return "Waiting";
+      return this._t("waiting", "Waiting");
     }
     const seconds = Math.max(0, Math.floor((Date.now() - this._lastHeartbeatAt.getTime()) / 1000));
-    return `${this._formatSeconds(seconds)} ago`;
+    return this._t("ago", "{duration} ago", { duration: this._formatSeconds(seconds) });
   }
 
   _escape(value) {
@@ -388,8 +425,10 @@ class SolaxLiveViewControllerCard extends HTMLElement {
     const detail = this._lastError
       ? this._lastError
       : state.budgetAdjusted
-        ? "API budget protected"
-        : `Heartbeat ${this._formatHeartbeatAge()}`;
+        ? this._t("budget_protected_detail", "API budget protected")
+        : this._t("heartbeat_detail", "Heartbeat {age}", {
+            age: this._formatHeartbeatAge(),
+          });
 
     this.shadowRoot.innerHTML = `
       <style>
@@ -535,7 +574,7 @@ class SolaxLiveViewControllerCard extends HTMLElement {
           <div class="icon-wrap"><ha-icon icon="mdi:clock-fast"></ha-icon></div>
           <div class="content">
             <div class="title-row">
-              <div class="title">${this._escape(this._name)}</div>
+              <div class="title">${this._escape(this._displayName())}</div>
               <div class="remaining">${this._escape(this._formatSeconds(state.remaining))}</div>
             </div>
             <div class="detail">${this._escape(detail)}</div>
@@ -554,12 +593,22 @@ class SolaxLiveViewControllerCard extends HTMLElement {
       return;
     }
     const state = this._buildDisplayState();
-    const statusText = this._lastError ? "Error" : state.active ? "Active" : "Starting";
+    const statusText = this._lastError
+      ? this._t("status_error", "Error")
+      : state.active
+        ? this._t("status_active", "Active")
+        : this._t("status_starting", "Starting");
     const statusClass = this._lastError ? "error" : state.active ? "active" : "starting";
-    const budgetText = state.budgetAdjusted ? "Protected" : "Normal";
+    const budgetText = state.budgetAdjusted
+      ? this._t("budget_protected", "Protected")
+      : this._t("budget_normal", "Normal");
     const refreshText =
-      state.refreshOk === undefined ? "Pending" : state.refreshOk ? "Fresh" : "Live, refresh warning";
-    const entityText = state.entityId || "Auto-detecting";
+      state.refreshOk === undefined
+        ? this._t("refresh_pending", "Pending")
+        : state.refreshOk
+          ? this._t("refresh_fresh", "Fresh")
+          : this._t("refresh_warning", "Live, refresh warning");
+    const entityText = state.entityId || this._t("auto_detecting", "Auto-detecting");
 
     if (this._minimal) {
       this._renderMinimal(state, statusText, statusClass);
@@ -794,8 +843,8 @@ class SolaxLiveViewControllerCard extends HTMLElement {
             <div class="brand">
               <div class="icon-wrap"><ha-icon icon="mdi:solar-power"></ha-icon></div>
               <div>
-                <h2 class="title">${this._escape(this._name)}</h2>
-                <div class="subtitle">Keeps Developer API Live View active while this dashboard is open.</div>
+                <h2 class="title">${this._escape(this._displayName())}</h2>
+                <div class="subtitle">${this._escape(this._t("subtitle", "Keeps Developer API Live View active while this dashboard is open."))}</div>
               </div>
             </div>
             <div class="status ${statusClass}">
@@ -806,23 +855,23 @@ class SolaxLiveViewControllerCard extends HTMLElement {
 
           <div class="hero">
             <div>
-              <div class="remaining-label">Live View Remaining</div>
+              <div class="remaining-label">${this._escape(this._t("remaining", "Live View Remaining"))}</div>
               <div class="remaining-value">${this._escape(this._formatSeconds(state.remaining))}</div>
             </div>
             <div class="profile">${this._escape(String(state.pollProfile).replaceAll("_", " "))}</div>
           </div>
 
           <div class="grid">
-            ${this._renderMetric("Target Interval", this._formatValue(state.targetInterval, "s"), "Requested card/service target")}
-            ${this._renderMetric("Effective Interval", this._formatValue(state.effectiveInterval, "s"), "May be increased for API safety")}
-            ${this._renderMetric("API Budget", budgetText, state.callBudget ? `${state.callBudget} calls/min configured` : "Budget metadata pending")}
-            ${this._renderMetric("Estimated Calls", this._formatValue(state.estimatedCalls), "Per Live View refresh cycle")}
-            ${this._renderMetric("Last Heartbeat", this._formatHeartbeatAge(), `Every ${this._heartbeatSeconds}s`)}
-            ${this._renderMetric("Refresh Status", refreshText, this._lastError ? this._lastError : "Latest service heartbeat")}
+            ${this._renderMetric(this._t("target_interval", "Target Interval"), this._formatValue(state.targetInterval, "s"), this._t("target_interval_help", "Requested card/service target"))}
+            ${this._renderMetric(this._t("effective_interval", "Effective Interval"), this._formatValue(state.effectiveInterval, "s"), this._t("effective_interval_help", "May be increased for API safety"))}
+            ${this._renderMetric(this._t("api_budget", "API Budget"), budgetText, state.callBudget ? this._t("calls_per_minute", "{count} calls/min configured", { count: state.callBudget }) : this._t("budget_pending", "Budget metadata pending"))}
+            ${this._renderMetric(this._t("estimated_calls", "Estimated Calls"), this._formatValue(state.estimatedCalls), this._t("estimated_calls_help", "Per Live View refresh cycle"))}
+            ${this._renderMetric(this._t("last_heartbeat", "Last Heartbeat"), this._formatHeartbeatAge(), this._t("heartbeat_every", "Every {seconds}s", { seconds: this._heartbeatSeconds }))}
+            ${this._renderMetric(this._t("refresh_status", "Refresh Status"), refreshText, this._lastError ? this._lastError : this._t("latest_heartbeat", "Latest service heartbeat"))}
           </div>
 
           <div class="footer">
-            Entity: <strong>${this._escape(entityText)}</strong>
+            ${this._escape(this._t("entity", "Entity"))}: <strong>${this._escape(entityText)}</strong>
             ${this._lastError ? `<br><span class="error-text">${this._escape(this._lastError)}</span>` : ""}
           </div>
         </div>
