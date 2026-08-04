@@ -65,6 +65,18 @@ def validate_catalog_group(
             issues.append(f"{label}/{filename}: key mismatch from en.json")
             continue
         for key, baseline_value in baseline.items():
+            if baseline_value.strip() and not catalog[key].strip():
+                issues.append(
+                    f"{label}/{filename}: empty translation at {key}"
+                )
+            if "ZXQ" in catalog[key]:
+                issues.append(
+                    f"{label}/{filename}: unreplaced protected token at {key}"
+                )
+            if "\n" not in baseline_value and "\n" in catalog[key]:
+                issues.append(
+                    f"{label}/{filename}: unexpected newline at {key}"
+                )
             if set(re.findall(r"{([^{}]+)}", baseline_value)) != set(
                 re.findall(r"{([^{}]+)}", catalog[key])
             ):
