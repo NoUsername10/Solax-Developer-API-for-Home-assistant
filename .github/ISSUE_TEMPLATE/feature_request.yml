@@ -1,0 +1,71 @@
+name: 💡 Feature request
+description: Suggest an idea or enhancement for the SolaX Developer API integration
+title: "[Feature]: "
+labels:
+  - enhancement
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for your suggestion!
+
+        We welcome ideas for improving the integration. Please provide as much detail as possible so we can evaluate your request.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      description: Please confirm the following.
+      options:
+        - label: I searched existing requests and did not find a similar feature request.
+          required: true
+        - label: This is a feature request and not a bug report.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Use case
+      description: What problem are you trying to solve? What is currently missing?
+      placeholder: Describe the limitation or inconvenience you're experiencing.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe how you would like this to work.
+      placeholder: Explain your proposed feature or improvement.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature_type
+    attributes:
+      label: Feature category
+      options:
+        - New functionality
+        - Improvement to existing functionality
+        - Performance
+        - User interface
+        - Configuration
+        - Diagnostics
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or references
+      description: Include screenshots, links, mockups, or examples from other integrations if applicable.
+      placeholder: Drag screenshots here or paste relevant links.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Add any other information that may help us evaluate your request.
