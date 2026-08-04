@@ -1,0 +1,189 @@
+name: 🐛 Bug report
+description: Report a reproducible problem with the SolaX Developer API integration
+title: "[Bug]: "
+labels:
+  - bug
+  - needs-triage
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for reporting a problem
+
+        Please complete all required fields. Detailed reports help us identify and resolve issues faster.
+
+        > Do not include passwords, API keys, tokens, serial numbers, or other sensitive information.
+        > Solax Developer API redacts ALL personal and system identifiers in the diagnostics JSON export.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      description: Please confirm the following.
+      options:
+        - label: I searched the README and did not find any instructions helping me.
+          required: true
+        - label: I am using the latest available version of the integration.
+          required: true
+        - label: I restarted Home Assistant after updating the integration.
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: Clearly describe what happened and what appears to be wrong.
+      placeholder: Describe the problem, including when it started and how often it occurs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide the exact steps needed to reproduce the problem.
+      value: |
+        1.
+        2.
+        3.
+        4.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: Describe what you expected to happen instead.
+      placeholder: I expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: Describe what happened instead.
+      placeholder: Instead, Home Assistant...
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: Integration version
+      description: Find this in HACS or the integration manifest.
+      placeholder: "Example: 1.2.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation_method
+    attributes:
+      label: Installation method
+      options:
+        - HACS
+        - Manual installation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: home_assistant_version
+    attributes:
+      label: Home Assistant version
+      description: Copy these details from **Settings → System → Repairs → System information** or **Settings → About**.
+      value: |
+        Core:
+        Supervisor:
+        Operating System:
+        Frontend:
+    validations:
+      required: true
+
+  - type: input
+    id: host_device
+    attributes:
+      label: Host device
+      description: The device or system running Home Assistant.
+      placeholder: "Example: Raspberry Pi 5, Home Assistant Green, Intel NUC"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client_device
+    attributes:
+      label: Device used to access Home Assistant
+      multiple: true
+      options:
+        - Desktop
+        - Laptop
+        - Mobile phone
+        - Tablet
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser or Home Assistant app
+      placeholder: "Example: Chrome 140, Safari 18, Home Assistant Android app"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: |
+        Add relevant Home Assistant log entries. Remove API keys, tokens, serial numbers, and other sensitive information.
+      placeholder: Paste relevant logs here.
+      render: text
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Diagnostics
+
+        Diagnostics are required, diagnostics are privacy redacted by default by the integration:
+
+        1. Go to **Settings → Devices & services**.
+        2. Open **SolaX Developer API**.
+        3. Open the top-right menu (**⋮**).
+        4. Select **Download diagnostics**.
+        5. Drag the downloaded JSON file into the diagnostics field below.
+
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics file
+      description: Drag and drop the downloaded diagnostics JSON file into this field.
+      placeholder: Drag the diagnostics JSON file here.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: diagnostics_confirmation
+    attributes:
+      label: Diagnostics confirmation
+      options:
+        - label: I have attached the diagnostics JSON file.
+          required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag and drop screenshots or screen recordings here, if applicable.
+      placeholder: Drag screenshots here.
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Include anything else that may help investigate the problem.
+      placeholder: Recent changes, related automations, network setup, frequency of the issue, etc.
