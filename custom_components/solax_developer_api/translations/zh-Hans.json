@@ -9,29 +9,29 @@
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "system_name": "系统名称",
-          "scan_interval": "扫描间隔（秒）",
+          "scan_interval": "轮询间隔（秒）",
           "api_region": "API 区域"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
-          "system_name": "系统名称",
-          "scan_interval": "扫描间隔（秒）",
-          "api_region": "API 区域"
+          "client_id": "SolaX Developer Portal 应用中的 Client ID。",
+          "client_secret": "同一 Developer Portal 应用中的 Client Secret。",
+          "system_name": "用于 Home Assistant 系统设备和实体 ID 前缀的名称。",
+          "scan_interval": "常规轮询间隔，单位为秒。",
+          "api_region": "分配给您的应用的 SolaX Developer API 区域。"
         }
       },
       "reauth_confirm": {
         "title": "重新连接 SolaX Developer API",
-        "description": "认证失败。请输入有效的 Developer API 凭据以重新连接此集成。",
+        "description": "身份验证失败。请输入有效的 Developer API 凭据以重新连接此集成。",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "api_region": "API 区域"
         },
         "data_description": {
-          "client_id": "Client ID for the existing SolaX Developer API application.",
-          "client_secret": "Current Client Secret for the application.",
-          "api_region": "API 区域"
+          "client_id": "现有 SolaX Developer API 应用的 Client ID。",
+          "client_secret": "应用当前的 Client Secret。",
+          "api_region": "分配给该应用的 SolaX Developer API 区域。"
         }
       },
       "reconfigure": {
@@ -44,10 +44,10 @@
           "api_region": "API 区域"
         },
         "data_description": {
-          "client_id": "Client ID to use after reconfiguration.",
-          "client_secret": "Client Secret to use after reconfiguration.",
-          "system_name": "系统名称",
-          "api_region": "API 区域"
+          "client_id": "重新配置后使用的 Client ID。",
+          "client_secret": "重新配置后使用的 Client Secret。",
+          "system_name": "用于 Home Assistant 系统设备和实体 ID 前缀的名称。",
+          "api_region": "分配给该应用的 SolaX Developer API 区域。"
         }
       }
     },
@@ -56,12 +56,12 @@
       "invalid_credentials": "凭据无效",
       "cannot_connect": "无法连接到 SolaX Developer API",
       "cannot_read_data": "凭据有效，但未返回可读取的电站数据",
-      "reauth_successful": "SolaX Developer API was reconnected successfully",
-      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+      "reauth_successful": "已成功重新连接 SolaX Developer API",
+      "reconfigure_successful": "已成功重新配置 SolaX Developer API"
     },
     "error": {
       "invalid_credentials": "凭据无效",
-      "invalid_system_name": "系统名称为必填项",
+      "invalid_system_name": "必须填写系统名称",
       "invalid_region": "区域无效",
       "cannot_connect": "无法连接到 SolaX Developer API",
       "cannot_read_data": "凭据有效，但未返回可读取的电站数据"
@@ -73,15 +73,15 @@
         "title": "SolaX Developer API 选项",
         "description": "选择要配置的集成部分。",
         "menu_options": {
-          "credentials": "Credentials and system",
-          "polling": "轮询 和 Live View",
-          "manual_devices": "Manual devices",
-          "advanced": "Advanced and diagnostics"
+          "credentials": "凭据和系统",
+          "polling": "轮询和 Live View",
+          "manual_devices": "手动添加的设备",
+          "advanced": "高级设置和诊断"
         }
       },
       "credentials": {
-        "title": "Credentials and system",
-        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "title": "凭据和系统",
+        "description": "更新 Developer API 账户、区域和 Home Assistant 系统名称。",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -89,101 +89,103 @@
           "api_region": "API 区域"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
-          "system_name": "系统名称",
-          "api_region": "API 区域"
+          "client_id": "SolaX Developer Portal 应用中的 Client ID。",
+          "client_secret": "同一 Developer Portal 应用中的 Client Secret。",
+          "system_name": "用于 Home Assistant 系统设备和实体 ID 前缀的名称。",
+          "api_region": "分配给您的应用的 SolaX Developer API 区域。"
         }
       },
       "polling": {
-        "title": "轮询 和 Live View",
+        "title": "轮询和 Live View",
         "description": "配置标准轮询、临时 Live View 轮询和夜间配置。",
         "data": {
-          "scan_interval": "扫描间隔（秒）",
-          "live_view_default_duration": "Live View Default Duration (seconds)",
-          "live_view_interval": "Live View Target Interval (seconds)",
-          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
-          "night_scan_interval": "Night Scan Interval (seconds)",
-          "night_start_hour": "夜间 模式 启动 Hour (0-23)",
-          "night_end_hour": "夜间 模式 End Hour (0-23)"
+          "scan_interval": "轮询间隔（秒）",
+          "live_view_default_duration": "Live View 默认持续时间（秒）",
+          "live_view_interval": "Live View 目标间隔（秒）",
+          "live_view_call_budget_per_minute": "Live View 调用预算（次/分钟）",
+          "night_scan_interval": "夜间轮询间隔（秒）",
+          "night_start_hour": "夜间模式开始时间（0-23）",
+          "night_end_hour": "夜间模式结束时间（0-23）"
         },
         "data_description": {
-          "scan_interval": "扫描间隔（秒）",
-          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
-          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
-          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
-          "night_scan_interval": "Polling interval used during the configured night period.",
-          "night_start_hour": "Local hour when night polling starts.",
-          "night_end_hour": "Local hour when night polling ends."
+          "scan_interval": "常规轮询间隔，单位为秒。",
+          "live_view_default_duration": "未另外指定持续时间时，Live View 保持活动的时长。",
+          "live_view_interval": "请求的 Live View 轮询间隔。为保护 API 预算，实际间隔可能会延长。",
+          "live_view_call_budget_per_minute": "为 Live View 预留的每分钟最大 API 调用次数。",
+          "night_scan_interval": "在已配置夜间时段使用的轮询间隔。",
+          "night_start_hour": "开始夜间轮询的本地时间。",
+          "night_end_hour": "结束夜间轮询的本地时间。"
         }
       },
       "manual_devices": {
-        "title": "Manual devices",
-        "description": "添加账号可读取但清单端点未返回的设备。每个设备都会在保存前验证。",
+        "title": "手动添加的设备",
+        "description": "添加账户可读取但设备清单 endpoint 未返回的设备。每个设备都会在保存前验证。",
         "data": {
-          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
-          "manual_meter_remove_serial": "要移除的手动电表",
-          "manual_meter_remove_confirm": "移除选中的手动电表",
-          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
-          "manual_ems_remove_serial": "要移除的手动 EMS 系统",
-          "manual_ems_remove_confirm": "移除选中的手动 EMS 系统"
+          "manual_meter_serials_add": "手动添加电表序列号（每行一个，可选 |businessType）",
+          "manual_meter_remove_serial": "要删除的手动电表",
+          "manual_meter_remove_confirm": "删除所选手动电表",
+          "manual_ems_systems_add": "手动添加 EMS 系统（EMS 序列号|Plant ID，每行一个）",
+          "manual_ems_remove_serial": "要删除的手动 EMS 系统",
+          "manual_ems_remove_confirm": "删除所选手动 EMS 系统"
         },
         "data_description": {
-          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
-          "manual_meter_remove_serial": "要移除的手动电表",
-          "manual_meter_remove_confirm": "移除选中的手动电表",
-          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
-          "manual_ems_remove_serial": "要移除的手动 EMS 系统",
-          "manual_ems_remove_confirm": "移除选中的手动 EMS 系统"
+          "manual_meter_serials_add": "每行输入一个可访问的电表序列号。仅在需要强制指定 businessType 时添加 |1 或 |4。",
+          "manual_meter_remove_serial": "选择之前手动添加的电表。",
+          "manual_meter_remove_confirm": "确认删除所选手动电表。",
+          "manual_ems_systems_add": "每行按 SERIAL|PLANT_ID 格式输入一个 EMS 序列号和 Plant ID。",
+          "manual_ems_remove_serial": "选择之前手动添加的 EMS 系统。",
+          "manual_ems_remove_confirm": "确认删除所选手动 EMS 系统。"
         }
       },
       "advanced": {
-        "title": "Advanced and diagnostics",
-        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "title": "高级设置和诊断",
+        "description": "配置诊断通知和集成的高级行为。",
         "data": {
-          "rate_limit_notifications": "速率限制 通知",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "rate_limit_notifications": "速率限制通知",
+          "ev_charger_controls_enabled": "EV charger 控制",
+          "alarm_notifications": "警报通知",
+          "alarm_scan_interval": "警报轮询间隔"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "当 SolaX 报告速率或配额限制时显示 Home Assistant 通知。",
+          "ev_charger_controls_enabled": "仅允许 EV charger 控制服务执行真实写入请求。禁用后，EV charger 服务会像其他控制服务一样在 dry-run 阶段被阻止。",
+          "alarm_notifications": "当 SolaX 报告活动警报时显示 Home Assistant 持久通知。",
+          "alarm_scan_interval": "检查 SolaX 活动警报的间隔，单位为秒。"
         }
       }
     },
     "error": {
       "invalid_credentials": "凭据无效",
-      "invalid_system_name": "系统名称为必填项",
+      "invalid_system_name": "必须填写系统名称",
       "invalid_region": "区域无效",
       "cannot_connect": "无法连接到 SolaX Developer API",
       "cannot_read_data": "凭据有效，但未返回可读取的电站数据",
-      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
-      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
-      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
-      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
-      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
-      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
-      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
-      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+      "invalid_manual_meter_serials": "手动电表序列号格式无效。每行输入一个序列号，也可使用 SERIAL|1 或 SERIAL|4。",
+      "manual_meter_serial_validation_failed": "手动电表序列号验证失败，无法确认电表实时数据。",
+      "manual_meter_serial_validation_unavailable": "集成完全加载前无法验证手动电表。",
+      "manual_meter_remove_target_required": "删除前请选择一个手动电表。",
+      "manual_meter_remove_target_missing": "当前设置中找不到所选的手动电表。",
+      "invalid_manual_ems_systems": "手动 EMS 格式无效。每行输入一个 EMS 序列号和 Plant ID：SERIAL|PLANT_ID。",
+      "manual_ems_validation_failed": "手动 EMS 验证失败。EMS 属性 endpoint 未能验证该序列号和电站。",
+      "manual_ems_validation_unavailable": "集成完全加载前无法验证手动 EMS。",
+      "manual_ems_remove_target_required": "删除前请选择一个手动 EMS 系统。",
+      "manual_ems_remove_target_missing": "当前设置中找不到所选的手动 EMS 系统。"
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "SolaX Developer API rate limit is active",
-      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+      "title": "SolaX Developer API 速率限制已生效",
+      "description": "由于速率或配额限制已生效，SolaX 拒绝了调用。受影响区域：{contexts}。请减少轮询频率或 Live View 使用量，并等待限制恢复。"
     },
     "api_permission": {
-      "title": "SolaX Developer API access is incomplete",
-      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+      "title": "SolaX Developer API 访问权限不完整",
+      "description": "SolaX 拒绝访问一个或多个读取 endpoint。受影响区域：{contexts}。请在 SolaX Developer Portal 中检查客户端权限和已授权电站。"
     }
   },
   "entity": {
     "switch": {
       "rate_limit_notifications": {
-        "name": "API 速率限制 通知"
+        "name": "API 速率限制通知"
       },
       "live_view_mode": {
         "name": "Live View 模式"
@@ -191,39 +193,39 @@
     },
     "button": {
       "live_view_boost": {
-        "name": "启动 Live View Boost"
+        "name": "启动 Live View 加速"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "锁定 EV charger"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "将 EV charger 设为可用"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "开始充电"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "停止充电"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "应用充电场景"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "应用 QR 码"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "应用预约充电"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "工作模式"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "启动模式"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "充电场景"
       }
     },
     "sensor": {
@@ -233,10 +235,10 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "电流限制"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "预约充电电流"
       }
     },
     "text": {
@@ -252,191 +254,191 @@
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "预约充电开始时间"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "预约充电结束时间"
       }
     }
   },
   "services": {
     "manual_refresh": {
       "name": "手动 刷新",
-      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "description": "立即刷新所有已配置的 SolaX Developer API 条目。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id; if omitted, all entries are refreshed."
+          "description": "可选的配置条目 ID；省略时刷新所有条目。"
         }
       }
     },
     "start_live_view": {
       "name": "启动 Live View",
-      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "description": "启用临时的实时数据轮询，并在超时后自动停止。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "duration_seconds": {
           "name": "持续时间（秒）",
-          "description": "Optional live mode duration override."
+          "description": "可选的 Live View 持续时间覆盖值。"
         },
         "interval_seconds": {
           "name": "目标间隔（秒）",
-          "description": "Optional live mode target interval override."
+          "description": "可选的 Live View 目标间隔覆盖值。"
         }
       }
     },
     "stop_live_view": {
       "name": "停止 Live View",
-      "description": "Disable live polling and return to standard/night profile timing.",
+      "description": "关闭 Live View 轮询并恢复标准/夜间配置的时间安排。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         }
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "列出历史数据设备",
+      "description": "列出当前已发现且可通过 Developer API 历史 endpoint 查询的设备。不会调用 SolaX API。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。省略时包含所有已加载条目。"
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "列出电站统计目标",
+      "description": "列出当前已发现且可通过 Developer API 电站统计 endpoint 查询的电站。不会调用 SolaX API。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。省略时包含所有已加载条目。"
         }
       }
     },
     "fetch_device_history": {
       "name": "Fetch 设备 历史",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "description": "从 Developer API 读取历史遥测数据并缓存结果。较长时间范围会自动拆分为 API 安全的时间窗口。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+          "description": "Device SN 列表，最少 1 个、最多 200 个。请求会自动分批。"
         },
         "device_type": {
           "name": "设备类型",
-          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+          "description": "1 逆变器，2 电池，3 电表，4 EV charger。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "1 residential, 4 commercial & industrial."
+          "description": "1 户用，4 工商业。"
         },
         "start_time": {
           "name": "开始时间",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13 位 UTC unix 毫秒时间戳。"
         },
         "end_time": {
           "name": "结束时间",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13 位 UTC unix 毫秒时间戳。"
         },
         "time_interval": {
           "name": "时间间隔",
-          "description": "5, 10, 15, 30, 60 minutes."
+          "description": "5、10、15、30 或 60 分钟。"
         },
         "request_sn_type": {
           "name": "请求 SN 类型",
-          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+          "description": "可选的电池查询模式（1 逆变器 SN / 2 电池 SN）。"
         },
         "request_id": {
           "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "description": "随附卡片用于协同取消的可选 Request ID。"
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "获取电站年度统计",
+      "description": "从 Developer API 读取某一年的电站月度统计。仅用于显示，不写入 Home Assistant Recorder。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。"
         },
         "plant_id": {
           "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "description": "list_plant_statistics_targets 返回的 Plant ID。"
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "业务类型",
+          "description": "1 户用，4 工商业。"
         },
         "year": {
           "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "description": "要获取的自然年。当前年份获取年初至今的数据，过往年份获取全部 12 个月。"
         },
         "request_id": {
           "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "description": "随附卡片用于协同取消的可选 Request ID。"
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "获取电站月度统计",
+      "description": "从 Developer API 读取某个月的电站每日统计。仅用于显示，不写入 Home Assistant Recorder。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。"
         },
         "plant_id": {
           "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "description": "list_plant_statistics_targets 返回的 Plant ID。"
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "业务类型",
+          "description": "1 户用，4 工商业。"
         },
         "year": {
           "name": "Year",
-          "description": "Calendar year to fetch."
+          "description": "要获取的自然年。"
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "月",
+          "description": "要获取的自然月，范围 1-12。不接受当前年份中的未来月份。"
         },
         "request_id": {
           "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "description": "随附卡片用于协同取消的可选 Request ID。"
         }
       }
     },
     "query_request_result": {
       "name": "Query 请求 结果",
-      "description": "Query asynchronous command request status by string requestId.",
+      "description": "使用字符串 requestId 查询异步命令请求状态。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "request_id": {
-          "name": "请求 ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "Request ID",
+          "description": "控制 API 调用返回的 Request ID。接受字符串和数字输入。"
         }
       }
     },
     "query_master_control_device": {
       "name": "Query 主 控制 设备",
-      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "description": "读取顶层主控制设备（仅限 C&I，businessType=4）。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "device_sn": {
           "name": "设备 SN"
@@ -446,7 +448,7 @@
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Must be 4 (commercial & industrial)."
+          "description": "必须为 4（工商业）。"
         }
       }
     },
@@ -456,31 +458,31 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "device_type": {
           "name": "设备类型",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "必填。Developer API 设备类型，例如 1 表示逆变器。"
         },
         "is_enable": {
           "name": "启用标志",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "limit_value": {
           "name": "限制值",
-          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+          "description": "必填。以 kW 为单位的输出限制；支持最多两位小数。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "control_mode": {
           "name": "控制模式",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
         }
       }
     },
@@ -490,27 +492,27 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "device_type": {
           "name": "设备类型",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "必填。Developer API 设备类型，例如 1 表示逆变器。"
         },
         "is_enable": {
           "name": "启用标志",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "limit_value": {
           "name": "限制值",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -520,63 +522,63 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "最低 SOC",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_from_grid_enable": {
           "name": "Charge From 电网 启用",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_upper_soc": {
           "name": "Charge 上限 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "charge_start_time_period1": {
           "name": "Charge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period1": {
           "name": "Charge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period1": {
           "name": "Discharge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period1": {
           "name": "Discharge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "enable_time_period2": {
           "name": "启用 时间 Period 2",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_start_time_period2": {
           "name": "Charge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period2": {
           "name": "Charge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period2": {
           "name": "Discharge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period2": {
           "name": "Discharge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         }
       }
     },
@@ -586,59 +588,59 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "最低 SOC",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_upper_soc": {
           "name": "Charge 上限 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "charge_start_time_period1": {
           "name": "Charge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period1": {
           "name": "Charge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period1": {
           "name": "Discharge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period1": {
           "name": "Discharge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "enable_time_period2": {
           "name": "启用 时间 Period 2",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_start_time_period2": {
           "name": "Charge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period2": {
           "name": "Charge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period2": {
           "name": "Discharge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period2": {
           "name": "Discharge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         }
       }
     },
@@ -648,63 +650,63 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "最低 SOC",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_from_grid_enable": {
           "name": "Charge From 电网 启用",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_upper_soc": {
           "name": "Charge 上限 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "charge_start_time_period1": {
           "name": "Charge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period1": {
           "name": "Charge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period1": {
           "name": "Discharge 启动 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period1": {
           "name": "Discharge End 时间 Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "enable_time_period2": {
           "name": "启用 时间 Period 2",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_start_time_period2": {
           "name": "Charge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "charge_end_time_period2": {
           "name": "Charge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_start_time_period2": {
           "name": "Discharge 启动 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         },
         "discharge_end_time_period2": {
           "name": "Discharge End 时间 Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "可选。HH:MM 格式的时间值。"
         }
       }
     },
@@ -714,19 +716,19 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "manual_mode": {
           "name": "手动 模式",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -736,15 +738,15 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -754,15 +756,15 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -772,27 +774,27 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "back_up_grid_enable": {
           "name": "备份 上 电网 启用",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "back_up_charge_start_time": {
           "name": "备份 上 Charge 启动 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "back_up_charge_end_time": {
           "name": "备份 上 Charge End 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -802,55 +804,55 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "demand_grid_enable": {
           "name": "需求 电网 启用",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "peak_limit_time1": {
           "name": "峰值 限制 时间 1",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "peak_limit_time2": {
           "name": "峰值 限制 时间 2",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "demand_discharge_start_time1": {
           "name": "需求 Discharge 启动 时间 1",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "demand_discharge_end_time1": {
           "name": "需求 Discharge End 时间 1",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "demand_discharge_start_time2": {
           "name": "需求 Discharge 启动 时间 2",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "demand_discharge_end_time2": {
           "name": "需求 Discharge End 时间 2",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "charger_power_limit": {
           "name": "充电器 功率 限制",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "demand_max_soc": {
           "name": "需求 Max SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "reserve_soc": {
           "name": "预留 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -860,39 +862,39 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "const_power_grid_enable": {
           "name": "Const 功率 电网 启用",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "const_power_discharge_limit": {
           "name": "Const 功率 Discharge 限制",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "const_power_charge_start_time": {
           "name": "Const 功率 Charge 启动 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "const_power_charge_end_time": {
           "name": "Const 功率 Charge End 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "const_power_discharge_start_time": {
           "name": "Const 功率 Discharge 启动 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "const_power_discharge_end_time": {
           "name": "Const 功率 Discharge End 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -902,15 +904,15 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -920,27 +922,27 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "active_power_target": {
           "name": "活动 功率 目标",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "w_reactive_power_target": {
           "name": "W Reactive 功率 目标",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -950,23 +952,23 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "target_engergy": {
           "name": "目标 Engergy",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_discharg_power": {
           "name": "Charge Discharg 功率",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -976,23 +978,23 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "target_soc": {
           "name": "目标 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "charge_discharg_power": {
           "name": "Charge Discharg 功率",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1002,27 +1004,27 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "battery_power": {
           "name": "电池 功率",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1032,75 +1034,75 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "name": "VPP 自用充放电（Dry-Run）",
       "description": "仅 Dry-Run。验证 payload 并阻止写入执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "name": "VPP 仅自用充电（Dry-Run）",
       "description": "仅 Dry-Run。验证 payload 并阻止写入执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1110,31 +1112,31 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "battery_power": {
           "name": "电池 功率",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "pv_power_limit": {
           "name": "PV 功率 限制",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1144,209 +1146,209 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "battery_power": {
           "name": "电池 功率",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "pv_power_limit": {
           "name": "PV 功率 限制",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "target_soc": {
           "name": "目标 SOC",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "time_of_duration": {
           "name": "时间 Of 持续时间",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "next_motion": {
           "name": "下次 Motion",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "设置 EV charger 充电场景",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "charger_scene": {
           "name": "充电器 场景",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "ocpp_url": {
-          "name": "OCPP Url",
-          "description": "Optional. String payload field used by dry-run validation."
+          "name": "OCPP URL",
+          "description": "可选。用于 dry-run 验证的字符串 payload 字段。"
         },
         "ocpp_charger_id": {
           "name": "OCPP 充电器 Id",
-          "description": "Optional. String payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的字符串 payload 字段。"
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "设置 EV charger QR 码",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "qr_code": {
           "name": "QR Code",
-          "description": "Required. String payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的字符串 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "设置 EV charger 工作模式",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "work_mode": {
-          "name": "工作 模式",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "工作模式",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         },
         "current_gear": {
           "name": "电流 Gear",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
         }
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "设置 EV charger 启动模式",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "start_mode": {
-          "name": "启动 模式",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "启动模式",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "设置 EV charger 充电命令",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "work_cmd": {
           "name": "工作 Cmd",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "EV charger 预约充电",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "charge_start_time": {
           "name": "Charge 启动 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "charge_end_time": {
           "name": "Charge End 时间",
-          "description": "Required. HH:MM time value."
+          "description": "必填。HH:MM 格式的时间值。"
         },
         "charge_current": {
           "name": "Charge 电流",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "EV charger 电流限制",
+      "description": "启用 EV charger 控制时执行真实命令；否则仅验证 payload，并按 dry-run 阻止执行。",
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "必填。Device SN 列表。运行时验证允许 1 到 10 个序列号。"
         },
         "current_limit": {
-          "name": "电流 限制",
-          "description": "Required. Integer payload field used by dry-run validation."
+          "name": "电流限制",
+          "description": "必填。用于 dry-run 验证的整数 payload 字段。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1356,39 +1358,39 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "sn_list": {
           "name": "设备序列号列表",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "description": "必填。Device SN 列表，最少 1 个、最多 10 个。"
         },
         "heating_enable": {
           "name": "加热 启用",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "description": "必填。0 禁用电池加热，1 启用。"
         },
         "heating_level": {
           "name": "加热 级别",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "description": "启用时必填。支持值 0、1 和 2。"
         },
         "heating_period1_start_time": {
           "name": "加热 Period 1 启动",
-          "description": "Required when enabled. HH:MM time value."
+          "description": "启用时必填。HH:MM 格式的时间值。"
         },
         "heating_period1_end_time": {
           "name": "加热 Period 1 End",
-          "description": "Required when enabled and must be later than period 1 start."
+          "description": "启用时必填，且必须晚于时段 1 的开始时间。"
         },
         "heating_period2_start_time": {
           "name": "加热 Period 2 启动",
-          "description": "Optional second heating period start. HH:MM time value."
+          "description": "可选的第二加热时段开始时间，格式为 HH:MM。"
         },
         "heating_period2_end_time": {
           "name": "加热 Period 2 End",
-          "description": "Required when period 2 start is supplied."
+          "description": "填写时段 2 的开始时间后必填。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "必填。1 表示户用，4 表示工商业。"
         }
       }
     },
@@ -1398,150 +1400,150 @@
       "fields": {
         "entry_id": {
           "name": "条目 ID",
-          "description": "Optional config entry id."
+          "description": "可选的配置条目 ID。"
         },
         "device_type": {
           "name": "设备类型",
-          "description": "Required. Fixed value 100 for EMS System."
+          "description": "必填。EMS 系统的固定值为 100。"
         },
         "business_type": {
           "name": "业务类型",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+          "description": "必填。工商业 EMS 系统的固定值为 4。"
         },
         "param_list": {
           "name": "EMS 参数",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+          "description": "必填。包含 1 到 10 个 EMS 对象的列表；对象含 registerNo、manualMode 以及条件性 power/targetSoc。"
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "列出警报目标",
+      "description": "列出当前已发现且可通过 Developer API 警报 endpoint 查询的电站和设备。不会调用 SolaX API。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。省略时包含所有已加载条目。"
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "获取警报信息",
+      "description": "从 Developer API 分页读取警报信息。仅用于显示，不写入 Home Assistant Recorder。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。"
         },
         "plant_id": {
           "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "description": "list_alarm_targets 返回的可选 Plant ID。省略时查询所有已加载电站。"
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "业务类型",
+          "description": "显式查询电站时使用的可选 businessType。1 表示户用，4 表示工商业。"
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "报警状态",
+          "description": "警报状态筛选器。可使用 all、ongoing、closed、1 或 0。"
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "设备 SN",
+          "description": "可选的设备序列号筛选器。"
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "最大页数",
+          "description": "每个电站和警报状态最多获取的页数，范围 1-100。"
         },
         "request_id": {
           "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "description": "随附卡片用于协同取消的可选 Request ID。"
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "取消获取",
+      "description": "请求协同取消由卡片发起的历史、统计或警报获取操作。",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "条目 ID",
+          "description": "可选的配置条目 ID。"
         },
         "request_id": {
           "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "description": "要取消的卡片获取操作所生成的 Request ID。"
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "No active {domain} entry for {entry_id}"
+      "message": "{entry_id} 没有活动的 {domain} 条目"
     },
     "no_configured_entries": {
       "message": "没有已配置的 SolaX Developer API 条目"
     },
     "history_end_before_start": {
-      "message": "end_time must be greater than start_time"
+      "message": "end_time 必须晚于 start_time"
     },
     "master_control_requires_ci": {
-      "message": "query_master_control_device supports business_type=4 only"
+      "message": "query_master_control_device 仅支持 business_type=4"
     },
     "system_name_required": {
-      "message": "系统名称为必填项"
+      "message": "必须填写系统名称"
     },
     "control_unknown_service": {
-      "message": "{service}: unknown control service"
+      "message": "{service}：未知的控制服务"
     },
     "control_field_name_invalid": {
-      "message": "{service}: service fields must use snake_case names"
+      "message": "{service}：服务字段名称必须使用 snake_case"
     },
     "control_missing_required_field": {
-      "message": "{service}: missing required field {field}"
+      "message": "{service}：缺少必填字段 {field}"
     },
     "control_field_must_be_int": {
-      "message": "{service}: field {field} must be int"
+      "message": "{service}：字段 {field} 必须为 int"
     },
     "control_field_type_mismatch": {
-      "message": "{service}: field {field} must be {expected_type}"
+      "message": "{service}：字段 {field} 必须为 {expected_type} 类型"
     },
     "control_sn_list_empty": {
-      "message": "{service}: snList must contain at least one serial"
+      "message": "{service}：snList 必须至少包含一个序列号"
     },
     "control_sn_list_too_long": {
-      "message": "{service}: snList supports max {max} serials"
+      "message": "{service}：snList 最多支持 {max} 个序列号"
     },
     "control_business_type_invalid": {
-      "message": "{service}: businessType must be 1 or 4"
+      "message": "{service}：businessType 必须为 1 或 4"
     },
     "control_time_format_invalid": {
-      "message": "{service}: field {field} must use HH:MM format"
+      "message": "{service}：字段 {field} 必须使用 HH:MM 格式"
     },
     "control_not_available": {
-      "message": "{service}: no compatible device capability is available in this integration"
+      "message": "{service}：此集成中没有可用的兼容设备能力"
     },
     "control_field_number_invalid": {
-      "message": "{service}: field {field} must be a finite number"
+      "message": "{service}：字段 {field} 必须为有限数值"
     },
     "control_field_value_invalid": {
-      "message": "{service}: field {field} has an unsupported value"
+      "message": "{service}：字段 {field} 的值不受支持"
     },
     "control_time_order_invalid": {
-      "message": "{service}: {end_field} must be later than {start_field}"
+      "message": "{service}：{end_field} 必须晚于 {start_field}"
     },
     "control_ems_context_invalid": {
-      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+      "message": "{service}：EMS 控制要求 deviceType 为 100 且 businessType 为 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+      "message": "{service}：paramList 必须包含 1 到 {max} 个 EMS 系统"
     },
     "control_param_list_item_invalid": {
-      "message": "{service}: paramList item {index} must be an object"
+      "message": "{service}：paramList 中的第 {index} 项必须为对象"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "year 必须介于 {min_year} 和 {max_year} 之间"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "month 必须介于 {min_month} 和 {max_month} 之间"
     }
   }
 }

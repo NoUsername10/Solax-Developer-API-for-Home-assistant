@@ -4,7 +4,7 @@
     "step": {
       "user": {
         "title": "Konfigurera SolaX Developer API",
-        "description": "Ange autentiseringsuppgifter för Developer API och avsökningsalternativ.",
+        "description": "Ange autentiseringsuppgifter för Developer API och alternativ för avsökning.",
         "data": {
           "client_id": "Klient-ID",
           "client_secret": "Klienthemlighet",
@@ -13,11 +13,11 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Klient-ID från din app i SolaX utvecklarportal.",
-          "client_secret": "Klienthemlighet från samma app i utvecklarportalen.",
-          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
-          "scan_interval": "Normalt avfrågningsintervall i sekunder.",
-          "api_region": "SolaX Developer API-regionen som tilldelats appen."
+          "client_id": "Klient-ID från din app i SolaX Developer Portal.",
+          "client_secret": "Klienthemlighet från samma app i SolaX Developer Portal.",
+          "system_name": "Namn som används för systemenheten i Home Assistant och som prefix för entitets-ID:n.",
+          "scan_interval": "Normalt avsökningsintervall i sekunder.",
+          "api_region": "SolaX Developer API-regionen som har tilldelats appen."
         }
       },
       "reauth_confirm": {
@@ -31,12 +31,12 @@
         "data_description": {
           "client_id": "Klient-ID för den befintliga SolaX Developer API-appen.",
           "client_secret": "Appens aktuella klienthemlighet.",
-          "api_region": "SolaX Developer API-regionen som tilldelats appen."
+          "api_region": "SolaX Developer API-regionen som har tilldelats appen."
         }
       },
       "reconfigure": {
         "title": "Konfigurera om SolaX Developer API",
-        "description": "Uppdatera anslutningsuppgifter, API-region eller Home Assistant-systemnamn.",
+        "description": "Uppdatera anslutningsuppgifter, API-region eller systemnamn i Home Assistant.",
         "data": {
           "client_id": "Klient-ID",
           "client_secret": "Klienthemlighet",
@@ -46,8 +46,8 @@
         "data_description": {
           "client_id": "Klient-ID som ska användas efter omkonfigureringen.",
           "client_secret": "Klienthemlighet som ska användas efter omkonfigureringen.",
-          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
-          "api_region": "SolaX Developer API-regionen som tilldelats appen."
+          "system_name": "Namn som används för systemenheten i Home Assistant och som prefix för entitets-ID:n.",
+          "api_region": "SolaX Developer API-regionen som har tilldelats appen."
         }
       }
     },
@@ -55,7 +55,7 @@
       "already_configured": "Integrationen är redan konfigurerad",
       "invalid_credentials": "Ogiltiga autentiseringsuppgifter",
       "cannot_connect": "Kan inte ansluta till SolaX Developer API",
-      "cannot_read_data": "Autentiseringsuppgifterna är giltiga men inga läsbara anläggningsdata returnerades",
+      "cannot_read_data": "Autentiseringsuppgifterna är giltiga, men inga läsbara anläggningsdata returnerades",
       "reauth_successful": "SolaX Developer API återanslöts",
       "reconfigure_successful": "SolaX Developer API konfigurerades om"
     },
@@ -64,7 +64,7 @@
       "invalid_system_name": "Systemnamn krävs",
       "invalid_region": "Ogiltig region",
       "cannot_connect": "Kan inte ansluta till SolaX Developer API",
-      "cannot_read_data": "Autentiseringsuppgifterna är giltiga men inga läsbara anläggningsdata returnerades"
+      "cannot_read_data": "Autentiseringsuppgifterna är giltiga, men inga läsbara anläggningsdata returnerades"
     }
   },
   "options": {
@@ -74,8 +74,8 @@
         "description": "Välj vilken del av integrationen som ska konfigureras.",
         "menu_options": {
           "credentials": "Autentiseringsuppgifter och system",
-          "polling": "Avsökning och livevy",
-          "manual_devices": "Manuella enheter",
+          "polling": "Avsökning och Live View",
+          "manual_devices": "Manuellt tillagda enheter",
           "advanced": "Avancerat och diagnostik"
         }
       },
@@ -89,66 +89,68 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Klient-ID från din app i SolaX utvecklarportal.",
-          "client_secret": "Klienthemlighet från samma app i utvecklarportalen.",
-          "system_name": "Namn som används för Home Assistant-systemenheten och prefixet för entitets-ID.",
-          "api_region": "SolaX Developer API-regionen som tilldelats appen."
+          "client_id": "Klient-ID från din app i SolaX Developer Portal.",
+          "client_secret": "Klienthemlighet från samma app i SolaX Developer Portal.",
+          "system_name": "Namn som används för systemenheten i Home Assistant och som prefix för entitets-ID:n.",
+          "api_region": "SolaX Developer API-regionen som har tilldelats appen."
         }
       },
       "polling": {
-        "title": "Avsökning och livevy",
-        "description": "Konfigurera normal avsökning, tillfällig avsökning för livevy och nattprofilen.",
+        "title": "Avsökning och Live View",
+        "description": "Konfigurera normal avsökning, tillfällig Live View-avsökning och nattprofilen.",
         "data": {
           "scan_interval": "Avsökningsintervall (sekunder)",
-          "live_view_default_duration": "Standardlängd för livevy (sekunder)",
-          "live_view_interval": "Målintervall för livevy (sekunder)",
-          "live_view_call_budget_per_minute": "Anropsbudget för livevy (anrop/min)",
+          "live_view_default_duration": "Standardlängd för Live View (sekunder)",
+          "live_view_interval": "Målintervall för Live View (sekunder)",
+          "live_view_call_budget_per_minute": "Anropsbudget för Live View (anrop/min)",
           "night_scan_interval": "Avsökningsintervall nattetid (sekunder)",
-          "night_start_hour": "Starttimme för nattläge (0-23)",
-          "night_end_hour": "Sluttimme för nattläge (0-23)"
+          "night_start_hour": "Starttimme för nattläge (0–23)",
+          "night_end_hour": "Sluttimme för nattläge (0–23)"
         },
         "data_description": {
-          "scan_interval": "Normalt avfrågningsintervall i sekunder.",
-          "live_view_default_duration": "Hur länge Live View förblir aktiv när ingen annan varaktighet anges.",
-          "live_view_interval": "Begärt avfrågningsintervall för Live View. Det effektiva intervallet kan ökas för att skydda API-budgeten.",
+          "scan_interval": "Normalt avsökningsintervall i sekunder.",
+          "live_view_default_duration": "Hur länge Live View förblir aktivt när ingen annan varaktighet anges.",
+          "live_view_interval": "Begärt avsökningsintervall för Live View. Det faktiska intervallet kan ökas för att skydda API-gränsen.",
           "live_view_call_budget_per_minute": "Maximalt antal API-anrop per minut som reserveras för Live View.",
-          "night_scan_interval": "Avfrågningsintervall som används under den konfigurerade nattperioden.",
-          "night_start_hour": "Lokal timme då nattavfrågningen börjar.",
-          "night_end_hour": "Lokal timme då nattavfrågningen slutar."
+          "night_scan_interval": "Avsökningsintervall som används under den inställda nattperioden.",
+          "night_start_hour": "Lokal timme då nattavsökningen börjar.",
+          "night_end_hour": "Lokal timme då nattavsökningen slutar."
         }
       },
       "manual_devices": {
-        "title": "Manuella enheter",
-        "description": "Lägg till enheter som kontot kan läsa men som inventeringsendpunkterna inte returnerar. Varje enhet verifieras innan den sparas.",
+        "title": "Manuellt tillagda enheter",
+        "description": "Lägg till enheter som kontot kan läsa men som inventarie-endpointarna inte returnerar. Varje enhet verifieras innan den sparas.",
         "data": {
-          "manual_meter_serials_add": "Lägg till manuella mätarserienummer (ett per rad, valfritt |businessType)",
-          "manual_meter_remove_serial": "Manuell mätare att ta bort",
-          "manual_meter_remove_confirm": "Ta bort vald manuell mätare",
-          "manual_ems_systems_add": "Lägg till manuella EMS-system (EMS-serie|anläggnings-ID, ett per rad)",
-          "manual_ems_remove_serial": "Manuellt EMS-system att ta bort",
-          "manual_ems_remove_confirm": "Ta bort valt manuellt EMS-system"
+          "manual_meter_serials_add": "Lägg till mätarserienummer (ett per rad, valfritt |businessType)",
+          "manual_meter_remove_serial": "Mätare att ta bort",
+          "manual_meter_remove_confirm": "Ta bort vald mätare",
+          "manual_ems_systems_add": "Lägg till EMS-system (EMS-serie|anläggnings-ID, ett per rad)",
+          "manual_ems_remove_serial": "EMS-system att ta bort",
+          "manual_ems_remove_confirm": "Ta bort valt EMS-system"
         },
         "data_description": {
-          "manual_meter_serials_add": "Ange ett åtkomligt mätarserienummer per rad. Lägg endast till |1 eller |4 när affärstypen måste anges.",
-          "manual_meter_remove_serial": "Välj en tidigare tillagd manuell mätare.",
-          "manual_meter_remove_confirm": "Bekräfta borttagning av den valda manuella mätaren.",
-          "manual_ems_systems_add": "Ange ett EMS-serienummer och plant-ID per rad som SERIAL|PLANT_ID.",
-          "manual_ems_remove_serial": "Välj ett tidigare tillagt manuellt EMS-system.",
-          "manual_ems_remove_confirm": "Bekräfta borttagning av det valda manuella EMS-systemet."
+          "manual_meter_serials_add": "Ange ett åtkomligt mätarserienummer per rad. Lägg endast till |1 eller |4 när businessType måste tvingas.",
+          "manual_meter_remove_serial": "Välj en tidigare tillagd mätare.",
+          "manual_meter_remove_confirm": "Bekräfta att den valda mätaren ska tas bort.",
+          "manual_ems_systems_add": "Ange ett EMS-serienummer och anläggnings-ID per rad i formatet SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Välj ett tidigare tillagt EMS-system.",
+          "manual_ems_remove_confirm": "Bekräfta att det valda EMS-systemet ska tas bort."
         }
       },
       "advanced": {
         "title": "Avancerat och diagnostik",
         "description": "Konfigurera diagnostikaviseringar och avancerat integrationsbeteende.",
         "data": {
-          "rate_limit_notifications": "Aviseringar om hastighetsgräns",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "rate_limit_notifications": "Aviseringar om API-gräns",
+          "ev_charger_controls_enabled": "Styrning av EV-laddare",
+          "alarm_notifications": "Larmaviseringar",
+          "alarm_scan_interval": "Intervall för larmkontroll"
         },
         "data_description": {
-          "rate_limit_notifications": "Visa Home Assistant-aviseringar när SolaX rapporterar en frekvens- eller kvotgräns.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "Visa aviseringar i Home Assistant när SolaX rapporterar en frekvens- eller kvotgräns.",
+          "ev_charger_controls_enabled": "Tillåt riktiga skrivbegäranden endast för tjänster som styr EV-laddaren. När alternativet är avstängt blockeras tjänsterna fortfarande som dry-run, precis som övriga styrtjänster.",
+          "alarm_notifications": "Visa beständiga aviseringar i Home Assistant när SolaX rapporterar aktiva larm.",
+          "alarm_scan_interval": "Hur ofta SolaX ska kontrolleras efter aktiva larm, i sekunder."
         }
       }
     },
@@ -157,73 +159,73 @@
       "invalid_system_name": "Systemnamn krävs",
       "invalid_region": "Ogiltig region",
       "cannot_connect": "Kan inte ansluta till SolaX Developer API",
-      "cannot_read_data": "Autentiseringsuppgifterna är giltiga men inga läsbara anläggningsdata returnerades",
-      "invalid_manual_meter_serials": "Ogiltigt format för manuellt mätarserienummer. Använd ett serienummer per rad, valfritt SERIAL|1 eller SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Valideringen av det manuella mätarserienumret misslyckades. Realtidsdata kunde inte verifieras.",
-      "manual_meter_serial_validation_unavailable": "Validering av manuell mätare är inte tillgänglig förrän integrationen är helt inläst.",
-      "manual_meter_remove_target_required": "Välj en manuell mätare innan den tas bort.",
-      "manual_meter_remove_target_missing": "Den valda manuella mätaren hittades inte i aktuella inställningar.",
-      "invalid_manual_ems_systems": "Ogiltigt manuellt EMS-format. Använd ett EMS-serienummer och anläggnings-ID per rad: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Valideringen av manuellt EMS misslyckades. EMS-attributendpunkten verifierade inte serienumret och anläggningen.",
-      "manual_ems_validation_unavailable": "Validering av manuellt EMS är inte tillgänglig förrän integrationen är helt inläst.",
-      "manual_ems_remove_target_required": "Välj ett manuellt EMS-system innan det tas bort.",
-      "manual_ems_remove_target_missing": "Det valda manuella EMS-systemet hittades inte i aktuella inställningar."
+      "cannot_read_data": "Autentiseringsuppgifterna är giltiga, men inga läsbara anläggningsdata returnerades",
+      "invalid_manual_meter_serials": "Ogiltigt format för mätarserienummer. Använd ett serienummer per rad, valfritt SERIAL|1 eller SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Valideringen av mätarserienumret misslyckades. Mätarens realtidsdata kunde inte verifieras.",
+      "manual_meter_serial_validation_unavailable": "Mätarvalidering är inte tillgänglig förrän integrationen har lästs in helt.",
+      "manual_meter_remove_target_required": "Välj en mätare innan du tar bort den.",
+      "manual_meter_remove_target_missing": "Den valda mätaren hittades inte i de aktuella inställningarna.",
+      "invalid_manual_ems_systems": "Ogiltigt EMS-format. Använd ett EMS-serienummer och anläggnings-ID per rad: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "EMS-valideringen misslyckades. Endpointen för EMS-attribut verifierade inte serienumret och anläggningen.",
+      "manual_ems_validation_unavailable": "EMS-validering är inte tillgänglig förrän integrationen har lästs in helt.",
+      "manual_ems_remove_target_required": "Välj ett EMS-system innan du tar bort det.",
+      "manual_ems_remove_target_missing": "Det valda EMS-systemet hittades inte i de aktuella inställningarna."
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "Hastighetsgränsen för SolaX Developer API är aktiv",
-      "description": "SolaX avvisade anrop eftersom en hastighets- eller kvotgräns är aktiv. Berörda områden: {contexts}. Minska avsökningen eller användningen av livevy och låt gränsen återställas."
+      "title": "Gränsen för SolaX Developer API är aktiv",
+      "description": "SolaX avvisade anrop eftersom en frekvens- eller kvotgräns är aktiv. Berörda områden: {contexts}. Minska avsökningen eller användningen av Live View och låt gränsen återställas."
     },
     "api_permission": {
       "title": "Åtkomsten till SolaX Developer API är ofullständig",
-      "description": "SolaX nekade åtkomst till en eller flera läsendpunkter. Berörda områden: {contexts}. Kontrollera klientbehörigheterna och auktoriserade anläggningar i SolaX Developer Portal."
+      "description": "SolaX nekade åtkomst till en eller flera läsendpointar. Berörda områden: {contexts}. Kontrollera klientbehörigheterna och de auktoriserade anläggningarna i SolaX Developer Portal."
     }
   },
   "entity": {
     "switch": {
       "rate_limit_notifications": {
-        "name": "Aviseringar om API-hastighetsgräns"
+        "name": "Aviseringar om API-gräns"
       },
       "live_view_mode": {
-        "name": "Livevyläge"
+        "name": "Live View-läge"
       }
     },
     "button": {
       "live_view_boost": {
-        "name": "Starta förstärkt livevy"
+        "name": "Starta förstärkt Live View"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "Lås laddaren"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "Gör laddaren tillgänglig"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "Starta laddning"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "Stoppa laddning"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "Tillämpa laddningsscenario"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "Tillämpa QR-kod"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "Tillämpa schemalagd laddning"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "Driftläge"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "Startläge"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "Laddningsscenario"
       }
     },
     "sensor": {
@@ -233,10 +235,10 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "Strömgräns"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "Ström för schemalagd laddning"
       }
     },
     "text": {
@@ -252,1236 +254,1236 @@
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "Starttid för schemalagd laddning"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "Sluttid för schemalagd laddning"
       }
     }
   },
   "services": {
     "manual_refresh": {
       "name": "Manuell uppdatering",
-      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "description": "Uppdatera alla konfigurerade SolaX Developer API-poster omedelbart.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID. Om det utelämnas uppdateras alla poster."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten. Om det utelämnas uppdateras alla poster."
         }
       }
     },
     "start_live_view": {
-      "name": "Starta livevy",
-      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "name": "Starta Live View",
+      "description": "Aktivera tillfällig realtidsinriktad avsökning med automatisk tidsgräns.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "duration_seconds": {
           "name": "Varaktighet (sekunder)",
-          "description": "Optional live mode duration override."
+          "description": "Valfri varaktighet för Live View som ersätter standardvärdet."
         },
         "interval_seconds": {
           "name": "Målintervall (sekunder)",
-          "description": "Optional live mode target interval override."
+          "description": "Valfritt målintervall för Live View som ersätter standardvärdet."
         }
       }
     },
     "stop_live_view": {
-      "name": "Stoppa livevy",
-      "description": "Disable live polling and return to standard/night profile timing.",
+      "name": "Stoppa Live View",
+      "description": "Inaktivera Live View-avsökningen och återgå till tidsinställningen för standard- eller nattprofilen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         }
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "Lista enheter med historik",
+      "description": "Lista identifierade enheter som kan hämtas via historik-endpointen i Developer API. Anropar inte SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten. Om det utelämnas inkluderas alla inlästa poster."
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "Lista anläggningar med statistik",
+      "description": "Lista identifierade anläggningar som kan hämtas via anläggningsstatistik-endpointen i Developer API. Anropar inte SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten. Om det utelämnas inkluderas alla inlästa poster."
         }
       }
     },
     "fetch_device_history": {
       "name": "Hämta enhetshistorik",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "description": "Läs historisk telemetri från Developer API och cachelagra resultatet. Långa tidsintervall delas automatiskt upp i API-säkra fönster.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+          "name": "Lista över enheternas serienummer",
+          "description": "Lista med enheternas SN, minst 1 och högst 200. Begäranden delas automatiskt upp i grupper."
         },
         "device_type": {
           "name": "Enhetstyp",
-          "description": "1 växelriktare, 2 batteri, 3 mätare, 4 elbilsladdare."
+          "description": "1 växelriktare, 2 batteri, 3 mätare, 4 EV-laddare."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
+          "name": "Anläggningstyp",
           "description": "1 bostad, 4 kommersiell och industriell."
         },
         "start_time": {
           "name": "Starttid",
-          "description": "13-siffriga Unix-millisekunder i UTC."
+          "description": "13-siffrig Unix-tidsstämpel i millisekunder (UTC)."
         },
         "end_time": {
           "name": "Sluttid",
-          "description": "13-siffriga Unix-millisekunder i UTC."
+          "description": "13-siffrig Unix-tidsstämpel i millisekunder (UTC)."
         },
         "time_interval": {
           "name": "Tidsintervall",
-          "description": "5, 10, 15, 30, 60 minuter."
+          "description": "5, 10, 15, 30 eller 60 minuter."
         },
         "request_sn_type": {
           "name": "SN-typ för begäran",
-          "description": "Valfritt batterifrågeläge (1 växelriktar-SN / 2 batteri-SN)."
+          "description": "Valfritt frågeläge för batteriet (1 — växelriktarens SN / 2 — batteriets SN)."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Begärans-ID",
+          "description": "Valfritt begärans-ID som de medföljande korten använder för samordnad avbrytning."
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hämta årsstatistik för anläggningen",
+      "description": "Läs månatlig anläggningsstatistik för ett år från Developer API. Endast för visning; skriver inte till Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anläggnings-ID",
+          "description": "Anläggnings-ID som returnerats av list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Anläggningstyp",
+          "description": "1 bostad, 4 kommersiell och industriell."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "name": "År",
+          "description": "Kalenderår som ska hämtas. För innevarande år hämtas hittillsvarande data; för tidigare år hämtas alla 12 månader."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Begärans-ID",
+          "description": "Valfritt begärans-ID som de medföljande korten använder för samordnad avbrytning."
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hämta månadsstatistik för anläggningen",
+      "description": "Läs daglig anläggningsstatistik för en månad från Developer API. Endast för visning; skriver inte till Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anläggnings-ID",
+          "description": "Anläggnings-ID som returnerats av list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Anläggningstyp",
+          "description": "1 bostad, 4 kommersiell och industriell."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch."
+          "name": "År",
+          "description": "Kalenderår som ska hämtas."
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "Månad",
+          "description": "Kalendermånad som ska hämtas, 1–12. Framtida månader under innevarande år avvisas."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Begärans-ID",
+          "description": "Valfritt begärans-ID som de medföljande korten använder för samordnad avbrytning."
         }
       }
     },
     "query_request_result": {
-      "name": "Hämta begäranderesultat",
-      "description": "Hämta status för en asynkron kommandobegäran med requestId som text.",
+      "name": "Kontrollera begäransresultat",
+      "description": "Kontrollera statusen för ett asynkront kommando med ett requestId i textformat.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "request_id": {
-          "name": "Begärande-ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "Begärans-ID",
+          "description": "Begärans-ID som returnerades av ett styranrop till API:t. Både text- och talvärden godtas."
         }
       }
     },
     "query_master_control_device": {
       "name": "Hämta huvudstyrenhet",
-      "description": "Läs huvudstyrenheten på översta nivån (endast C&I, businessType=4).",
+      "description": "Läs den överordnade huvudstyrenheten (endast kommersiell och industriell, businessType=4).",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "device_sn": {
-          "name": "Enhets-SN"
+          "name": "Enhetens SN"
         },
         "device_type": {
           "name": "Enhetstyp"
         },
         "business_type": {
-          "name": "Verksamhetstyp",
+          "name": "Anläggningstyp",
           "description": "Måste vara 4 (kommersiell och industriell)."
         }
       }
     },
     "set_export_control": {
-      "name": "Ställ in exportstyrning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Ställ in exportstyrning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "device_type": {
           "name": "Enhetstyp",
-          "description": "Obligatoriskt. Enhetstyp i Developer API, exempelvis 1 för växelriktare."
+          "description": "Obligatoriskt. Enhetstyp i Developer API, till exempel 1 för växelriktare."
         },
         "is_enable": {
           "name": "Aktiveringsflagga",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "limit_value": {
           "name": "Gränsvärde",
-          "description": "Obligatoriskt. Exportgräns i kW. Decimalvärden med upp till två decimaler stöds."
+          "description": "Obligatoriskt. Exportgräns i kW; decimalvärden med upp till två decimaler stöds."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "control_mode": {
           "name": "Styrläge",
-          "description": "Valfritt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
         }
       }
     },
     "set_import_control": {
-      "name": "Ställ in importstyrning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Ställ in importstyrning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "device_type": {
           "name": "Enhetstyp",
-          "description": "Obligatoriskt. Enhetstyp i Developer API, exempelvis 1 för växelriktare."
+          "description": "Obligatoriskt. Enhetstyp i Developer API, till exempel 1 för växelriktare."
         },
         "is_enable": {
           "name": "Aktiveringsflagga",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "limit_value": {
           "name": "Gränsvärde",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "batch_set_spontaneity_self_use": {
-      "name": "Växelriktare: Egenanvändning Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Växelriktarens självanvändningsläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Minsta SOC",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_from_grid_enable": {
           "name": "Aktivera laddning från elnätet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_upper_soc": {
           "name": "Övre SOC för laddning",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "charge_start_time_period1": {
-          "name": "Starttid för laddning Period 1",
+          "name": "Laddningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Sluttid för laddning Period 1",
+          "name": "Laddningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Starttid för urladdning Period 1",
+          "name": "Urladdningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Sluttid för urladdning Period 1",
+          "name": "Urladdningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivera tidsperiod 2",
-          "description": "Valfritt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera period 2",
+          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_start_time_period2": {
-          "name": "Starttid för laddning Period 2",
+          "name": "Laddningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Sluttid för laddning Period 2",
+          "name": "Laddningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Starttid för urladdning Period 2",
+          "name": "Urladdningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Sluttid för urladdning Period 2",
+          "name": "Urladdningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         }
       }
     },
     "batch_set_on_grid_first": {
-      "name": "Växelriktare: Prioriterad inmatning Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Växelriktarens inmatningsprioritet (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Minsta SOC",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_upper_soc": {
           "name": "Övre SOC för laddning",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "charge_start_time_period1": {
-          "name": "Starttid för laddning Period 1",
+          "name": "Laddningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Sluttid för laddning Period 1",
+          "name": "Laddningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Starttid för urladdning Period 1",
+          "name": "Urladdningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Sluttid för urladdning Period 1",
+          "name": "Urladdningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivera tidsperiod 2",
-          "description": "Valfritt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera period 2",
+          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_start_time_period2": {
-          "name": "Starttid för laddning Period 2",
+          "name": "Laddningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Sluttid för laddning Period 2",
+          "name": "Laddningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Starttid för urladdning Period 2",
+          "name": "Urladdningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Sluttid för urladdning Period 2",
+          "name": "Urladdningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         }
       }
     },
     "batch_set_peace_mode": {
-      "name": "Växelriktare: Reservkraft Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Växelriktarens reservkraftsläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Minsta SOC",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_from_grid_enable": {
           "name": "Aktivera laddning från elnätet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_upper_soc": {
           "name": "Övre SOC för laddning",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "charge_start_time_period1": {
-          "name": "Starttid för laddning Period 1",
+          "name": "Laddningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Sluttid för laddning Period 1",
+          "name": "Laddningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Starttid för urladdning Period 1",
+          "name": "Urladdningsstart — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Sluttid för urladdning Period 1",
+          "name": "Urladdningsslut — period 1",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivera tidsperiod 2",
-          "description": "Valfritt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera period 2",
+          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_start_time_period2": {
-          "name": "Starttid för laddning Period 2",
+          "name": "Laddningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Sluttid för laddning Period 2",
+          "name": "Laddningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Starttid för urladdning Period 2",
+          "name": "Urladdningsstart — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Sluttid för urladdning Period 2",
+          "name": "Urladdningsslut — period 2",
           "description": "Valfritt. Tid i formatet HH:MM."
         }
       }
     },
     "batch_set_manual_mode": {
-      "name": "Växelriktare: Manuellt läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Växelriktarens manuella läge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "manual_mode": {
           "name": "Manuellt läge",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "self_use_mode": {
-      "name": "A1-Hybrid-G2 Egenanvändning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "A1-Hybrid-G2 — självanvändning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "feed_in_priority": {
-      "name": "A1-Hybrid-G2 Prioriterad inmatning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "A1-Hybrid-G2 — inmatningsprioritet (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "back_up_mode": {
-      "name": "A1-Hybrid-G2 Reservkraft (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "A1-Hybrid-G2 — reservkraft (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "back_up_grid_enable": {
-          "name": "Aktivera reservkraftsnät",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera elnät i reservkraftsläge",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "back_up_charge_start_time": {
-          "name": "Reservkraft Starttid för laddning",
+          "name": "Start för reservkraftsladdning",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "back_up_charge_end_time": {
-          "name": "Reservkraft Sluttid för laddning",
+          "name": "Slut för reservkraftsladdning",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "demand_mode": {
-      "name": "A1-Hybrid-G2 Efterfrågan Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "A1-Hybrid-G2 — behovsläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "demand_grid_enable": {
-          "name": "Aktivera elnät i efterfrågeläge",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera elnät i behovsläge",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "peak_limit_time1": {
           "name": "Tid för toppeffektgräns 1",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "peak_limit_time2": {
           "name": "Tid för toppeffektgräns 2",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "demand_discharge_start_time1": {
-          "name": "Efterfrågan Starttid för urladdning 1",
+          "name": "Start för behovsurladdning 1",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "demand_discharge_end_time1": {
-          "name": "Efterfrågan Sluttid för urladdning 1",
+          "name": "Slut för behovsurladdning 1",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "demand_discharge_start_time2": {
-          "name": "Efterfrågan Starttid för urladdning 2",
+          "name": "Start för behovsurladdning 2",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "demand_discharge_end_time2": {
-          "name": "Efterfrågan Sluttid för urladdning 2",
+          "name": "Slut för behovsurladdning 2",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "charger_power_limit": {
           "name": "Laddarens effektgräns",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "demand_max_soc": {
-          "name": "Maximal SOC för efterfrågan",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Högsta SOC i behovsläge",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "reserve_soc": {
           "name": "Reserv-SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "const_power_mode": {
-      "name": "A1-Hybrid-G2 ConstPower Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "A1-Hybrid-G2 — konstanteffektläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "const_power_grid_enable": {
-          "name": "Aktivera elnät för konstant effekt",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktivera elnät i konstanteffektläge",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "const_power_discharge_limit": {
-          "name": "Urladdningsgräns för konstant effekt",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Urladdningsgräns vid konstant effekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "const_power_charge_start_time": {
-          "name": "Const Power Starttid för laddning",
+          "name": "Laddningsstart vid konstant effekt",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "const_power_charge_end_time": {
-          "name": "Const Power Sluttid för laddning",
+          "name": "Laddningsslut vid konstant effekt",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "const_power_discharge_start_time": {
-          "name": "Const Power Starttid för urladdning",
+          "name": "Urladdningsstart vid konstant effekt",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "const_power_discharge_end_time": {
-          "name": "Const Power Sluttid för urladdning",
+          "name": "Urladdningsslut vid konstant effekt",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "exit_vpp_mode": {
-      "name": "Avsluta VPP Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "Avsluta VPP-läge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "power_control_mode": {
-      "name": "VPP Power Styrläge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP-effektstyrning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "active_power_target": {
-          "name": "Active Power Target",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Mål för aktiv effekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "w_reactive_power_target": {
-          "name": "W Reactive Power Target",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Mål för reaktiv effekt i W",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "electric_quantity_target_control_mode": {
-      "name": "VPP Electric Quantity Target Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP-läge för målenergi (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "target_engergy": {
-          "name": "Target Engergy",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Målenergi",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_discharg_power": {
-          "name": "Charge Discharg Power",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Laddnings- eller urladdningseffekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "soc_target_control_mode": {
-      "name": "VPP SOC Target Styrläge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP-styrning mot mål-SOC (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "target_soc": {
           "name": "Mål-SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "charge_discharg_power": {
-          "name": "Charge Discharg Power",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Laddnings- eller urladdningseffekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "push_power_positive_or_negative_mode": {
-      "name": "VPP Push Power +/- Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP-läge för effekt +/− (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "battery_power": {
-          "name": "Battery Power",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Batterieffekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "push_power_zero_mode": {
-      "name": "VPP Skicka nolleffekt Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP-nolleffektläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Egenförbrukning laddning/urladdning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP — självanvändning med laddning/urladdning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Egenförbrukning endast laddning (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP — självanvändning med endast laddning (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "pv_and_bat_individual_setting_duration_mode": {
-      "name": "VPP PV&BAT Varaktighet Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP PV&BAT — varaktighetsläge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "battery_power": {
-          "name": "Battery Power",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Batterieffekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "pv_power_limit": {
-          "name": "PV Power Limit",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "PV-effektgräns",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "pv_and_bat_individual_setting_target_soc_mode": {
-      "name": "VPP PV&BAT Mål-SOC Läge (simulering)",
-      "description": "Endast simulering. Validerar nyttolasten och blockerar skrivning.",
+      "name": "VPP PV&BAT — mål-SOC-läge (dry-run)",
+      "description": "Endast dry-run. Validerar payloaden och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "battery_power": {
-          "name": "Battery Power",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Batterieffekt",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "pv_power_limit": {
-          "name": "PV Power Limit",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "PV-effektgräns",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "target_soc": {
           "name": "Mål-SOC",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "time_of_duration": {
-          "name": "Time Of Varaktighet",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Varaktighet",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Nästa åtgärd",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Ställ in laddningsscenario för EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "charger_scene": {
-          "name": "Charger Scene",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Laddningsscenario",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "ocpp_url": {
-          "name": "OCPP Url",
-          "description": "Optional. String payload fält used by dry-run validation."
+          "name": "OCPP-URL",
+          "description": "Valfritt. Textfält i payloaden som används vid dry-run-validering."
         },
         "ocpp_charger_id": {
-          "name": "OCPP Charger Id",
-          "description": "Optional. String payload fält used by dry-run validation."
+          "name": "OCPP-laddarens ID",
+          "description": "Valfritt. Textfält i payloaden som används vid dry-run-validering."
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Ställ in QR-kod för EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "qr_code": {
-          "name": "QR-kod",
-          "description": "Required. String payload fält used by dry-run validation."
+          "name": "QR Code",
+          "description": "Obligatoriskt. Textfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Ställ in driftläge för EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "work_mode": {
-          "name": "Arbetsläge",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Driftläge",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "current_gear": {
-          "name": "Current Gear",
-          "description": "Valfritt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Aktuell strömnivå",
+          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
         }
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Ställ in startläge för EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "start_mode": {
           "name": "Startläge",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Skicka laddningskommando till EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "work_cmd": {
-          "name": "Work Cmd",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "name": "Driftkommando",
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Schemalägg EV-laddning",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "charge_start_time": {
-          "name": "Starttid för laddning",
+          "name": "Laddningsstart",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "charge_end_time": {
-          "name": "Sluttid för laddning",
+          "name": "Laddningsslut",
           "description": "Obligatoriskt. Tid i formatet HH:MM."
         },
         "charge_current": {
           "name": "Laddningsström",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Strömgräns för EV-laddaren",
+      "description": "Kör ett riktigt kommando på EV-laddaren när styrningen är aktiverad. Annars valideras payloaden och blockeras som dry-run.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Obligatoriskt. Lista över enhets-SN. Valideringen tillåter 1 till 10 serienummer."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN. Körningsvalideringen tillåter 1–10 serienummer."
         },
         "current_limit": {
           "name": "Strömgräns",
-          "description": "Obligatoriskt. Heltalsfält som används vid simuleringsvalidering."
+          "description": "Obligatoriskt. Heltalsfält i payloaden som används vid dry-run-validering."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_battery_heating": {
-      "name": "Inställningar för batteriuppvärmning (simulering)",
-      "description": "Endast simulering. Validerar inställningar för batteriuppvärmning och blockerar skrivning.",
+      "name": "Inställningar för batterivärme (dry-run)",
+      "description": "Endast dry-run. Validerar inställningarna för batterivärme och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "sn_list": {
-          "name": "Lista över enhetsserienummer",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "name": "Lista över enheternas serienummer",
+          "description": "Obligatoriskt. Lista med enheternas SN, minst 1 och högst 10."
         },
         "heating_enable": {
           "name": "Aktivera uppvärmning",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "description": "Obligatoriskt. 0 inaktiverar batterivärmen och 1 aktiverar den."
         },
         "heating_level": {
-          "name": "Uppvärmningsnivå",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "name": "Värmenivå",
+          "description": "Obligatoriskt när funktionen är aktiverad. Värdena 0, 1 och 2 stöds."
         },
         "heating_period1_start_time": {
-          "name": "Start för uppvärmningsperiod 1",
-          "description": "Required when enabled. HH:MM time value."
+          "name": "Start för värmeperiod 1",
+          "description": "Obligatoriskt när funktionen är aktiverad. Tid i formatet HH:MM."
         },
         "heating_period1_end_time": {
-          "name": "Slut för uppvärmningsperiod 1",
-          "description": "Required when enabled and måste vara later than period 1 start."
+          "name": "Slut för värmeperiod 1",
+          "description": "Obligatoriskt när funktionen är aktiverad och måste vara senare än starten för period 1."
         },
         "heating_period2_start_time": {
-          "name": "Start för uppvärmningsperiod 2",
-          "description": "Optional second heating period start. HH:MM time value."
+          "name": "Start för värmeperiod 2",
+          "description": "Valfri start för den andra värmeperioden. Tid i formatet HH:MM."
         },
         "heating_period2_end_time": {
-          "name": "Slut för uppvärmningsperiod 2",
-          "description": "Required when period 2 start is supplied."
+          "name": "Slut för värmeperiod 2",
+          "description": "Obligatoriskt när starten för period 2 har angetts."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Obligatoriskt. 1 bostad eller 4 kommersiell och industriell."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         }
       }
     },
     "set_ems_manual_mode": {
-      "name": "Manuellt EMS-läge (simulering)",
-      "description": "Endast simulering. Validerar manuella EMS-inställningar och blockerar skrivning.",
+      "name": "Manuellt EMS-läge (dry-run)",
+      "description": "Endast dry-run. Validerar inställningarna för manuellt EMS-läge och blockerar skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Post-ID",
-          "description": "Valfritt konfigurationspost-ID."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "device_type": {
           "name": "Enhetstyp",
-          "description": "Required. Fixed value 100 for EMSsystem."
+          "description": "Obligatoriskt. Fast värde 100 för EMS-system."
         },
         "business_type": {
-          "name": "Verksamhetstyp",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS system."
+          "name": "Anläggningstyp",
+          "description": "Obligatoriskt. Fast värde 4 för kommersiella och industriella EMS-system."
         },
         "param_list": {
           "name": "EMS-parametrar",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualLäge, and conditional power/targetSoc."
+          "description": "Obligatoriskt. Lista med 1–10 EMS-objekt med registerNo, manualMode och villkorliga power/targetSoc."
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "Lista larmmål",
+      "description": "Lista identifierade anläggningar och enheter som kan hämtas via larm-endpointen i Developer API. Anropar inte SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten. Om det utelämnas inkluderas alla inlästa poster."
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hämta larminformation",
+      "description": "Läs sidindelad larminformation från Developer API. Endast för visning; skriver inte till Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "name": "Anläggnings-ID",
+          "description": "Valfritt anläggnings-ID som returnerats av list_alarm_targets. Om det utelämnas hämtas alla inlästa anläggningar."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "Anläggningstyp",
+          "description": "Valfri anläggningstyp för uttryckliga frågor. 1 bostad, 4 kommersiell och industriell."
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "Larmstatus",
+          "description": "Filter för larmstatus. Använd all, ongoing, closed, 1 eller 0."
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "Enhetens SN",
+          "description": "Valfritt filter för enhetens serienummer."
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "Högsta antal sidor",
+          "description": "Högsta antal sidor som hämtas per anläggning och larmstatus, 1–100."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Begärans-ID",
+          "description": "Valfritt begärans-ID som de medföljande korten använder för samordnad avbrytning."
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "Avbryt hämtning",
+      "description": "Begär samordnad avbrytning av en kortstyrd hämtning av historik, statistik eller larm.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Konfigurationspostens ID",
+          "description": "Valfritt ID för konfigurationsposten."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "name": "Begärans-ID",
+          "description": "Begärans-ID som genererades av kortets hämtning och ska avbrytas."
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "Ingen aktiv post för {domain} för {entry_id}"
+      "message": "Ingen aktiv {domain}-post för {entry_id}"
     },
     "no_configured_entries": {
-      "message": "Inga konfigurerade poster för SolaX Developer API"
+      "message": "Inga SolaX Developer API-poster har konfigurerats"
     },
     "history_end_before_start": {
-      "message": "end_time måste vara större än start_time"
+      "message": "end_time måste vara senare än start_time"
     },
     "master_control_requires_ci": {
       "message": "query_master_control_device stöder endast business_type=4"
@@ -1493,7 +1495,7 @@
       "message": "{service}: okänd styrtjänst"
     },
     "control_field_name_invalid": {
-      "message": "{service}: tjänstefält måste använda snake_case-namn"
+      "message": "{service}: tjänstefälten måste använda namn i snake_case"
     },
     "control_missing_required_field": {
       "message": "{service}: det obligatoriska fältet {field} saknas"
@@ -1532,16 +1534,16 @@
       "message": "{service}: EMS-styrning kräver deviceType 100 och businessType 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList måste innehålla 1 till {max} EMS-system"
+      "message": "{service}: paramList måste innehålla 1–{max} EMS-system"
     },
     "control_param_list_item_invalid": {
       "message": "{service}: objekt {index} i paramList måste vara ett objekt"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "year måste vara mellan {min_year} och {max_year}"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "month måste vara mellan {min_month} och {max_month}"
     }
   }
 }

@@ -3,40 +3,40 @@
   "config": {
     "step": {
       "user": {
-        "title": "Konfigurer SolaX Developer API",
-        "description": "Indtast dine Developer API-loginoplysninger og pollingindstillinger.",
+        "title": "Opsæt SolaX Developer API",
+        "description": "Indtast adgangsoplysningerne til Developer API og indstillingerne for opdatering.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "system_name": "Systemnavn",
-          "scan_interval": "Pollinginterval (sekunder)",
+          "scan_interval": "Opdateringsinterval (sekunder)",
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
-          "system_name": "Systemnavn",
-          "scan_interval": "Pollinginterval (sekunder)",
-          "api_region": "API-region"
+          "client_id": "Client ID fra din applikation i SolaX Developer Portal.",
+          "client_secret": "Client Secret fra den samme applikation i Developer Portal.",
+          "system_name": "Navnet, der bruges til systemenheden i Home Assistant og som præfiks for entity-ID'er.",
+          "scan_interval": "Normalt opdateringsinterval i sekunder.",
+          "api_region": "Den SolaX Developer API-region, som er tildelt din applikation."
         }
       },
       "reauth_confirm": {
-        "title": "Genforbind SolaX Developer API",
-        "description": "Godkendelse mislykkedes. Indtast gyldige Developer API-loginoplysninger for at forbinde integrationen igen.",
+        "title": "Forbind SolaX Developer API igen",
+        "description": "Godkendelsen mislykkedes. Indtast gyldige adgangsoplysninger til Developer API for at forbinde integrationen igen.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID for the existing SolaX Developer API application.",
-          "client_secret": "Current Client Secret for the application.",
-          "api_region": "API-region"
+          "client_id": "Client ID for den eksisterende SolaX Developer API-applikation.",
+          "client_secret": "Applikationens aktuelle Client Secret.",
+          "api_region": "Den SolaX Developer API-region, som er tildelt applikationen."
         }
       },
       "reconfigure": {
-        "title": "Omkonfigurer SolaX Developer API",
-        "description": "Opdater forbindelsesoplysninger, API-region eller Home Assistant-systemnavn.",
+        "title": "Konfigurer SolaX Developer API igen",
+        "description": "Opdater adgangsoplysningerne, API-regionen eller systemnavnet i Home Assistant.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -44,44 +44,44 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID to use after reconfiguration.",
-          "client_secret": "Client Secret to use after reconfiguration.",
-          "system_name": "Systemnavn",
-          "api_region": "API-region"
+          "client_id": "Client ID, der skal bruges efter omkonfigurationen.",
+          "client_secret": "Client Secret, der skal bruges efter omkonfigurationen.",
+          "system_name": "Navnet, der bruges til systemenheden i Home Assistant og som præfiks for entity-ID'er.",
+          "api_region": "Den SolaX Developer API-region, som er tildelt applikationen."
         }
       }
     },
     "abort": {
-      "already_configured": "Integration is already configured",
-      "invalid_credentials": "Invalid credentials",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "reauth_successful": "SolaX Developer API was reconnected successfully",
-      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+      "already_configured": "Integrationen er allerede konfigureret",
+      "invalid_credentials": "Ugyldige adgangsoplysninger",
+      "cannot_connect": "Der kan ikke oprettes forbindelse til SolaX Developer API",
+      "cannot_read_data": "Adgangsoplysningerne er gyldige, men der blev ikke returneret læsbare data for noget anlæg",
+      "reauth_successful": "SolaX Developer API blev forbundet igen",
+      "reconfigure_successful": "SolaX Developer API blev konfigureret igen"
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned"
+      "invalid_credentials": "Ugyldige adgangsoplysninger",
+      "invalid_system_name": "Systemnavn er påkrævet",
+      "invalid_region": "Ugyldig region",
+      "cannot_connect": "Der kan ikke oprettes forbindelse til SolaX Developer API",
+      "cannot_read_data": "Adgangsoplysningerne er gyldige, men der blev ikke returneret læsbare data for noget anlæg"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "SolaX Developer API Indstillinger",
-        "description": "Vælg hvilken del af integrationen der skal konfigureres.",
+        "title": "Indstillinger for SolaX Developer API",
+        "description": "Vælg, hvilken del af integrationen du vil konfigurere.",
         "menu_options": {
-          "credentials": "Loginoplysninger & System",
-          "polling": "Polling & Live View",
-          "manual_devices": "Manuel enheder",
-          "advanced": "Avanceret & diagnostik"
+          "credentials": "Adgangsoplysninger og system",
+          "polling": "Opdatering og Live View",
+          "manual_devices": "Manuelt tilføjede enheder",
+          "advanced": "Avanceret og diagnosticering"
         }
       },
       "credentials": {
-        "title": "Loginoplysninger & System",
-        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "title": "Adgangsoplysninger og system",
+        "description": "Opdater Developer API-kontoen, regionen og systemnavnet i Home Assistant.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -89,141 +89,143 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
-          "system_name": "Systemnavn",
-          "api_region": "API-region"
+          "client_id": "Client ID fra din applikation i SolaX Developer Portal.",
+          "client_secret": "Client Secret fra den samme applikation i Developer Portal.",
+          "system_name": "Navnet, der bruges til systemenheden i Home Assistant og som præfiks for entity-ID'er.",
+          "api_region": "Den SolaX Developer API-region, som er tildelt din applikation."
         }
       },
       "polling": {
-        "title": "Polling & Live View",
-        "description": "Konfigurer standardpolling, midlertidig Live View-polling og natprofilen.",
+        "title": "Opdatering og Live View",
+        "description": "Konfigurer normal opdatering, midlertidig opdatering til Live View og natprofilen.",
         "data": {
-          "scan_interval": "Pollinginterval (sekunder)",
-          "live_view_default_duration": "Live View Default Duration (seconds)",
-          "live_view_interval": "Live View Target Interval (seconds)",
-          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
-          "night_scan_interval": "Night Scan Interval (seconds)",
-          "night_start_hour": "Nat Tilstand Start Hour (0-23)",
-          "night_end_hour": "Nat Tilstand End Hour (0-23)"
+          "scan_interval": "Opdateringsinterval (sekunder)",
+          "live_view_default_duration": "Standardvarighed for Live View (sekunder)",
+          "live_view_interval": "Målinterval for Live View (sekunder)",
+          "live_view_call_budget_per_minute": "Kaldsbudget for Live View (kald/min)",
+          "night_scan_interval": "Opdateringsinterval om natten (sekunder)",
+          "night_start_hour": "Starttime for nattilstand (0-23)",
+          "night_end_hour": "Sluttime for nattilstand (0-23)"
         },
         "data_description": {
-          "scan_interval": "Pollinginterval (sekunder)",
-          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
-          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
-          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
-          "night_scan_interval": "Polling interval used during the configured night period.",
-          "night_start_hour": "Local hour when night polling starts.",
-          "night_end_hour": "Local hour when night polling ends."
+          "scan_interval": "Normalt opdateringsinterval i sekunder.",
+          "live_view_default_duration": "Hvor længe Live View forbliver aktiv, når der ikke angives en anden varighed.",
+          "live_view_interval": "Det ønskede opdateringsinterval for Live View. Det faktiske interval kan blive øget for at beskytte API-budgettet.",
+          "live_view_call_budget_per_minute": "Det maksimale antal API-kald pr. minut, der er reserveret til Live View.",
+          "night_scan_interval": "Det opdateringsinterval, der bruges i den konfigurerede natperiode.",
+          "night_start_hour": "Den lokale time, hvor natopdateringen starter.",
+          "night_end_hour": "Den lokale time, hvor natopdateringen slutter."
         }
       },
       "manual_devices": {
-        "title": "Manuel enheder",
-        "description": "Tilføj enheder som kontoen kan læse, men som inventar-endpoints ikke returnerer. Hver enhed verificeres før den gemmes.",
+        "title": "Manuelt tilføjede enheder",
+        "description": "Tilføj enheder, som kontoen kan læse, men som inventory-endepunkterne ikke returnerer. Hver enhed valideres, før den gemmes.",
         "data": {
-          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
-          "manual_meter_remove_serial": "Manuel måler der skal fjernes",
-          "manual_meter_remove_confirm": "Fjern valgt manuel måler",
-          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
-          "manual_ems_remove_serial": "Manuelt EMS-system der skal fjernes",
-          "manual_ems_remove_confirm": "Fjern valgt manuelt EMS-system"
+          "manual_meter_serials_add": "Tilføj serienumre på elmålere (ét pr. linje, valgfrit |businessType)",
+          "manual_meter_remove_serial": "Manuelt tilføjet elmåler, der skal fjernes",
+          "manual_meter_remove_confirm": "Fjern den valgte elmåler",
+          "manual_ems_systems_add": "Tilføj EMS-systemer (EMS-serienummer|anlægs-ID, ét pr. linje)",
+          "manual_ems_remove_serial": "Manuelt tilføjet EMS-system, der skal fjernes",
+          "manual_ems_remove_confirm": "Fjern det valgte EMS-system"
         },
         "data_description": {
-          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
-          "manual_meter_remove_serial": "Manuel måler der skal fjernes",
-          "manual_meter_remove_confirm": "Fjern valgt manuel måler",
-          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
-          "manual_ems_remove_serial": "Manuelt EMS-system der skal fjernes",
-          "manual_ems_remove_confirm": "Fjern valgt manuelt EMS-system"
+          "manual_meter_serials_add": "Indtast ét tilgængeligt serienummer på en elmåler pr. linje. Tilføj kun |1 eller |4, når en bestemt virksomhedstype skal gennemtvinges.",
+          "manual_meter_remove_serial": "Vælg en tidligere manuelt tilføjet elmåler.",
+          "manual_meter_remove_confirm": "Bekræft, at den valgte manuelt tilføjede elmåler skal fjernes.",
+          "manual_ems_systems_add": "Indtast ét EMS-serienummer og anlægs-ID pr. linje som SERIAL|PLANT_ID.",
+          "manual_ems_remove_serial": "Vælg et tidligere manuelt tilføjet EMS-system.",
+          "manual_ems_remove_confirm": "Bekræft, at det valgte manuelt tilføjede EMS-system skal fjernes."
         }
       },
       "advanced": {
-        "title": "Avanceret & diagnostik",
-        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "title": "Avanceret og diagnosticering",
+        "description": "Konfigurer diagnosticeringsmeddelelser og avanceret adfærd for integrationen.",
         "data": {
-          "rate_limit_notifications": "Rate limit Notifikationer",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "rate_limit_notifications": "Meddelelser om hastighedsgrænse",
+          "ev_charger_controls_enabled": "Styring af EV charger",
+          "alarm_notifications": "Alarmmeddelelser",
+          "alarm_scan_interval": "Interval for alarmkontrol"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "Vis meddelelser i Home Assistant, når SolaX rapporterer en hastigheds- eller kvotegrænse.",
+          "ev_charger_controls_enabled": "Tillad kun rigtige skriveanmodninger for tjenester, der styrer EV charger. Når dette er slået fra, forbliver tjenesterne til EV charger blokeret som testkørsler ligesom de øvrige styringstjenester.",
+          "alarm_notifications": "Vis vedvarende meddelelser i Home Assistant, når SolaX rapporterer aktive alarmer.",
+          "alarm_scan_interval": "Hvor ofte SolaX skal kontrolleres for aktive alarmer, i sekunder."
         }
       }
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
-      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
-      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
-      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
-      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
-      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
-      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
-      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+      "invalid_credentials": "Ugyldige adgangsoplysninger",
+      "invalid_system_name": "Systemnavn er påkrævet",
+      "invalid_region": "Ugyldig region",
+      "cannot_connect": "Der kan ikke oprettes forbindelse til SolaX Developer API",
+      "cannot_read_data": "Adgangsoplysningerne er gyldige, men der blev ikke returneret læsbare data for noget anlæg",
+      "invalid_manual_meter_serials": "Ugyldigt format for elmålerens serienummer. Brug ét serienummer pr. linje, eventuelt SERIAL|1 eller SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Valideringen af elmålerens serienummer mislykkedes. Realtidsdata fra elmåleren kunne ikke bekræftes.",
+      "manual_meter_serial_validation_unavailable": "Validering af elmålere er ikke tilgængelig, før integrationen er indlæst helt.",
+      "manual_meter_remove_target_required": "Vælg en manuelt tilføjet elmåler, før du bruger fjern.",
+      "manual_meter_remove_target_missing": "Den valgte manuelt tilføjede elmåler blev ikke fundet i de aktuelle indstillinger.",
+      "invalid_manual_ems_systems": "Ugyldigt EMS-format. Brug ét EMS-serienummer og anlægs-ID pr. linje: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "EMS-valideringen mislykkedes. EMS-attributendepunktet bekræftede ikke dette serienummer og anlæg.",
+      "manual_ems_validation_unavailable": "EMS-validering er ikke tilgængelig, før integrationen er indlæst helt.",
+      "manual_ems_remove_target_required": "Vælg et manuelt tilføjet EMS-system, før du bruger fjern.",
+      "manual_ems_remove_target_missing": "Det valgte manuelt tilføjede EMS-system blev ikke fundet i de aktuelle indstillinger."
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "SolaX Developer API rate limit is active",
-      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+      "title": "Hastighedsgrænsen for SolaX Developer API er aktiv",
+      "description": "SolaX afviste kald, fordi en hastigheds- eller kvotegrænse er aktiv. Berørte områder: {contexts}. Reducer opdateringsfrekvensen eller brugen af Live View, og vent på, at grænsen ophæves."
     },
     "api_permission": {
-      "title": "SolaX Developer API access is incomplete",
-      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+      "title": "Adgangen til SolaX Developer API er ufuldstændig",
+      "description": "SolaX afviste adgang til et eller flere læseendepunkter. Berørte områder: {contexts}. Kontrollér klientens rettigheder og de godkendte anlæg i SolaX Developer Portal."
     }
   },
   "entity": {
     "switch": {
       "rate_limit_notifications": {
-        "name": "API Rate limit Notifikationer"
+        "name": "Meddelelser om API-hastighedsgrænse"
       },
       "live_view_mode": {
-        "name": "Live View Tilstand"
+        "name": "Live View-tilstand"
       }
     },
     "button": {
       "live_view_boost": {
-        "name": "Start Live View Boost"
+        "name": "Start hurtig Live View"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "Lås EV charger"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "Angiv EV charger som tilgængelig"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "Start opladning"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "Stop opladning"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "Anvend opladningsscenarie"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "Anvend QR-kode"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "Anvend reserveret opladning"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "Driftstilstand"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "Starttilstand"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "Opladningsscenarie"
       }
     },
     "sensor": {
@@ -233,210 +235,210 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "Strømgrænse"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "Strøm til reserveret opladning"
       }
     },
     "text": {
       "ev_charger_qr_code": {
-        "name": "QR Code"
+        "name": "QR-kode"
       },
       "ev_charger_ocpp_url": {
-        "name": "OCPP URL"
+        "name": "OCPP-URL"
       },
       "ev_charger_ocpp_charger_id": {
-        "name": "OCPP Charger ID"
+        "name": "OCPP-ID for EV charger"
       }
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "Starttid for reserveret opladning"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "Sluttid for reserveret opladning"
       }
     }
   },
   "services": {
     "manual_refresh": {
-      "name": "Manuel Opdatering",
-      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "name": "Manuel opdatering",
+      "description": "Udløs en øjeblikkelig opdatering af alle konfigurerede SolaX Developer API-poster.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Optional config entry id; if omitted, all entries are refreshed."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten. Hvis det udelades, opdateres alle poster."
         }
       }
     },
     "start_live_view": {
       "name": "Start Live View",
-      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "description": "Aktiver midlertidig opdatering med fokus på realtidsdata og automatisk timeout.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "duration_seconds": {
           "name": "Varighed (sekunder)",
-          "description": "Optional live mode duration override."
+          "description": "Valgfri tilsidesættelse af varigheden for Live View."
         },
         "interval_seconds": {
           "name": "Målinterval (sekunder)",
-          "description": "Optional live mode target interval override."
+          "description": "Valgfri tilsidesættelse af målintervallet for Live View."
         }
       }
     },
     "stop_live_view": {
       "name": "Stop Live View",
-      "description": "Disable live polling and return to standard/night profile timing.",
+      "description": "Deaktiver opdatering til Live View, og vend tilbage til tidsplanen for standard- eller natprofilen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         }
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "Vis enheder til historik",
+      "description": "Vis de enheder, der aktuelt er fundet, og som kan forespørges via historikendepunktet i Developer API. Kalder ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten. Hvis det udelades, medtages alle indlæste poster."
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "Vis mål for anlægsstatistik",
+      "description": "Vis de anlæg, der aktuelt er fundet, og som kan forespørges via endepunktet for anlægsstatistik i Developer API. Kalder ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten. Hvis det udelades, medtages alle indlæste poster."
         }
       }
     },
     "fetch_device_history": {
-      "name": "Hent Device Historik",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "name": "Hent enhedshistorik",
+      "description": "Læs historisk telemetri fra Developer API, og gem resultatet i cachen. Lange tidsrum opdeles automatisk i intervaller, der er sikre for API.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+          "name": "Liste over enhedsserienumre",
+          "description": "Liste over enhedsserienumre, mindst 1 og højst 200. Anmodninger opdeles automatisk."
         },
         "device_type": {
           "name": "Enhedstype",
-          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+          "description": "1 inverter, 2 batteri, 3 elmåler, 4 EV charger."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "1 privat, 4 erhverv og industri."
         },
         "start_time": {
           "name": "Starttid",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-cifrede Unix-millisekunder i UTC."
         },
         "end_time": {
           "name": "Sluttid",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-cifrede Unix-millisekunder i UTC."
         },
         "time_interval": {
           "name": "Tidsinterval",
-          "description": "5, 10, 15, 30, 60 minutes."
+          "description": "5, 10, 15, 30 eller 60 minutter."
         },
         "request_sn_type": {
-          "name": "Request SN-type",
-          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+          "name": "Type af serienummer i anmodningen",
+          "description": "Valgfri forespørgselstilstand for batterier (1 inverter-SN / 2 batteri-SN)."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Anmodnings-ID",
+          "description": "Valgfrit anmodnings-ID, som de medfølgende kort bruger til koordineret annullering."
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent årsstatistik for anlæg",
+      "description": "Læs månedlig anlægsstatistik for ét år fra Developer API. Kun til visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anlægs-ID",
+          "description": "Anlægs-ID returneret af list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "1 privat, 4 erhverv og industri."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "name": "År",
+          "description": "Det kalenderår, der skal hentes. For det aktuelle år hentes data til dato; for tidligere år hentes alle 12 måneder."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Anmodnings-ID",
+          "description": "Valgfrit anmodnings-ID, som de medfølgende kort bruger til koordineret annullering."
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent månedsstatistik for anlæg",
+      "description": "Læs daglig anlægsstatistik for én måned fra Developer API. Kun til visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anlægs-ID",
+          "description": "Anlægs-ID returneret af list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "1 privat, 4 erhverv og industri."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch."
+          "name": "År",
+          "description": "Det kalenderår, der skal hentes."
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "Måned",
+          "description": "Den kalendermåned, der skal hentes, 1-12. Fremtidige måneder i det aktuelle år afvises."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Anmodnings-ID",
+          "description": "Valgfrit anmodnings-ID, som de medfølgende kort bruger til koordineret annullering."
         }
       }
     },
     "query_request_result": {
-      "name": "Forespørg Request Resultat",
-      "description": "Query asynchronous command request status by string requestId.",
+      "name": "Forespørg på resultatet af en anmodning",
+      "description": "Forespørg på status for en asynkron kommando via tekstværdien requestId.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "Anmodnings-ID",
+          "description": "Det anmodnings-ID, der returneres af et styringskald til API. Både tekst- og talværdier accepteres."
         }
       }
     },
     "query_master_control_device": {
-      "name": "Forespørg Master Styring Device",
-      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "name": "Forespørg på den overordnede styreenhed",
+      "description": "Læs den overordnede styreenhed på øverste niveau (kun erhverv og industri, businessType=4).",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "device_sn": {
           "name": "Enheds-SN"
@@ -445,1103 +447,1103 @@
           "name": "Enhedstype"
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Must be 4 (commercial & industrial)."
+          "name": "Virksomhedstype",
+          "description": "Skal være 4 (erhverv og industri)."
         }
       }
     },
     "set_export_control": {
-      "name": "Set Export Styring (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Indstil eksportstyring (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "device_type": {
           "name": "Enhedstype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Påkrævet. Enhedstype i Developer API, for eksempel 1 for inverter."
         },
         "is_enable": {
           "name": "Aktiveringsflag",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "limit_value": {
           "name": "Grænseværdi",
-          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+          "description": "Påkrævet. Eksportgrænse i kW; decimaltal med op til to decimaler understøttes."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "control_mode": {
           "name": "Styringstilstand",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         }
       }
     },
     "set_import_control": {
-      "name": "Set Import Styring (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Indstil importstyring (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "device_type": {
           "name": "Enhedstype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Påkrævet. Enhedstype i Developer API, for eksempel 1 for inverter."
         },
         "is_enable": {
           "name": "Aktiveringsflag",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "limit_value": {
           "name": "Grænseværdi",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "batch_set_spontaneity_self_use": {
-      "name": "Inverter Self Use Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Inverterens tilstand for egetforbrug (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Minimum-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_from_grid_enable": {
-          "name": "Charge From Grid Aktivér",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér opladning fra nettet",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Øvre SOC for opladning",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "charge_start_time_period1": {
-          "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivér Tid Period 2",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér periode 2",
+          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_start_time_period2": {
-          "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         }
       }
     },
     "batch_set_on_grid_first": {
-      "name": "Inverter Feed-in Priority Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Inverterens prioritet for levering til nettet (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Minimum-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Øvre SOC for opladning",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "charge_start_time_period1": {
-          "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivér Tid Period 2",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér periode 2",
+          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_start_time_period2": {
-          "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         }
       }
     },
     "batch_set_peace_mode": {
-      "name": "Inverter Back Up Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Inverterens reservetilstand (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Minimum-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_from_grid_enable": {
-          "name": "Charge From Grid Aktivér",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér opladning fra nettet",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Øvre SOC for opladning",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "charge_start_time_period1": {
-          "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period1": {
-          "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period1": {
-          "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period1": {
-          "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 1",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "enable_time_period2": {
-          "name": "Aktivér Tid Period 2",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér periode 2",
+          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_start_time_period2": {
-          "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time_period2": {
-          "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på opladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_start_time_period2": {
-          "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Start på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         },
         "discharge_end_time_period2": {
-          "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "name": "Slut på afladningsperiode 2",
+          "description": "Valgfrit. Tidspunkt i formatet HH:MM."
         }
       }
     },
     "batch_set_manual_mode": {
-      "name": "Inverter Manuel Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Inverterens manuelle tilstand (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "manual_mode": {
-          "name": "Manuel Tilstand",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Manuel tilstand",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "self_use_mode": {
-      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "A1-Hybrid-G2 egetforbrug (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "feed_in_priority": {
-      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "A1-Hybrid-G2 prioritet for levering til nettet (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "back_up_mode": {
-      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "A1-Hybrid-G2 reservetilstand (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "back_up_grid_enable": {
-          "name": "Back Up Grid Aktivér",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér elnet i reservetilstand",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "back_up_charge_start_time": {
-          "name": "Back Up Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for reserveopladning",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "back_up_charge_end_time": {
-          "name": "Back Up Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for reserveopladning",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "demand_mode": {
-      "name": "A1-Hybrid-G2 Demand Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "A1-Hybrid-G2 tilstand for begrænsning af spidsbelastning (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "demand_grid_enable": {
-          "name": "Demand Grid Aktivér",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér elnet i tilstanden for begrænsning af spidsbelastning",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "peak_limit_time1": {
-          "name": "Peak Grænse Tid 1",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Tidspunkt for spidsgrænse 1",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "peak_limit_time2": {
-          "name": "Peak Grænse Tid 2",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Tidspunkt for spidsgrænse 2",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "demand_discharge_start_time1": {
-          "name": "Demand Discharge Start Tid 1",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for afladning ved belastningsbegrænsning 1",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "demand_discharge_end_time1": {
-          "name": "Demand Discharge End Tid 1",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for afladning ved belastningsbegrænsning 1",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "demand_discharge_start_time2": {
-          "name": "Demand Discharge Start Tid 2",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for afladning ved belastningsbegrænsning 2",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "demand_discharge_end_time2": {
-          "name": "Demand Discharge End Tid 2",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for afladning ved belastningsbegrænsning 2",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "charger_power_limit": {
-          "name": "Charger Effekt Grænse",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Effektgrænse for oplader",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "demand_max_soc": {
-          "name": "Demand Max SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Maksimal SOC ved belastningsbegrænsning",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "reserve_soc": {
-          "name": "Reserve SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Reserve-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "const_power_mode": {
-      "name": "A1-Hybrid-G2 ConstPower Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "A1-Hybrid-G2 tilstand med konstant effekt (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "const_power_grid_enable": {
-          "name": "Const Effekt Grid Aktivér",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Aktivér elnet ved konstant effekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "const_power_discharge_limit": {
-          "name": "Const Effekt Discharge Grænse",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Afladningsgrænse ved konstant effekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "const_power_charge_start_time": {
-          "name": "Const Effekt Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for opladning ved konstant effekt",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "const_power_charge_end_time": {
-          "name": "Const Effekt Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for opladning ved konstant effekt",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "const_power_discharge_start_time": {
-          "name": "Const Effekt Discharge Start Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for afladning ved konstant effekt",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "const_power_discharge_end_time": {
-          "name": "Const Effekt Discharge End Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for afladning ved konstant effekt",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "exit_vpp_mode": {
-      "name": "Exit VPP Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "Afslut VPP-tilstand (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "power_control_mode": {
-      "name": "VPP Effekt Styring Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand til effektstyring (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "active_power_target": {
-          "name": "Active Effekt Mål",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Mål for aktiv effekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "w_reactive_power_target": {
-          "name": "W Reactive Effekt Mål",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Mål for reaktiv effekt W",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "electric_quantity_target_control_mode": {
-      "name": "VPP Electric Quantity Mål Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand med mål for energimængde (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "target_engergy": {
-          "name": "Mål Engergy",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Målenergi",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_discharg_power": {
-          "name": "Charge Discharg Effekt",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Opladnings-/afladningseffekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "soc_target_control_mode": {
-      "name": "VPP SOC Mål Styring Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand til styring af mål-SOC (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "target_soc": {
-          "name": "Mål SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Mål-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "charge_discharg_power": {
-          "name": "Charge Discharg Effekt",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Opladnings-/afladningseffekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "push_power_positive_or_negative_mode": {
-      "name": "VPP Push Effekt +/- Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand til positiv/negativ effektlevering (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "battery_power": {
-          "name": "Battery Effekt",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Batterieffekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "push_power_zero_mode": {
-      "name": "VPP Push Effekt Zero Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand med nul effektlevering (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-egetforbrug med opladning/afladning (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Self-Consume Charge Only (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-egetforbrug kun med opladning (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "pv_and_bat_individual_setting_duration_mode": {
-      "name": "VPP PV&BAT Varighed Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand for PV og batteri efter varighed (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "battery_power": {
-          "name": "Battery Effekt",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Batterieffekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "pv_power_limit": {
-          "name": "PV Effekt Grænse",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Grænse for PV-effekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "pv_and_bat_individual_setting_target_soc_mode": {
-      "name": "VPP PV&BAT Mål SOC Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer payload og blokerer skrivning.",
+      "name": "VPP-tilstand for PV og batteri med mål-SOC (testkørsel)",
+      "description": "Kun testkørsel. Validerer payload og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "battery_power": {
-          "name": "Battery Effekt",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Batterieffekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "pv_power_limit": {
-          "name": "PV Effekt Grænse",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Grænse for PV-effekt",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "target_soc": {
-          "name": "Mål SOC",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Mål-SOC",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "time_of_duration": {
-          "name": "Tid Of Varighed",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Varighed",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "next_motion": {
-          "name": "Next Motion",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Næste handling",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Indstil opladningsscenarie for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "charger_scene": {
-          "name": "Charger Scene",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Opladerscenarie",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "ocpp_url": {
-          "name": "OCPP Url",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "OCPP-URL",
+          "description": "Valgfrit. Tekstfelt i payload, der bruges ved validering af testkørslen."
         },
         "ocpp_charger_id": {
-          "name": "OCPP Charger Id",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "OCPP-ID for EV charger",
+          "description": "Valgfrit. Tekstfelt i payload, der bruges ved validering af testkørslen."
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Indstil QR-kode for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "qr_code": {
-          "name": "QR Code",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "QR-kode",
+          "description": "Påkrævet. Tekstfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Indstil driftstilstand for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "work_mode": {
-          "name": "Work Tilstand",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Driftstilstand",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "current_gear": {
-          "name": "Strøm Gear",
-          "description": "Valgfri. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Strømtrin",
+          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         }
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Indstil starttilstand for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "start_mode": {
-          "name": "Start Tilstand",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Starttilstand",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Indstil opladningskommando for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "work_cmd": {
-          "name": "Work Cmd",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Driftskommando",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Reserveret opladning for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "charge_start_time": {
-          "name": "Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Starttid for opladning",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "charge_end_time": {
-          "name": "Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "name": "Sluttid for opladning",
+          "description": "Påkrævet. Tidspunkt i formatet HH:MM."
         },
         "charge_current": {
-          "name": "Charge Strøm",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Ladestrøm",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Strømgrænse for EV charger",
+      "description": "Udfører en rigtig kommando til EV charger, når styring er aktiveret. Ellers valideres payload, og kommandoen blokeres som en testkørsel.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre. Validering under kørsel tillader 1 til 10 serienumre."
         },
         "current_limit": {
-          "name": "Strøm Grænse",
-          "description": "Påkrævet. Heltalsfelt i payload brugt til Dry-Run-validering."
+          "name": "Strømgrænse",
+          "description": "Påkrævet. Heltalsfelt i payload, der bruges ved validering af testkørslen."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_battery_heating": {
-      "name": "Battery Heating Settings (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer battery heating settings og blokerer skrivning.",
+      "name": "Indstillinger for batteriopvarmning (testkørsel)",
+      "description": "Kun testkørsel. Validerer indstillingerne for batteriopvarmning og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "sn_list": {
-          "name": "Liste over enheders serienumre",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "name": "Liste over enhedsserienumre",
+          "description": "Påkrævet. Liste over enhedsserienumre, mindst 1 og højst 10."
         },
         "heating_enable": {
-          "name": "Heating Aktivér",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "name": "Aktivér opvarmning",
+          "description": "Påkrævet. 0 deaktiverer batteriopvarmning; 1 aktiverer den."
         },
         "heating_level": {
-          "name": "Heating Level",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "name": "Opvarmningsniveau",
+          "description": "Påkrævet, når opvarmning er aktiveret. De understøttede værdier er 0, 1 og 2."
         },
         "heating_period1_start_time": {
-          "name": "Heating Period 1 Start",
-          "description": "Required when enabled. HH:MM time value."
+          "name": "Start på opvarmningsperiode 1",
+          "description": "Påkrævet, når opvarmning er aktiveret. Tidspunkt i formatet HH:MM."
         },
         "heating_period1_end_time": {
-          "name": "Heating Period 1 End",
-          "description": "Required when enabled and must be later than period 1 start."
+          "name": "Slut på opvarmningsperiode 1",
+          "description": "Påkrævet, når opvarmning er aktiveret, og skal ligge efter starten på periode 1."
         },
         "heating_period2_start_time": {
-          "name": "Heating Period 2 Start",
-          "description": "Optional second heating period start. HH:MM time value."
+          "name": "Start på opvarmningsperiode 2",
+          "description": "Valgfri start på den anden opvarmningsperiode. Tidspunkt i formatet HH:MM."
         },
         "heating_period2_end_time": {
-          "name": "Heating Period 2 End",
-          "description": "Required when period 2 start is supplied."
+          "name": "Slut på opvarmningsperiode 2",
+          "description": "Påkrævet, når starten på periode 2 er angivet."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         }
       }
     },
     "set_ems_manual_mode": {
-      "name": "EMS Manuel Tilstand (Dry-Run)",
-      "description": "Kun Dry-Run. Validerer EMS manual-mode settings og blokerer skrivning.",
+      "name": "Manuel EMS-tilstand (testkørsel)",
+      "description": "Kun testkørsel. Validerer indstillingerne for manuel EMS-tilstand og blokerer skrivningen.",
       "fields": {
         "entry_id": {
-          "name": "Entry-ID",
-          "description": "Valgfri konfigurations-entry-ID."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "device_type": {
           "name": "Enhedstype",
-          "description": "Required. Fixed value 100 for EMS System."
+          "description": "Påkrævet. Fast værdi 100 for EMS-system."
         },
         "business_type": {
-          "name": "Forretningstype",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+          "name": "Virksomhedstype",
+          "description": "Påkrævet. Fast værdi 4 for EMS-systemer til erhverv og industri."
         },
         "param_list": {
-          "name": "EMS Parameters",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+          "name": "EMS-parametre",
+          "description": "Påkrævet. Liste med 1 til 10 EMS-objekter med registerNo, manualMode og betinget power/targetSoc."
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "Vis alarmmål",
+      "description": "Vis de anlæg og enheder, der aktuelt er fundet, og som kan forespørges via alarmendepunktet i Developer API. Kalder ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten. Hvis det udelades, medtages alle indlæste poster."
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent alarmoplysninger",
+      "description": "Læs sideopdelte alarmoplysninger fra Developer API. Kun til visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "name": "Anlægs-ID",
+          "description": "Valgfrit anlægs-ID returneret af list_alarm_targets. Hvis det udelades, forespørges alle indlæste anlæg."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "Virksomhedstype",
+          "description": "Valgfri virksomhedstype til direkte anlægsforespørgsler. 1 for privat, 4 for erhverv og industri."
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "Alarmstatus",
+          "description": "Filter for alarmstatus. Brug all, ongoing, closed, 1 eller 0."
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "Enheds-SN",
+          "description": "Valgfrit filter efter enhedens serienummer."
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "Maksimalt antal sider",
+          "description": "Det maksimale antal sider, der hentes pr. anlæg og alarmstatus, 1-100."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Anmodnings-ID",
+          "description": "Valgfrit anmodnings-ID, som de medfølgende kort bruger til koordineret annullering."
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "Annuller hentning",
+      "description": "Anmod om koordineret annullering af en kortstyret hentning af historik, statistik eller alarmer.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Post-ID",
+          "description": "Valgfrit ID for konfigurationsposten."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "name": "Anmodnings-ID",
+          "description": "Anmodnings-ID oprettet af kortets hentehandling, som skal annulleres."
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "No active {domain} entry for {entry_id}"
+      "message": "Ingen aktiv {domain}-post for {entry_id}"
     },
     "no_configured_entries": {
-      "message": "No configured SolaX Developer API entries"
+      "message": "Ingen konfigurerede SolaX Developer API-poster"
     },
     "history_end_before_start": {
-      "message": "end_time must be greater than start_time"
+      "message": "end_time skal være større end start_time"
     },
     "master_control_requires_ci": {
-      "message": "query_master_control_device supports business_type=4 only"
+      "message": "query_master_control_device understøtter kun business_type=4"
     },
     "system_name_required": {
-      "message": "System name is required"
+      "message": "Systemnavn er påkrævet"
     },
     "control_unknown_service": {
-      "message": "{service}: unknown control service"
+      "message": "{service}: ukendt styringstjeneste"
     },
     "control_field_name_invalid": {
-      "message": "{service}: service fields must use snake_case names"
+      "message": "{service}: tjenestefelter skal bruge navne i snake_case"
     },
     "control_missing_required_field": {
-      "message": "{service}: missing required field {field}"
+      "message": "{service}: det påkrævede felt {field} mangler"
     },
     "control_field_must_be_int": {
-      "message": "{service}: field {field} must be int"
+      "message": "{service}: feltet {field} skal være af typen int"
     },
     "control_field_type_mismatch": {
-      "message": "{service}: field {field} must be {expected_type}"
+      "message": "{service}: feltet {field} skal være af typen {expected_type}"
     },
     "control_sn_list_empty": {
-      "message": "{service}: snList must contain at least one serial"
+      "message": "{service}: snList skal indeholde mindst ét serienummer"
     },
     "control_sn_list_too_long": {
-      "message": "{service}: snList supports max {max} serials"
+      "message": "{service}: snList understøtter højst {max} serienumre"
     },
     "control_business_type_invalid": {
-      "message": "{service}: businessType must be 1 or 4"
+      "message": "{service}: businessType skal være 1 eller 4"
     },
     "control_time_format_invalid": {
-      "message": "{service}: field {field} must use HH:MM format"
+      "message": "{service}: feltet {field} skal bruge formatet HH:MM"
     },
     "control_not_available": {
-      "message": "{service}: no compatible device capability is available in this integration"
+      "message": "{service}: der findes ingen kompatibel enhedsfunktion i denne integration"
     },
     "control_field_number_invalid": {
-      "message": "{service}: field {field} must be a finite number"
+      "message": "{service}: feltet {field} skal være et endeligt tal"
     },
     "control_field_value_invalid": {
-      "message": "{service}: field {field} has an unsupported value"
+      "message": "{service}: feltet {field} har en værdi, der ikke understøttes"
     },
     "control_time_order_invalid": {
-      "message": "{service}: {end_field} must be later than {start_field}"
+      "message": "{service}: {end_field} skal ligge efter {start_field}"
     },
     "control_ems_context_invalid": {
-      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+      "message": "{service}: EMS-styring kræver deviceType 100 og businessType 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+      "message": "{service}: paramList skal indeholde 1 til {max} EMS-systemer"
     },
     "control_param_list_item_invalid": {
-      "message": "{service}: paramList item {index} must be an object"
+      "message": "{service}: element {index} i paramList skal være et objekt"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "året skal være mellem {min_year} og {max_year}"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "måneden skal være mellem {min_month} og {max_month}"
     }
   }
 }
