@@ -741,10 +741,6 @@ The integration includes a Lovelace controller card that renews Live View while 
 
 The card also shows Live View status, remaining time, target/effective polling intervals, API-budget protection, heartbeat status, and the detected Live View entity.
 
-### Card previews
-
-The repository includes preview assets for both Live View card layouts. These can be replaced later with real Home Assistant screenshots using the same filenames.
-
 **Regular view**
 
 ![SolaX Live View regular card preview](https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/live-view/regular-light.svg)
