@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import re
-from datetime import timedelta
+from collections.abc import Mapping
+from datetime import datetime, timedelta
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
+from homeassistant.const import EntityCategory
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util, slugify
 
@@ -16,6 +20,7 @@ from .i18n import translate
 from .const import (
     BATTERY_STATUS_MAP,
     BATTERY_STATUS_MAP_BY_BUSINESS,
+    BUSINESS_TYPE_NAMES,
     COMMAND_STATUS_MAP,
     DEVICE_MODEL_MAP,
     DEVICE_MODEL_MAP_BY_CONTEXT,
@@ -26,6 +31,8 @@ from .const import (
     INVERTER_STATUS_MAP,
 )
 from .entity import system_device_info, system_identity
+from .coordinator import SolaxDeveloperCoordinator
+from .runtime import SolaxConfigEntry
 from .statistics import extract_plant_stat_metrics
 
 PARALLEL_UPDATES = 0
@@ -33,8 +40,20 @@ PARALLEL_UPDATES = 0
 CORE_PLANT_INFO_KEYS = {"plantState", "plantTimeZone", "electricityPriceUnit"}
 CORE_DEVICE_INFO_KEYS = {"onlineStatus", "flag", "deviceModel"}
 
+CONNECTIVITY_MIN_FRESHNESS_SECONDS = 15 * 60
+INVERTER_FAULT_STATUS_CODES = frozenset({103})
+INVERTER_CRITICAL_STATUS_CODES = frozenset({104})
+BATTERY_FAULT_STATUS_CODES = frozenset({5, 10})
+EV_CHARGER_FAULT_STATUS_CODES = frozenset({4})
 
-def _t(hass, key: str, *, placeholders: dict[str, Any] | None = None, fallback: str | None = None) -> str:
+
+def _t(
+    hass: HomeAssistant,
+    key: str,
+    *,
+    placeholders: dict[str, Any] | None = None,
+    fallback: str | None = None,
+) -> str:
     return translate(hass, key, placeholders=placeholders, fallback=fallback)
 
 
@@ -141,7 +160,9 @@ def _device_sensor_unique_suffix(*, field_slug: str, device_sn: str, info: bool 
     return f"{field_slug}_device_{serial_slug}"
 
 
-def _device_field_display_name(hass, *, device_type: int, field_name: str) -> str:
+def _device_field_display_name(
+    hass: HomeAssistant, *, device_type: int, field_name: str
+) -> str:
     if int(device_type) == 1:
         return _t(
             hass,
@@ -162,7 +183,9 @@ def _device_field_display_name(hass, *, device_type: int, field_name: str) -> st
     )
 
 
-def _device_info_display_name(hass, *, device_type: int, key_name: str) -> str:
+def _device_info_display_name(
+    hass: HomeAssistant, *, device_type: int, key_name: str
+) -> str:
     if int(device_type) == 1:
         return _t(
             hass,
@@ -226,7 +249,7 @@ def _normalize_numeric_value(key: str, value: Any, business_type: int) -> Any:
 
 
 def _status_text(
-    hass,
+    hass: HomeAssistant,
     device_type: int,
     business_type: int,
     key: str,
@@ -234,6 +257,8 @@ def _status_text(
 ) -> str | Any:
     if value is None:
         return None
+    if key in {"businessType", "deviceType"}:
+        return _coded_type_text(hass, key=key, value=value)
     try:
         int_val = int(value)
     except Exception:
@@ -327,16 +352,16 @@ def _infer_unit_and_classes(
 
 
 def _device_model_text(
-    hass,
+    hass: HomeAssistant,
     value: Any,
     *,
     business_type: Any = None,
     device_type: Any = None,
-) -> Any:
+) -> str:
     try:
         model_id = int(value)
     except (TypeError, ValueError):
-        return value
+        return str(value or "")
     try:
         context_key = (int(business_type), int(device_type), model_id)
     except (TypeError, ValueError):
@@ -356,7 +381,7 @@ def _device_model_text(
     return _t(hass, f"runtime.device_model.code.{model_id}", fallback=fallback)
 
 
-def _device_type_text(hass, value: Any) -> str:
+def _device_type_text(hass: HomeAssistant, value: Any) -> str:
     try:
         device_type = int(value)
     except (TypeError, ValueError):
@@ -365,16 +390,50 @@ def _device_type_text(hass, value: Any) -> str:
     return _t(hass, f"runtime.labels.device_type.{device_type}", fallback=fallback)
 
 
-def _business_type_text(hass, value: Any) -> str:
+def _business_type_text(hass: HomeAssistant, value: Any) -> str:
     try:
         business_type = int(value)
     except (TypeError, ValueError):
         return _t(hass, "runtime.labels.unknown", fallback="Unknown")
-    fallback = str(business_type)
+    fallback = BUSINESS_TYPE_NAMES.get(business_type, str(business_type))
     return _t(hass, f"runtime.labels.business_type.{business_type}", fallback=fallback)
 
 
-def _plant_state_text(hass, business_type: int, value: Any) -> Any:
+def _coded_type_text(
+    hass: HomeAssistant,
+    *,
+    key: str,
+    value: Any,
+) -> str:
+    """Return a translated type label while retaining the SolaX API code."""
+    code_text = str(value).strip()
+    try:
+        code = int(value)
+    except (TypeError, ValueError):
+        code = None
+
+    if key == "deviceType" and code in DEVICE_TYPE_NAMES:
+        label = (
+            _t(hass, "runtime.labels.ems", fallback="EMS")
+            if code == 100
+            else _device_type_text(hass, code)
+        )
+    elif key == "businessType" and code in {1, 4}:
+        label = _business_type_text(hass, code)
+    else:
+        label = _t(hass, "runtime.labels.unknown", fallback="Unknown")
+
+    return _t(
+        hass,
+        "runtime.entity_templates.type_code_label",
+        placeholders={"code": code_text, "label": label},
+        fallback="Type {code}, {label}",
+    )
+
+
+def _plant_state_text(
+    hass: HomeAssistant, business_type: int, value: Any
+) -> Any:
     try:
         state = int(value)
     except (TypeError, ValueError):
@@ -392,7 +451,7 @@ def _plant_state_text(hass, business_type: int, value: Any) -> Any:
     return _t(hass, "runtime.status.plant_residential.2", fallback="Online")
 
 
-def _online_status_text(hass, value: Any) -> Any:
+def _online_status_text(hass: HomeAssistant, value: Any) -> Any:
     try:
         status = int(value)
     except (TypeError, ValueError):
@@ -402,7 +461,9 @@ def _online_status_text(hass, value: Any) -> Any:
     return _t(hass, "runtime.status.online.0", fallback="Offline")
 
 
-def _parallel_flag_text(hass, business_type: int, value: Any) -> Any:
+def _parallel_flag_text(
+    hass: HomeAssistant, business_type: int, value: Any
+) -> Any:
     try:
         flag = int(value)
     except (TypeError, ValueError):
@@ -426,7 +487,11 @@ def _extract_stat_metrics(stat_payload: dict[str, Any] | None) -> dict[str, floa
     return extract_plant_stat_metrics(stat_payload)
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up sensors for a config entry."""
     coordinator = entry.runtime_data.coordinator
     system_name, system_slug = system_identity(hass, entry)
@@ -457,6 +522,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         "system_yield_total",
         "system_efficiency",
         "system_health",
+        "device_connectivity",
         "api_rate_limit_status",
         "poll_profile",
         "effective_scan_interval",
@@ -524,9 +590,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             # Year/month stat summary sensors.
             for period in ("year", "month"):
                 metrics = _extract_stat_metrics((plant_stats.get(plant_id) or {}).get(period))
-                for metric_name, metric_val in metrics.items():
-                    if metric_val is None:
-                        continue
+                for metric_name in metrics:
                     token = (f"plant_stat_{period}", plant_id, metric_name)
                     if token in created:
                         continue
@@ -679,12 +743,20 @@ async def async_setup_entry(hass, entry, async_add_entities):
     entry.async_on_unload(coordinator.async_add_listener(_coordinator_updated))
 
 
-class SolaxBaseSensor(CoordinatorEntity, SensorEntity):
+class SolaxBaseSensor(
+    CoordinatorEntity[SolaxDeveloperCoordinator], SensorEntity
+):
     """Common base for all SolaX sensors."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, system_slug: str, unique_suffix: str, name: str) -> None:
+    def __init__(
+        self,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        unique_suffix: str,
+        name: str,
+    ) -> None:
         super().__init__(coordinator)
         self._system_slug = system_slug
         self._attr_unique_id = f"{system_slug}_{unique_suffix}".lower()
@@ -696,7 +768,13 @@ class SolaxBaseSensor(CoordinatorEntity, SensorEntity):
 class SolaxSystemSensor(SolaxBaseSensor):
     """System total / diagnostic sensors."""
 
-    def __init__(self, coordinator, key: str, system_name: str, system_slug: str) -> None:
+    def __init__(
+        self,
+        coordinator: SolaxDeveloperCoordinator,
+        key: str,
+        system_name: str,
+        system_slug: str,
+    ) -> None:
         self._key = key
         self._system_name = system_name
 
@@ -733,6 +811,7 @@ class SolaxSystemSensor(SolaxBaseSensor):
                 self._attr_entity_registry_enabled_default = False
         elif key in (
             "system_health",
+            "device_connectivity",
             "api_rate_limit_status",
             "dry_run_command_count",
             "poll_profile",
@@ -749,7 +828,7 @@ class SolaxSystemSensor(SolaxBaseSensor):
                 self._attr_native_unit_of_measurement = "s"
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         return system_device_info(
             self.coordinator.hass,
             self.coordinator,
@@ -1017,11 +1096,330 @@ class SolaxSystemSensor(SolaxBaseSensor):
     def _system_dc_total(self) -> float:
         return float((self._system_dc_breakdown()).get("total_w") or 0.0)
 
-    @property
-    def native_value(self):
+    def _realtime_by_serial(self) -> dict[str, dict[str, Any]]:
+        realtime = (self.coordinator.data or {}).get("device_realtime") or {}
+        return {
+            str(serial).casefold(): payload
+            for serial, payload in realtime.items()
+            if isinstance(payload, dict)
+        }
+
+    @staticmethod
+    def _coerce_status(value: Any) -> int | None:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _active_alarm_breakdown(self) -> dict[str, Any]:
+        data = self.coordinator.data or {}
+        alarms = data.get("alarms") or {}
+        plants = data.get("plants") or {}
+        total = 0
+        active_plant_ids: list[str] = []
+        authoritative_plant_ids: list[str] = []
+
+        if isinstance(alarms, Mapping):
+            for plant_id, payload in alarms.items():
+                if not isinstance(payload, Mapping):
+                    continue
+                plant_id_text = str(plant_id)
+                authoritative_plant_ids.append(plant_id_text)
+                records = payload.get("records") or []
+                try:
+                    count = int(payload.get("total") or len(records))
+                except (TypeError, ValueError):
+                    count = len(records) if isinstance(records, list) else 0
+                total += max(0, count)
+                if count > 0:
+                    active_plant_ids.append(plant_id_text)
+
+        all_plant_ids = self._sort_strings([str(plant_id) for plant_id in plants])
+        authoritative = self._sort_strings(authoritative_plant_ids)
+        return {
+            "active_alarm_count": total,
+            "active_alarm_plant_ids": self._sort_strings(active_plant_ids),
+            "alarm_data_available": bool(authoritative),
+            "alarm_data_complete": bool(all_plant_ids)
+            and set(authoritative) == set(all_plant_ids),
+            "alarm_checked_plant_ids": authoritative,
+            "alarm_unchecked_plant_ids": self._sort_strings(
+                list(set(all_plant_ids) - set(authoritative))
+            ),
+        }
+
+    def _operational_health_breakdown(self) -> dict[str, Any]:
         data = self.coordinator.data or {}
         devices = data.get("devices") or {}
-        device_rt = data.get("device_realtime") or {}
+        realtime = self._realtime_by_serial()
+        healthy: list[str] = []
+        faulted: list[str] = []
+        critical: list[str] = []
+        not_evaluated: list[str] = []
+        per_device: dict[str, dict[str, Any]] = {}
+
+        for serial_raw, inventory_raw in devices.items():
+            serial = str(serial_raw)
+            inventory = inventory_raw if isinstance(inventory_raw, dict) else {}
+            payload = realtime.get(serial.casefold(), {})
+            device_type = self._device_type_int(serial, payload)
+            business_type = self._coerce_status(
+                payload.get("businessType") or inventory.get("businessType")
+            ) or 1
+            status = self._coerce_status(payload.get("deviceStatus"))
+            status_known = False
+            severity = "not_evaluated"
+            reason = "device_status_not_supported"
+
+            if device_type == 1 and status in INVERTER_STATUS_MAP:
+                status_known = True
+                severity = "healthy"
+                reason = "documented_non_fault_status"
+                if status in INVERTER_CRITICAL_STATUS_CODES:
+                    severity = "critical"
+                    reason = "permanent_fault_status"
+                elif status in INVERTER_FAULT_STATUS_CODES:
+                    severity = "fault"
+                    reason = "fault_status"
+            elif device_type == 2:
+                battery_status_known = (
+                    status
+                    in BATTERY_STATUS_MAP_BY_BUSINESS.get(business_type, {})
+                    or status in BATTERY_STATUS_MAP
+                )
+                if battery_status_known:
+                    status_known = True
+                    severity = (
+                        "fault"
+                        if status in BATTERY_FAULT_STATUS_CODES
+                        else "healthy"
+                    )
+                    reason = (
+                        "fault_status"
+                        if severity == "fault"
+                        else "documented_non_fault_status"
+                    )
+            elif device_type == 4 and status in EV_STATUS_MAP:
+                status_known = True
+                severity = (
+                    "fault"
+                    if status in EV_CHARGER_FAULT_STATUS_CODES
+                    else "healthy"
+                )
+                reason = (
+                    "fault_status"
+                    if severity == "fault"
+                    else "documented_non_fault_status"
+                )
+            elif device_type in {3, 100}:
+                reason = "no_documented_operational_status"
+            elif status is None:
+                reason = "device_status_missing"
+            else:
+                reason = "device_status_unknown"
+
+            if severity == "healthy":
+                healthy.append(serial)
+            elif severity == "fault":
+                faulted.append(serial)
+            elif severity == "critical":
+                critical.append(serial)
+            else:
+                not_evaluated.append(serial)
+
+            per_device[serial] = {
+                "device_type": device_type,
+                "device_type_name": _device_type_text(
+                    self.coordinator.hass, device_type
+                ),
+                "device_status": status,
+                "device_status_name": (
+                    _status_text(
+                        self.coordinator.hass,
+                        device_type,
+                        business_type,
+                        "deviceStatus",
+                        status,
+                    )
+                    if status_known
+                    else None
+                ),
+                "operational_health": severity,
+                "reason": reason,
+            }
+
+        alarm_breakdown = self._active_alarm_breakdown()
+        if not devices:
+            state = "unknown"
+        elif critical:
+            state = "error"
+        elif faulted or alarm_breakdown["active_alarm_count"] > 0:
+            state = "degraded"
+        elif healthy or alarm_breakdown["alarm_data_available"]:
+            state = "ok"
+        else:
+            state = "unknown"
+
+        return {
+            "state": state,
+            "evaluation_basis": "documented_device_fault_statuses_and_active_alarms",
+            "healthy_device_serials": self._sort_strings(healthy),
+            "faulted_device_serials": self._sort_strings(faulted),
+            "critical_device_serials": self._sort_strings(critical),
+            "not_evaluated_device_serials": self._sort_strings(not_evaluated),
+            "per_device_operational_health": {
+                serial: per_device[serial]
+                for serial in self._sort_strings(list(per_device))
+            },
+            **alarm_breakdown,
+        }
+
+    def _connectivity_freshness_seconds(self) -> int:
+        data = self.coordinator.data or {}
+        meta = data.get("meta") or {}
+        interval = self._coerce_status(meta.get("effective_scan_interval"))
+        if interval is None and self.coordinator.update_interval is not None:
+            interval = int(self.coordinator.update_interval.total_seconds())
+        return max(CONNECTIVITY_MIN_FRESHNESS_SECONDS, int(interval or 0) * 3)
+
+    @staticmethod
+    def _payload_data_time(
+        payload: Mapping[str, Any],
+    ) -> tuple[str | None, datetime | None]:
+        for field in ("dataTime", "utcTime", "utcDateTime"):
+            raw_value = payload.get(field)
+            if raw_value in (None, ""):
+                continue
+            parsed = dt_util.parse_datetime(str(raw_value))
+            if parsed is None or parsed.tzinfo is None:
+                continue
+            return field, dt_util.as_utc(parsed)
+        return None, None
+
+    def _device_realtime_refresh_failed(
+        self,
+        *,
+        device_type: int,
+        business_type: int,
+    ) -> bool:
+        errors = (self.coordinator.data or {}).get("last_errors") or []
+        if device_type == 100:
+            prefixes = ("ems_realtime",)
+        else:
+            prefixes = (f"device_realtime:{business_type}:{device_type}",)
+        return any(
+            isinstance(item, Mapping)
+            and str(item.get("context") or "").startswith(prefixes)
+            for item in errors
+        )
+
+    def _device_connectivity_breakdown(self) -> dict[str, Any]:
+        data = self.coordinator.data or {}
+        devices = data.get("devices") or {}
+        realtime = self._realtime_by_serial()
+        now = dt_util.utcnow()
+        freshness_seconds = self._connectivity_freshness_seconds()
+        grouped: dict[str, list[str]] = {
+            "online": [],
+            "offline": [],
+            "stale": [],
+            "unknown": [],
+        }
+        per_device: dict[str, dict[str, Any]] = {}
+
+        for serial_raw, inventory_raw in devices.items():
+            serial = str(serial_raw)
+            inventory = inventory_raw if isinstance(inventory_raw, dict) else {}
+            payload = realtime.get(serial.casefold(), {})
+            device_type = self._device_type_int(serial, payload)
+            business_type = self._coerce_status(
+                payload.get("businessType") or inventory.get("businessType")
+            ) or 1
+            raw_online = (
+                payload.get("onlineStatus")
+                if payload.get("onlineStatus") is not None
+                else inventory.get("onlineStatus")
+            )
+            online_status = self._coerce_status(raw_online)
+            time_field, data_time = self._payload_data_time(payload)
+            data_age_seconds = None
+            if data_time is not None:
+                data_age_seconds = max(0, int((now - data_time).total_seconds()))
+
+            if online_status == 1:
+                connectivity = "online"
+                reason = "online_status_online"
+            elif online_status == 0:
+                connectivity = "offline"
+                reason = "online_status_offline"
+            elif raw_online is not None:
+                connectivity = "unknown"
+                reason = "online_status_invalid"
+            elif not payload:
+                connectivity = "unknown"
+                reason = "realtime_data_missing"
+            elif self._device_realtime_refresh_failed(
+                device_type=device_type,
+                business_type=business_type,
+            ):
+                connectivity = "unknown"
+                reason = "latest_realtime_refresh_failed"
+            elif data_age_seconds is not None and data_age_seconds > freshness_seconds:
+                connectivity = "stale"
+                reason = "realtime_data_stale"
+            else:
+                connectivity = "online"
+                reason = (
+                    "realtime_data_fresh"
+                    if data_age_seconds is not None
+                    else "successful_realtime_response_without_online_status"
+                )
+
+            grouped[connectivity].append(serial)
+            per_device[serial] = {
+                "device_type": device_type,
+                "device_type_name": _device_type_text(
+                    self.coordinator.hass, device_type
+                ),
+                "connectivity": connectivity,
+                "reason": reason,
+                "online_status": online_status,
+                "data_time_field": time_field,
+                "data_time": data_time.isoformat() if data_time is not None else None,
+                "data_age_seconds": data_age_seconds,
+            }
+
+        total = len(devices)
+        online_count = len(grouped["online"])
+        offline_count = len(grouped["offline"])
+        if total == 0:
+            state = "unknown"
+        elif online_count == total:
+            state = "online"
+        elif offline_count == total:
+            state = "offline"
+        elif online_count or offline_count:
+            state = "degraded"
+        else:
+            state = "unknown"
+
+        return {
+            "state": state,
+            "evaluation_basis": "online_status_then_realtime_freshness",
+            "freshness_threshold_seconds": freshness_seconds,
+            "online_device_serials": self._sort_strings(grouped["online"]),
+            "offline_device_serials": self._sort_strings(grouped["offline"]),
+            "stale_device_serials": self._sort_strings(grouped["stale"]),
+            "unknown_device_serials": self._sort_strings(grouped["unknown"]),
+            "per_device_connectivity": {
+                serial: per_device[serial]
+                for serial in self._sort_strings(list(per_device))
+            },
+        }
+
+    @property
+    def native_value(self) -> Any:
+        data = self.coordinator.data or {}
 
         if self._key == "system_ac_power":
             return round(self._system_ac_total(), 3)
@@ -1043,38 +1441,29 @@ class SolaxSystemSensor(SolaxBaseSensor):
             return 0.0
 
         if self._key == "system_health":
-            total = len(devices)
-            if total == 0:
-                return _t(
-                    self.coordinator.hass,
-                    "runtime.status.system_health.unknown",
-                    fallback="Unknown",
-                )
-            online = 0
-            for sn, device in devices.items():
-                online_status = device.get("onlineStatus")
-                if online_status is not None:
-                    try:
-                        if int(online_status) == 1:
-                            online += 1
-                    except (TypeError, ValueError):
-                        pass
-                    continue
-                payload = device_rt.get(sn)
-                if isinstance(payload, dict):
-                    online += 1
-            if online == total:
-                return _t(self.coordinator.hass, "runtime.status.system_health.ok", fallback="OK")
-            if online == 0:
-                return _t(
-                    self.coordinator.hass,
-                    "runtime.status.system_health.error",
-                    fallback="Error",
-                )
+            state = str(self._operational_health_breakdown()["state"])
             return _t(
                 self.coordinator.hass,
-                "runtime.status.system_health.degraded",
-                fallback="Degraded",
+                f"runtime.status.system_health.{state}",
+                fallback={
+                    "unknown": "Unknown",
+                    "ok": "OK",
+                    "error": "Error",
+                    "degraded": "Degraded",
+                }[state],
+            )
+
+        if self._key == "device_connectivity":
+            state = str(self._device_connectivity_breakdown()["state"])
+            return _t(
+                self.coordinator.hass,
+                f"runtime.status.device_connectivity.{state}",
+                fallback={
+                    "unknown": "Unknown",
+                    "online": "Online",
+                    "offline": "Offline",
+                    "degraded": "Degraded",
+                }[state],
             )
 
         if self._key == "api_rate_limit_status":
@@ -1114,6 +1503,8 @@ class SolaxSystemSensor(SolaxBaseSensor):
         if self._key == "next_scheduled_poll":
             if self.coordinator.last_update_attempt is None:
                 return None
+            if self.coordinator.update_interval is None:
+                return None
             return self.coordinator.last_update_attempt + timedelta(
                 seconds=self.coordinator.update_interval.total_seconds()
             )
@@ -1127,9 +1518,9 @@ class SolaxSystemSensor(SolaxBaseSensor):
         return None
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> Mapping[str, Any]:
         data = self.coordinator.data or {}
-        attrs = {
+        attrs: dict[str, Any] = {
             "plants": len(data.get("plants") or {}),
             "devices": len(data.get("devices") or {}),
         }
@@ -1140,6 +1531,16 @@ class SolaxSystemSensor(SolaxBaseSensor):
                 attrs["last_rate_limit_at"] = self.coordinator.last_rate_limit_at.isoformat()
 
         if self._key == "system_health":
+            attrs.update(self._operational_health_breakdown())
+            attrs["last_successful_refresh"] = (
+                self.coordinator.last_successful_update.isoformat()
+                if self.coordinator.last_successful_update
+                else None
+            )
+            attrs["errors"] = self.coordinator.data.get("last_errors") or []
+
+        if self._key == "device_connectivity":
+            attrs.update(self._device_connectivity_breakdown())
             attrs["last_successful_refresh"] = (
                 self.coordinator.last_successful_update.isoformat()
                 if self.coordinator.last_successful_update
@@ -1271,7 +1672,13 @@ class SolaxSystemSensor(SolaxBaseSensor):
 class SolaxPlantFieldSensor(SolaxBaseSensor):
     """Dynamic sensor for plant realtime fields."""
 
-    def __init__(self, coordinator, system_slug: str, plant_id: str, field_key: str) -> None:
+    def __init__(
+        self,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        plant_id: str,
+        field_key: str,
+    ) -> None:
         self._plant_id = plant_id
         self._field_key = field_key
         name = _t(
@@ -1293,7 +1700,7 @@ class SolaxPlantFieldSensor(SolaxBaseSensor):
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
-    def available(self):
+    def available(self) -> bool:
         plant = (self.coordinator.data.get("plant_realtime") or {}).get(self._plant_id)
         if not isinstance(plant, dict):
             return False
@@ -1301,7 +1708,7 @@ class SolaxPlantFieldSensor(SolaxBaseSensor):
         return self._field_key in flat and flat[self._field_key] is not None
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         plant = (self.coordinator.data.get("plant_realtime") or {}).get(self._plant_id)
         if not isinstance(plant, dict):
             return None
@@ -1315,30 +1722,30 @@ class SolaxPlantFieldSensor(SolaxBaseSensor):
         return _normalize_numeric_value(self._field_key, raw_value, business_type)
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         plants = self.coordinator.data.get("plants") or {}
         plant = plants.get(self._plant_id) or {}
         business_type_label = _business_type_text(
             self.coordinator.hass,
             plant.get("businessType"),
         )
-        return {
-            "identifiers": {(DOMAIN, f"plant_{self._plant_id}")},
-            "name": plant.get("plantName")
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"plant_{self._plant_id}")},
+            name=plant.get("plantName")
             or _t(
                 self.coordinator.hass,
                 "runtime.entity_templates.plant_name",
                 placeholders={"plant_id": self._plant_id},
                 fallback="Plant {plant_id}",
             ),
-            "manufacturer": "SolaX",
-            "model": _t(
+            manufacturer="SolaX",
+            model=_t(
                 self.coordinator.hass,
                 "runtime.device_model.plant",
                 placeholders={"business_type": business_type_label},
                 fallback="Plant {business_type}",
             ),
-        }
+        )
 
 
 class SolaxPlantAlarmCountSensor(SolaxBaseSensor):
@@ -1346,7 +1753,12 @@ class SolaxPlantAlarmCountSensor(SolaxBaseSensor):
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator, system_slug: str, plant_id: str) -> None:
+    def __init__(
+        self,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        plant_id: str,
+    ) -> None:
         self._plant_id = plant_id
         super().__init__(
             coordinator,
@@ -1362,27 +1774,27 @@ class SolaxPlantAlarmCountSensor(SolaxBaseSensor):
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
-    def native_value(self):
+    def native_value(self) -> int:
         alarms = (self.coordinator.data.get("alarms") or {}).get(self._plant_id) or {}
         return int(alarms.get("total") or 0)
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"plant_{self._plant_id}")},
-            "name": _t(
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"plant_{self._plant_id}")},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.plant_name",
                 placeholders={"plant_id": self._plant_id},
                 fallback="Plant {plant_id}",
             ),
-            "manufacturer": "SolaX",
-            "model": _t(
+            manufacturer="SolaX",
+            model=_t(
                 self.coordinator.hass,
                 "runtime.device_model.plant_simple",
                 fallback="Plant",
             ),
-        }
+        )
 
 
 class SolaxPlantStatSensor(SolaxBaseSensor):
@@ -1390,7 +1802,7 @@ class SolaxPlantStatSensor(SolaxBaseSensor):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
         plant_id: str,
         period: str,
@@ -1429,7 +1841,7 @@ class SolaxPlantStatSensor(SolaxBaseSensor):
             self._attr_native_unit_of_measurement = "kWh"
 
     @property
-    def native_value(self):
+    def native_value(self) -> float:
         stat = (
             ((self.coordinator.data.get("plant_stats") or {}).get(self._plant_id) or {}).get(
                 self._period
@@ -1440,22 +1852,22 @@ class SolaxPlantStatSensor(SolaxBaseSensor):
         return round(float(metrics.get(self._metric_name) or 0), 3)
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"plant_{self._plant_id}")},
-            "name": _t(
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"plant_{self._plant_id}")},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.plant_name",
                 placeholders={"plant_id": self._plant_id},
                 fallback="Plant {plant_id}",
             ),
-            "manufacturer": "SolaX",
-            "model": _t(
+            manufacturer="SolaX",
+            model=_t(
                 self.coordinator.hass,
                 "runtime.device_model.plant_stats",
                 fallback="Plant Stats",
             ),
-        }
+        )
 
 
 class SolaxPlantInfoSensor(SolaxBaseSensor):
@@ -1463,7 +1875,13 @@ class SolaxPlantInfoSensor(SolaxBaseSensor):
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator, system_slug: str, plant_id: str, key: str) -> None:
+    def __init__(
+        self,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        plant_id: str,
+        key: str,
+    ) -> None:
         self._plant_id = plant_id
         self._key = key
         super().__init__(
@@ -1481,7 +1899,7 @@ class SolaxPlantInfoSensor(SolaxBaseSensor):
             self._attr_entity_registry_enabled_default = False
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         plant = (self.coordinator.data.get("plants") or {}).get(self._plant_id) or {}
         value = plant.get(self._key)
         if self._key == "plantState" and value is not None:
@@ -1490,22 +1908,22 @@ class SolaxPlantInfoSensor(SolaxBaseSensor):
         return value
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"plant_{self._plant_id}")},
-            "name": _t(
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"plant_{self._plant_id}")},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.plant_name",
                 placeholders={"plant_id": self._plant_id},
                 fallback="Plant {plant_id}",
             ),
-            "manufacturer": "SolaX",
-            "model": _t(
+            manufacturer="SolaX",
+            model=_t(
                 self.coordinator.hass,
                 "runtime.device_model.plant_simple",
                 fallback="Plant",
             ),
-        }
+        )
 
 
 class SolaxPlantAlarmPreviewSensor(SolaxBaseSensor):
@@ -1516,7 +1934,7 @@ class SolaxPlantAlarmPreviewSensor(SolaxBaseSensor):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
         plant_id: str,
         alarm_index: int,
@@ -1542,7 +1960,7 @@ class SolaxPlantAlarmPreviewSensor(SolaxBaseSensor):
         )
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         alarms = (self.coordinator.data.get("alarms") or {}).get(self._plant_id) or {}
         records = alarms.get("records") or []
         if self._alarm_index >= len(records):
@@ -1553,22 +1971,22 @@ class SolaxPlantAlarmPreviewSensor(SolaxBaseSensor):
         return row.get(self._alarm_key)
 
     @property
-    def device_info(self):
-        return {
-            "identifiers": {(DOMAIN, f"plant_{self._plant_id}")},
-            "name": _t(
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(
+            identifiers={(DOMAIN, f"plant_{self._plant_id}")},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.plant_name",
                 placeholders={"plant_id": self._plant_id},
                 fallback="Plant {plant_id}",
             ),
-            "manufacturer": "SolaX",
-            "model": _t(
+            manufacturer="SolaX",
+            model=_t(
                 self.coordinator.hass,
                 "runtime.device_model.plant_alarms",
                 fallback="Plant Alarms",
             ),
-        }
+        )
 
 
 class SolaxDeviceFieldSensor(SolaxBaseSensor):
@@ -1576,7 +1994,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
         device_sn: str,
         device_type: Any,
@@ -1624,11 +2042,11 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
-    def _payload(self) -> dict[str, Any]:
+    def _payload(self) -> Any:
         return (self.coordinator.data.get("device_realtime") or {}).get(self._device_sn) or {}
 
     @property
-    def available(self):
+    def available(self) -> bool:
         payload = self._payload
         if not isinstance(payload, dict):
             return False
@@ -1636,7 +2054,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         return self._field_key in flat and flat[self._field_key] is not None
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         payload = self._payload
         if not isinstance(payload, dict):
             return None
@@ -1644,6 +2062,12 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         raw_value = flat.get(self._field_key)
         if raw_value is None:
             return None
+        if self._field_key in {"businessType", "deviceType"}:
+            return _coded_type_text(
+                self.coordinator.hass,
+                key=self._field_key,
+                value=raw_value,
+            )
 
         device_type = int(payload.get("deviceType") or 0)
         business_type = int(payload.get("businessType") or self._business_type or 1)
@@ -1660,12 +2084,21 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         return _normalize_numeric_value(self._field_key, raw_value, business_type)
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> Mapping[str, Any]:
         payload = self._payload
         flat = _flatten_dict(payload) if isinstance(payload, dict) else {}
         raw_value = flat.get(self._field_key)
         if raw_value is None:
             return {}
+        if self._field_key in {"businessType", "deviceType"}:
+            return {
+                "raw_value": raw_value,
+                "mapped_value": _coded_type_text(
+                    self.coordinator.hass,
+                    key=self._field_key,
+                    value=raw_value,
+                ),
+            }
 
         business_type = int(payload.get("businessType") or self._business_type or 1)
         mapped = _status_text(
@@ -1691,7 +2124,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         return attrs
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         devices = self.coordinator.data.get("devices") or {}
         device = devices.get(self._device_sn) or {}
         device_type = int(device.get("deviceType") or 0)
@@ -1709,9 +2142,9 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
                 fallback="Unknown",
             )
 
-        return {
-            "identifiers": {(DOMAIN, self._device_sn)},
-            "name": _t(
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device_sn)},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.device_name",
                 placeholders={
@@ -1720,10 +2153,10 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
                 },
                 fallback="Solax {device_type} {device_sn}",
             ),
-            "manufacturer": "SolaX",
-            "model": model_name,
-            "serial_number": self._device_sn,
-        }
+            manufacturer="SolaX",
+            model=model_name,
+            serial_number=self._device_sn,
+        )
 
 
 class SolaxDeviceInfoSensor(SolaxBaseSensor):
@@ -1733,7 +2166,7 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
 
     def __init__(
         self,
-        coordinator,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
         device_sn: str,
         device_type: Any,
@@ -1765,9 +2198,15 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
             self._attr_entity_registry_enabled_default = False
 
     @property
-    def native_value(self):
+    def native_value(self) -> Any:
         device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
         value = device.get(self._key)
+        if self._key in {"businessType", "deviceType"} and value is not None:
+            return _coded_type_text(
+                self.coordinator.hass,
+                key=self._key,
+                value=value,
+            )
         business_type = int(device.get("businessType") or 1)
         if self._key == "deviceModel" and value is not None:
             return _device_model_text(
@@ -1783,7 +2222,25 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
         return value
 
     @property
-    def device_info(self):
+    def extra_state_attributes(self) -> Mapping[str, Any]:
+        """Return the raw SolaX code alongside its translated state."""
+        if self._key not in {"businessType", "deviceType"}:
+            return {}
+        device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
+        raw_value = device.get(self._key)
+        if raw_value is None:
+            return {}
+        return {
+            "raw_value": raw_value,
+            "mapped_value": _coded_type_text(
+                self.coordinator.hass,
+                key=self._key,
+                value=raw_value,
+            ),
+        }
+
+    @property
+    def device_info(self) -> DeviceInfo:
         device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
         device_type = int(device.get("deviceType") or self._device_type or 0)
         model_name = _device_model_text(
@@ -1804,9 +2261,9 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
                 "runtime.device_model.inventory",
                 fallback="Inventory",
             )
-        return {
-            "identifiers": {(DOMAIN, self._device_sn)},
-            "name": _t(
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device_sn)},
+            name=_t(
                 self.coordinator.hass,
                 "runtime.entity_templates.device_name",
                 placeholders={
@@ -1818,7 +2275,7 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
                 },
                 fallback="Solax {device_type} {device_sn}",
             ),
-            "manufacturer": "SolaX",
-            "model": model_name,
-            "serial_number": self._device_sn,
-        }
+            manufacturer="SolaX",
+            model=model_name,
+            serial_number=self._device_sn,
+        )

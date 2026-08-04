@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from collections.abc import Mapping
+from typing import Any, cast
 
 from homeassistant.components.select import SelectEntity
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .coordinator import SolaxDeveloperCoordinator
 from .entity import system_identity
 from .ev_charger import (
     CHARGE_SCENE_OPTIONS,
@@ -15,17 +19,22 @@ from .ev_charger import (
     ev_charger_devices,
     translated_option,
 )
+from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     _system_name, system_slug = system_identity(hass, entry)
     seen: set[tuple[str, str]] = set()
 
-    def _build_entities():
-        new_entities = []
+    def _build_entities() -> list[SelectEntity]:
+        new_entities: list[SelectEntity] = []
         for device in ev_charger_devices(coordinator):
             device_sn = str(device.get("deviceSn") or "")
             for cls in (
@@ -63,7 +72,13 @@ class SolaxEVWorkModeSelect(SolaxEVChargerEntity, SelectEntity):
     FIELD_SLUG = "ev_charger_work_mode"
     _attr_translation_key = "ev_charger_work_mode"
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "select")
         self._option_map: dict[str, tuple[int, int | None]] = {}
         for key, work_mode, current_gear in WORK_MODE_OPTIONS:
@@ -87,7 +102,7 @@ class SolaxEVWorkModeSelect(SolaxEVChargerEntity, SelectEntity):
     def current_option(self) -> str | None:
         state_option = self._ev_gui_state.get("work_mode_option")
         if state_option in self._option_map:
-            return state_option
+            return cast(str, state_option)
         payload = (self.coordinator.data.get("device_realtime") or {}).get(
             self._device_sn,
         ) or {}
@@ -124,7 +139,13 @@ class SolaxEVStartModeSelect(SolaxEVChargerEntity, SelectEntity):
     FIELD_SLUG = "ev_charger_start_mode"
     _attr_translation_key = "ev_charger_start_mode"
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "select")
         fallback_map = {
             "plug_and_charge": "Plug and charge",
@@ -146,7 +167,7 @@ class SolaxEVStartModeSelect(SolaxEVChargerEntity, SelectEntity):
     def current_option(self) -> str | None:
         state_option = self._ev_gui_state.get("start_mode_option")
         if state_option in self._option_map:
-            return state_option
+            return cast(str, state_option)
         payload = (self.coordinator.data.get("device_realtime") or {}).get(
             self._device_sn,
         ) or {}
@@ -169,7 +190,13 @@ class SolaxEVChargeSceneSelect(SolaxEVChargerEntity, SelectEntity):
     FIELD_SLUG = "ev_charger_charge_scene"
     _attr_translation_key = "ev_charger_charge_scene"
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "select")
         fallback_map = {
             "home": "HOME",
@@ -191,7 +218,7 @@ class SolaxEVChargeSceneSelect(SolaxEVChargerEntity, SelectEntity):
     def current_option(self) -> str | None:
         state_option = self._ev_gui_state.get("charge_scene_option")
         if state_option in self._option_map:
-            return state_option
+            return cast(str, state_option)
         payload = (self.coordinator.data.get("device_realtime") or {}).get(
             self._device_sn,
         ) or {}

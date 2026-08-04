@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, TypedDict
+
+from homeassistant.config_entries import ConfigEntry
 
 DOMAIN = "solax_developer_api"
 PLATFORMS = ["sensor", "switch", "button", "select", "number", "text", "time"]
@@ -16,6 +19,7 @@ CONF_ENTITY_PREFIX = "entity_prefix"
 CONF_API_REGION = "api_region"
 CONF_RATE_LIMIT_NOTIFICATIONS = "rate_limit_notifications"
 CONF_ALARM_NOTIFICATIONS = "alarm_notifications"
+CONF_ALARM_SCAN_INTERVAL = "alarm_scan_interval"
 CONF_LIVE_VIEW_DEFAULT_DURATION = "live_view_default_duration"
 CONF_LIVE_VIEW_INTERVAL = "live_view_interval"
 CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE = "live_view_call_budget_per_minute"
@@ -30,6 +34,9 @@ DEFAULT_SYSTEM_NAME = "Solax Developer System"
 DEFAULT_SCAN_INTERVAL = 120
 MIN_SCAN_INTERVAL = 60
 MAX_SCAN_INTERVAL = 3600
+DEFAULT_ALARM_SCAN_INTERVAL = 120
+MIN_ALARM_SCAN_INTERVAL = 60
+MAX_ALARM_SCAN_INTERVAL = 3600
 DEFAULT_LIVE_VIEW_DEFAULT_DURATION = 300
 MIN_LIVE_VIEW_DURATION = 30
 MAX_LIVE_VIEW_DURATION = 3600
@@ -48,7 +55,7 @@ DEFAULT_NIGHT_END_HOUR = 6
 API_RATE_LIMIT_PER_MINUTE = 100
 
 
-def config_value(entry, key: str, default=None):
+def config_value(entry: ConfigEntry[Any], key: str, default: Any = None) -> Any:
     """Return an option value with legacy config-data fallback."""
     if key in entry.options:
         return entry.options[key]
@@ -144,6 +151,8 @@ EV_CHARGER_CONTROL_SERVICES = frozenset(
 )
 
 EV_CHARGER_ACCEPTED_COMMAND_STATUSES = frozenset({3, 4})
+EV_CHARGER_DEVICE_ACKNOWLEDGED_STATUSES = frozenset({4})
+EV_CHARGER_FAILED_COMMAND_STATUSES = frozenset({1, 2, 5, 6})
 
 INVERTER_STATUS_MAP = {
     100: "Waiting",
@@ -449,8 +458,19 @@ FIELD_UNITS = {
     "chargeDischargePower": ("W", "power"),
 }
 
+type ExpectedFieldType = type[Any] | tuple[type[Any], ...]
+
+
+class ControlServiceDefinition(TypedDict):
+    """Schema and endpoint metadata for one control service."""
+
+    endpoint: str
+    required: dict[str, ExpectedFieldType]
+    optional: dict[str, ExpectedFieldType]
+
+
 # Explicit control services. All are dry-run blocked in this development phase.
-CONTROL_SERVICE_DEFINITIONS = {
+CONTROL_SERVICE_DEFINITIONS: dict[str, ControlServiceDefinition] = {
     "set_export_control": {
         "endpoint": "/openapi/v2/device/device_control/strategy/set_export_control",
         "required": {
@@ -709,7 +729,7 @@ CONTROL_SERVICE_DEFINITIONS = {
 }
 
 # Services are registered only when the loaded account exposes the relevant family.
-CONTROL_SERVICE_CAPABILITIES = {
+CONTROL_SERVICE_CAPABILITIES: dict[str, dict[str, tuple[str, ...]]] = {
     "set_export_control": {"families": ("inverter", "ems")},
     "set_import_control": {"families": ("ci_inverter", "ems")},
     "batch_set_spontaneity_self_use": {"families": ("battery_system",)},

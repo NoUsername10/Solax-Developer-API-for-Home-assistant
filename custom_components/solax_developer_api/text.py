@@ -2,21 +2,32 @@
 
 from __future__ import annotations
 
-from homeassistant.components.text import TextEntity, TextMode
+from collections.abc import Mapping
+from typing import Any
 
+from homeassistant.components.text import TextEntity, TextMode
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .coordinator import SolaxDeveloperCoordinator
 from .entity import system_identity
 from .ev_charger import SolaxEVChargerEntity, ev_charger_devices
+from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     _system_name, system_slug = system_identity(hass, entry)
     seen: set[tuple[str, str]] = set()
 
-    def _build_entities():
-        new_entities = []
+    def _build_entities() -> list[TextEntity]:
+        new_entities: list[TextEntity] = []
         for device in ev_charger_devices(coordinator):
             device_sn = str(device.get("deviceSn") or "")
             for cls in (
@@ -55,7 +66,13 @@ class _SolaxEVTextEntity(SolaxEVChargerEntity, TextEntity):
     FIELD_SLUG = ""
     _attr_mode = TextMode.TEXT
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "text")
 
     @property

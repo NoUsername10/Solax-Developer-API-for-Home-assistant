@@ -5,10 +5,11 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from collections.abc import Callable
-from typing import Any, Iterable
+from collections.abc import Callable, Iterable
+from typing import Any, TypeVar, cast
 
 import async_timeout
+from aiohttp import ClientSession
 
 from .const import (
     API_BASE_URLS,
@@ -28,7 +29,10 @@ from .const import (
 )
 
 
-def chunked(items: Iterable[Any], size: int) -> list[list[Any]]:
+_T = TypeVar("_T")
+
+
+def chunked(items: Iterable[_T], size: int) -> list[list[_T]]:
     """Return list chunks of ``size`` from iterable values."""
     if size <= 0:
         raise ValueError("size must be > 0")
@@ -70,7 +74,7 @@ def split_time_windows(start_time: int, end_time: int, max_window_ms: int) -> li
     return windows
 
 
-def _history_row_identity(row: Any) -> tuple[str, str] | None:
+def _history_row_identity(row: object) -> tuple[str, str] | None:
     if not isinstance(row, dict):
         return None
     device_sn = str(row.get("deviceSn") or "").strip()
@@ -126,7 +130,7 @@ class SolaxDeveloperApiClient:
         client_id: str,
         client_secret: str,
         region: str = API_REGION_DEFAULT,
-        session,
+        session: ClientSession,
         timeout_seconds: int = 20,
     ) -> None:
         self._client_id = client_id
@@ -220,7 +224,7 @@ class SolaxDeveloperApiClient:
                             payload={"status": response.status, "body": text},
                         )
                     try:
-                        data = await response.json()
+                        raw_data = await response.json()
                     except Exception as json_err:  # pragma: no cover - defensive
                         raise SolaxApiError(
                             code=None,
@@ -235,6 +239,14 @@ class SolaxDeveloperApiClient:
                 classification="timeout",
             ) from err
 
+        if not isinstance(raw_data, dict):
+            raise SolaxApiError(
+                code=None,
+                message="Token response must be a JSON object",
+                classification="json",
+                payload={"body": text},
+            )
+        data = cast(dict[str, Any], raw_data)
         code = data.get("code")
         if code != SUCCESS_CODE_TOKEN:
             raise SolaxApiError(
@@ -305,7 +317,7 @@ class SolaxDeveloperApiClient:
                             payload={"status": response.status, "body": text},
                         )
                     try:
-                        data = await response.json()
+                        raw_data = await response.json()
                     except Exception as json_err:  # pragma: no cover - defensive
                         raise SolaxApiError(
                             code=None,
@@ -320,6 +332,14 @@ class SolaxDeveloperApiClient:
                 classification="timeout",
             ) from err
 
+        if not isinstance(raw_data, dict):
+            raise SolaxApiError(
+                code=None,
+                message=f"API response for {path} must be a JSON object",
+                classification="json",
+                payload={"body": text},
+            )
+        data = cast(dict[str, Any], raw_data)
         code = data.get("code")
         if success_code is None:
             return data

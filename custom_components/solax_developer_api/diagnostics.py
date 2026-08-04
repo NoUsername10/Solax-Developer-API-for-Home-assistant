@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from copy import deepcopy
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -22,6 +22,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SYSTEM_NAME,
     DEFAULT_SCAN_INTERVAL,
+    config_value,
 )
 
 MASK_META_SUFFIXES = ("_masked", "_length", "_present")
@@ -56,6 +57,11 @@ PERSONAL_REDACTED_KEYS = (
     "longitude",
     "latitude",
 )
+FULLY_REDACTED_ACCESS_KEYS = (
+    "ocppurl",
+    "ocppchargerid",
+    "qrcode",
+)
 REDACTED_VALUE = "*REDACTED*"
 
 
@@ -89,6 +95,11 @@ def _is_personal_key(key: str | None) -> bool:
     return normalized in PERSONAL_REDACTED_KEYS or any(
         normalized.endswith(private_key) for private_key in PERSONAL_REDACTED_KEYS
     )
+
+
+def _is_fully_redacted_access_key(key: str | None) -> bool:
+    normalized = _normalize_key(key).replace("_", "")
+    return normalized in FULLY_REDACTED_ACCESS_KEYS
 
 
 def _mask_secret(value: Any) -> Any:
@@ -131,7 +142,7 @@ def _to_iso(value: Any) -> str | None:
         return value.isoformat()
     if hasattr(value, "isoformat"):
         try:
-            return value.isoformat()
+            return str(value.isoformat())
         except Exception:  # noqa: BLE001
             return str(value)
     return str(value)
@@ -308,6 +319,8 @@ def _sanitize_for_diagnostics(
         value_casefold = value.casefold()
         if _is_mask_meta_key(key):
             return value
+        if _is_fully_redacted_access_key(key):
+            return REDACTED_VALUE if value.strip() else value
         if _is_personal_key(key):
             return REDACTED_VALUE if value.strip() else value
         if value.casefold().startswith("bearer "):
@@ -323,7 +336,7 @@ def _sanitize_for_diagnostics(
             return _mask_serial(value)
         return value
 
-    if _is_personal_key(key_hint):
+    if _is_fully_redacted_access_key(key_hint) or _is_personal_key(key_hint):
         if value is None:
             return None
         if isinstance(value, (int, float)):
@@ -370,8 +383,8 @@ def _build_config_entry_snapshot(entry: ConfigEntry, state: dict[str, Any], clie
     return {
         "entry_id": entry.entry_id,
         "title": entry.title,
-        "system_name": entry.data.get(CONF_SYSTEM_NAME),
-        "scan_interval": entry.data.get(CONF_SCAN_INTERVAL),
+        "system_name": config_value(entry, CONF_SYSTEM_NAME),
+        "scan_interval": config_value(entry, CONF_SCAN_INTERVAL),
         "api_region": entry.data.get(CONF_API_REGION),
         "manual_meter_serial_count": manual_meter_count,
         "manual_meter_config_present": bool(entry.options.get(CONF_MANUAL_METER_SERIALS)),
@@ -563,6 +576,17 @@ def _build_coordinator_snapshot(coordinator: Any, state: dict[str, Any]) -> dict
         "effective_scan_interval": meta.get("effective_scan_interval"),
         "live_view_active": meta.get("live_view_active"),
         "live_view_remaining_seconds": meta.get("live_view_remaining_seconds"),
+        "alarm_scan_interval": meta.get("alarm_scan_interval"),
+        "alarm_last_update_attempt": _to_iso(meta.get("alarm_last_update_attempt")),
+        "alarm_last_successful_update": _to_iso(
+            meta.get("alarm_last_successful_update")
+        ),
+        "alarm_last_update_success": meta.get("alarm_last_update_success"),
+        "alarm_last_error": meta.get("alarm_last_error"),
+        "alarm_last_errors": deepcopy(meta.get("alarm_last_errors") or []),
+        "alarm_reserved_calls_per_minute": meta.get(
+            "alarm_reserved_calls_per_minute"
+        ),
         "history_cache_entries": len(getattr(coordinator, "history_cache", {}) or {}),
         "request_result_cache_entries": len(getattr(coordinator, "request_result_cache", {}) or {}),
         "master_control_cache_entries": len(getattr(coordinator, "master_control_cache", {}) or {}),
@@ -641,10 +665,13 @@ def _build_and_sanitize_payload(
         for serial in (raw_vs_filtered_summary.get("devices") or {}).keys()
         if str(serial).strip()
     )
-    return _sanitize_for_diagnostics(
-        diagnostics_payload,
-        known_secrets=known_secret_values,
-        known_serials=known_serial_values,
+    return cast(
+        dict[str, Any],
+        _sanitize_for_diagnostics(
+            diagnostics_payload,
+            known_secrets=known_secret_values,
+            known_serials=known_serial_values,
+        ),
     )
 
 
@@ -676,7 +703,10 @@ async def _build_unloaded_entry_diagnostics(
         client=client,
         config_entry=entry,
         entry_id=entry.entry_id,
-        scan_interval=int(entry.data.get(CONF_SCAN_INTERVAL) or DEFAULT_SCAN_INTERVAL),
+        scan_interval=int(
+            config_value(entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+            or DEFAULT_SCAN_INTERVAL
+        ),
         options=dict(entry.options or {}),
     )
     coordinator._schedule_capability_cache_save = lambda: None  # type: ignore[method-assign]
@@ -685,6 +715,9 @@ async def _build_unloaded_entry_diagnostics(
     raw_api_responses = deepcopy(getattr(coordinator, "raw_api_responses", {}) or {})
     try:
         state = deepcopy(await coordinator._async_update_data())
+        if refresh_alarms := getattr(coordinator, "async_refresh_alarms_once", None):
+            await refresh_alarms()
+        state = deepcopy(getattr(coordinator, "data", {}) or state)
         raw_api_responses = deepcopy(getattr(coordinator, "raw_api_responses", {}) or {})
         fallback_probe["success"] = True
         fallback_probe["completed_at"] = _to_iso(datetime.now(timezone.utc))
@@ -738,6 +771,12 @@ async def async_get_config_entry_diagnostics(
         }
         try:
             await coordinator.async_request_refresh()
+            if refresh_alarms := getattr(
+                coordinator,
+                "async_refresh_alarms_once",
+                None,
+            ):
+                await refresh_alarms()
             state = deepcopy(getattr(coordinator, "data", {}) or {})
             raw_api_responses = deepcopy(getattr(coordinator, "raw_api_responses", {}) or {})
             fallback_probe["success"] = True

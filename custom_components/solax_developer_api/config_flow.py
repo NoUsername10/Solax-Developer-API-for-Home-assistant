@@ -11,18 +11,20 @@ from typing import Any
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components import persistent_notification
-from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import selector
 
 from .api import SolaxApiError, SolaxDeveloperApiClient
 from .i18n import async_ensure_catalog_loaded, translate
+from .coordinator import SolaxDeveloperCoordinator
 from .const import (
     API_REGION_CN,
     API_REGION_DEFAULT,
     API_REGION_EU,
     CONF_ALARM_NOTIFICATIONS,
+    CONF_ALARM_SCAN_INTERVAL,
     CONF_API_REGION,
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
@@ -41,6 +43,7 @@ from .const import (
     CONF_SYSTEM_NAME,
     CONFIG_ENTRY_VERSION,
     DEFAULT_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    DEFAULT_ALARM_SCAN_INTERVAL,
     DEFAULT_LIVE_VIEW_DEFAULT_DURATION,
     DEFAULT_LIVE_VIEW_INTERVAL,
     DEFAULT_NIGHT_END_HOUR,
@@ -50,16 +53,19 @@ from .const import (
     DEFAULT_SYSTEM_NAME,
     DOMAIN,
     MAX_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    MAX_ALARM_SCAN_INTERVAL,
     MAX_LIVE_VIEW_DURATION,
     MAX_LIVE_VIEW_INTERVAL,
     MAX_NIGHT_SCAN_INTERVAL,
     MAX_SCAN_INTERVAL,
     MIN_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    MIN_ALARM_SCAN_INTERVAL,
     MIN_LIVE_VIEW_DURATION,
     MIN_LIVE_VIEW_INTERVAL,
     MIN_NIGHT_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
 )
+from .runtime import SolaxConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,7 +85,7 @@ def _slugify_name(value: str) -> str:
     return value.lower().replace(" ", "_").replace("-", "_")
 
 
-def _region_options(hass) -> dict[str, str]:
+def _region_options(hass: HomeAssistant) -> dict[str, str]:
     return {
         API_REGION_EU: translate(
             hass,
@@ -94,7 +100,9 @@ def _region_options(hass) -> dict[str, str]:
     }
 
 
-def _text_selector(*, password: bool = False, multiline: bool = False):
+def _text_selector(
+    *, password: bool = False, multiline: bool = False
+) -> selector.TextSelector:
     return selector.TextSelector(
         selector.TextSelectorConfig(
             type=(
@@ -107,7 +115,7 @@ def _text_selector(*, password: bool = False, multiline: bool = False):
     )
 
 
-def _number_selector(minimum: int, maximum: int):
+def _number_selector(minimum: int, maximum: int) -> selector.NumberSelector:
     return selector.NumberSelector(
         selector.NumberSelectorConfig(
             min=minimum,
@@ -118,7 +126,7 @@ def _number_selector(minimum: int, maximum: int):
     )
 
 
-def _region_selector(hass):
+def _region_selector(hass: HomeAssistant) -> selector.SelectSelector:
     return selector.SelectSelector(
         selector.SelectSelectorConfig(
             options=[
@@ -130,7 +138,7 @@ def _region_selector(hass):
     )
 
 
-def _mapped_select_selector(options: Mapping[str, str]):
+def _mapped_select_selector(options: Mapping[str, str]) -> selector.SelectSelector:
     return selector.SelectSelector(
         selector.SelectSelectorConfig(
             options=[
@@ -163,7 +171,9 @@ def _manual_meter_entries_to_text(raw_entries: Any) -> str:
     return "\n".join(lines)
 
 
-def _manual_meter_remove_options(hass, entries: list[dict[str, Any]]) -> dict[str, str]:
+def _manual_meter_remove_options(
+    hass: HomeAssistant, entries: list[dict[str, Any]]
+) -> dict[str, str]:
     options: dict[str, str] = {
         MANUAL_METER_REMOVE_NONE: translate(
             hass,
@@ -476,7 +486,9 @@ def _parse_manual_ems_entries_text(
     return entries, None
 
 
-def _manual_ems_remove_options(hass, entries: list[dict[str, Any]]) -> dict[str, str]:
+def _manual_ems_remove_options(
+    hass: HomeAssistant, entries: list[dict[str, Any]]
+) -> dict[str, str]:
     options = {
         MANUAL_EMS_REMOVE_NONE: translate(
             hass,
@@ -499,7 +511,7 @@ def _manual_ems_remove_options(hass, entries: list[dict[str, Any]]) -> dict[str,
 
 
 async def _validate_credentials(
-    hass,
+    hass: HomeAssistant,
     *,
     client_id: str,
     client_secret: str,
@@ -565,7 +577,9 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = CONFIG_ENTRY_VERSION
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         await async_ensure_catalog_loaded(self.hass)
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
@@ -644,7 +658,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reauth(
         self,
         entry_data: Mapping[str, Any],
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Start reauthentication after Home Assistant detects invalid credentials."""
         await async_ensure_catalog_loaded(self.hass)
         return await self.async_step_reauth_confirm()
@@ -652,7 +666,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reconfigure(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Reconfigure credentials, region, and system identity."""
         await async_ensure_catalog_loaded(self.hass)
         entry = self._get_reconfigure_entry()
@@ -729,7 +743,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reauth_confirm(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Validate and store replacement Developer API credentials."""
         await async_ensure_catalog_loaded(self.hass)
         entry = self._get_reauth_entry()
@@ -784,14 +798,16 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+    def async_get_options_flow(
+        config_entry: SolaxConfigEntry,
+    ) -> config_entries.OptionsFlow:
         return SolaxDeveloperOptionsFlowHandler(config_entry)
 
 
 class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     """Options flow for SolaX Developer API."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self, config_entry: SolaxConfigEntry) -> None:
         self._config_entry = config_entry
 
     async def _async_finish(
@@ -799,7 +815,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         *,
         data: dict[str, Any] | None = None,
         options: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Persist a focused options page and reload the config entry."""
         updated_data = dict(self._config_entry.data if data is None else data)
         updated_options = dict(
@@ -817,14 +833,14 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         await self.hass.config_entries.async_reload(self._config_entry.entry_id)
         return self.async_create_entry(title="", data=updated_options)
 
-    def _runtime_coordinator(self):
+    def _runtime_coordinator(self) -> SolaxDeveloperCoordinator | None:
         runtime = getattr(self._config_entry, "runtime_data", None)
         return runtime.coordinator if runtime is not None else None
 
     def _manual_device_context(
         self,
     ) -> tuple[
-        Any,
+        SolaxDeveloperCoordinator | None,
         list[dict[str, Any]],
         dict[str, str],
         list[dict[str, Any]],
@@ -1002,7 +1018,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Show the focused options menu."""
         await async_ensure_catalog_loaded(self.hass)
         return self.async_show_menu(
@@ -1018,7 +1034,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_credentials(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Update account credentials and system identity."""
         await async_ensure_catalog_loaded(self.hass)
         current_data = dict(self._config_entry.data)
@@ -1113,7 +1129,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_polling(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Update standard, live-view, and night polling settings."""
         await async_ensure_catalog_loaded(self.hass)
         current_options = dict(self._config_entry.options)
@@ -1201,7 +1217,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_manual_devices(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Add or remove manually validated meters and EMS systems."""
         await async_ensure_catalog_loaded(self.hass)
         (
@@ -1451,7 +1467,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_advanced(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Update advanced diagnostics and notification behavior."""
         await async_ensure_catalog_loaded(self.hass)
         current_options = dict(self._config_entry.options)
@@ -1461,6 +1477,12 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             )
             current_options[CONF_ALARM_NOTIFICATIONS] = bool(
                 user_input.get(CONF_ALARM_NOTIFICATIONS, True)
+            )
+            current_options[CONF_ALARM_SCAN_INTERVAL] = int(
+                user_input.get(
+                    CONF_ALARM_SCAN_INTERVAL,
+                    DEFAULT_ALARM_SCAN_INTERVAL,
+                )
             )
             current_options[CONF_EV_CHARGER_CONTROLS_ENABLED] = bool(
                 user_input.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
@@ -1485,6 +1507,16 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                             True,
                         ),
                     ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_ALARM_SCAN_INTERVAL,
+                        default=current_options.get(
+                            CONF_ALARM_SCAN_INTERVAL,
+                            DEFAULT_ALARM_SCAN_INTERVAL,
+                        ),
+                    ): _number_selector(
+                        MIN_ALARM_SCAN_INTERVAL,
+                        MAX_ALARM_SCAN_INTERVAL,
+                    ),
                     vol.Required(
                         CONF_EV_CHARGER_CONTROLS_ENABLED,
                         default=current_options.get(
