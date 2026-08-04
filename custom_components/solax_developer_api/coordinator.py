@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 from collections import defaultdict
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 import json
-import math
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+import logging
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -23,11 +26,14 @@ from .api import (
     serialize_api_error,
 )
 from .i18n import translate
-from .statistics import extract_plant_stat_metrics, extract_plant_stat_row_metrics
+from .features.alarms import AlarmManager
+from .features.history import HistoryManager
+from .features.live_view import LiveViewManager
 from .const import (
     API_RATE_LIMIT_PER_MINUTE,
     BUSINESS_TYPES,
     COMMAND_STATUS_MAP,
+    CONF_ALARM_SCAN_INTERVAL,
     CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_MANUAL_EMS_SYSTEMS,
     CONF_MANUAL_METER_SERIALS,
@@ -38,6 +44,7 @@ from .const import (
     CONF_NIGHT_SCAN_INTERVAL,
     CONF_NIGHT_START_HOUR,
     DEFAULT_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    DEFAULT_ALARM_SCAN_INTERVAL,
     DEFAULT_LIVE_VIEW_DEFAULT_DURATION,
     DEFAULT_LIVE_VIEW_INTERVAL,
     DEFAULT_NIGHT_END_HOUR,
@@ -47,19 +54,22 @@ from .const import (
     DEVICE_MODEL_MAP,
     DEVICE_MODEL_MAP_BY_CONTEXT,
     DEVICE_TYPE_NAMES,
-    DEVICE_HISTORY_SAFE_WINDOW_MS,
     DOMAIN,
     EMS_DEVICE_TYPE,
     CONTROL_SERVICE_CAPABILITIES,
     EV_CHARGER_ACCEPTED_COMMAND_STATUSES,
     EV_CHARGER_CONTROL_SERVICES,
+    EV_CHARGER_DEVICE_ACKNOWLEDGED_STATUSES,
+    EV_CHARGER_FAILED_COMMAND_STATUSES,
     ERROR_QUOTA_CODES,
     ERROR_RATE_LIMIT_CODES,
     MAX_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    MAX_ALARM_SCAN_INTERVAL,
     MAX_LIVE_VIEW_DURATION,
     MAX_LIVE_VIEW_INTERVAL,
     MAX_NIGHT_SCAN_INTERVAL,
     MIN_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
+    MIN_ALARM_SCAN_INTERVAL,
     MIN_LIVE_VIEW_DURATION,
     MIN_LIVE_VIEW_INTERVAL,
     MIN_NIGHT_SCAN_INTERVAL,
@@ -68,6 +78,8 @@ from .const import (
 )
 
 INVENTORY_REFRESH_EVERY_POLLS = 10
+EV_CHARGER_CONFIRMATION_POLL_SECONDS = 2
+EV_CHARGER_CONFIRMATION_TIMEOUT_SECONDS = 10
 CAPABILITY_STORE_VERSION = 1
 CAPABILITY_STORE_SAVE_DELAY_SECONDS = 30
 RAW_ENDPOINT_PAGE_PLANT_INFO = "page_plant_info"
@@ -91,8 +103,8 @@ TEMPORARY_FAILURE_CLASSIFICATIONS = {
     "exception",
 }
 MAX_REFRESH_FAILURE_BACKOFF_SECONDS = 1800
-HISTORY_PACING_THRESHOLD_REQUESTS = 90
-HISTORY_TARGET_CALLS_PER_MINUTE = 80
+
+_LOGGER = logging.getLogger(__name__)
 
 def _flatten_dict(data: dict[str, Any], parent_key: str = "") -> dict[str, Any]:
     flat: dict[str, Any] = {}
@@ -106,31 +118,36 @@ def _flatten_dict(data: dict[str, Any], parent_key: str = "") -> dict[str, Any]:
     return flat
 
 
-class SolaxDeveloperCoordinator(DataUpdateCoordinator):
+class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator that fetches inventory + telemetry + diagnostics."""
 
     def __init__(
         self,
-        hass,
+        hass: HomeAssistant,
         *,
         client: SolaxDeveloperApiClient,
-        config_entry=None,
+        config_entry: ConfigEntry[Any] | None = None,
         entry_id: str,
         scan_interval: int,
         options: dict[str, Any] | None = None,
     ) -> None:
         base_scan_interval = max(int(scan_interval), MIN_SCAN_INTERVAL)
-        coordinator_kwargs: dict[str, Any] = {
-            "logger": __import__("logging").getLogger(__name__),
-            "name": "Solax Developer API",
-            "update_interval": timedelta(seconds=base_scan_interval),
-        }
-        if config_entry is not None:
-            coordinator_kwargs["config_entry"] = config_entry
-        super().__init__(
-            hass,
-            **coordinator_kwargs,
-        )
+        if config_entry is None:
+            super().__init__(
+                hass,
+                logger=_LOGGER,
+                name="Solax Developer API",
+                update_interval=timedelta(seconds=base_scan_interval),
+            )
+        else:
+            super().__init__(
+                hass,
+                logger=_LOGGER,
+                name="Solax Developer API",
+                update_interval=timedelta(seconds=base_scan_interval),
+                config_entry=config_entry,
+            )
+        self.config_entry = config_entry
         options = options or {}
 
         self.client = client
@@ -175,20 +192,27 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         self._ev_charger_controls_enabled = bool(
             options.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
         )
-        self._live_view_until = None
-        self.last_update_attempt = None
-        self.last_successful_update = None
-        self.last_rate_limit_at = None
+        self._alarm_scan_interval = self._clamp_int(
+            options.get(CONF_ALARM_SCAN_INTERVAL),
+            default=DEFAULT_ALARM_SCAN_INTERVAL,
+            min_value=MIN_ALARM_SCAN_INTERVAL,
+            max_value=MAX_ALARM_SCAN_INTERVAL,
+        )
+        self._live_view_until: datetime | None = None
+        self.last_update_attempt: datetime | None = None
+        self.last_successful_update: datetime | None = None
+        self.last_rate_limit_at: datetime | None = None
         self.rate_limited = False
         self.rate_limited_context: list[str] = []
         self._poll_profile = "standard"
         self._estimated_live_calls_per_cycle = 0
+        self._alarm_reserved_calls_per_minute = 0.0
         self._live_view_budget_adjusted = False
         self._refresh_failure_streak = 0
         self._refresh_backoff_seconds = 0
         self._last_refresh_failure_classification: str | None = None
         self._last_refresh_failure_context: str | None = None
-        self._last_refresh_failure_at = None
+        self._last_refresh_failure_at: datetime | None = None
 
         self._poll_count = 0
         self._history_cache: dict[str, dict[str, Any]] = {}
@@ -198,6 +222,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         self._master_control_cache: dict[str, dict[str, Any]] = {}
         self._control_dry_runs: list[dict[str, Any]] = []
         self._ev_charger_control_commands: list[dict[str, Any]] = []
+        self._ev_charger_gui_state: dict[str, dict[str, Any]] = {}
         self._manual_meter_entries = self._normalize_manual_meter_entries(
             options.get(CONF_MANUAL_METER_SERIALS)
         )
@@ -216,6 +241,12 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         )
 
         self.data = self._empty_state()
+        self._state_merge_lock = asyncio.Lock()
+        self._alarm_manager: AlarmManager | None = None
+        self._alarm_manager_unsub: Callable[[], None] | None = None
+        self._alarm_merge_task: asyncio.Task[None] | None = None
+        self._history_manager = HistoryManager(self)
+        self._live_view_manager = LiveViewManager(self)
 
     @staticmethod
     def _normalize_fetch_request_id(request_id: str | None) -> str | None:
@@ -255,6 +286,144 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             "request_id": normalized,
             "was_active": was_active,
         }
+
+    def _get_history_manager(self) -> HistoryManager:
+        """Return the on-demand history feature, including test-safe lazy setup."""
+        manager = getattr(self, "_history_manager", None)
+        if manager is None:
+            manager = HistoryManager(self)
+            self._history_manager = manager
+        return manager
+
+    def _get_live_view_manager(self) -> LiveViewManager:
+        """Return the Live View policy component."""
+        manager = getattr(self, "_live_view_manager", None)
+        if manager is None:
+            manager = LiveViewManager(self)
+            self._live_view_manager = manager
+        return manager
+
+    def _get_alarm_manager(self) -> AlarmManager:
+        """Return the independent alarm coordinator."""
+        manager = getattr(self, "_alarm_manager", None)
+        if manager is None:
+            manager = AlarmManager(
+                self,
+                scan_interval=int(
+                    getattr(
+                        self,
+                        "_alarm_scan_interval",
+                        DEFAULT_ALARM_SCAN_INTERVAL,
+                    )
+                ),
+            )
+            self._alarm_manager = manager
+        return manager
+
+    def _get_state_merge_lock(self) -> asyncio.Lock:
+        """Return the shared state lock, restoring reconstructed state safely."""
+        lock: object = getattr(self, "_state_merge_lock", None)
+        if not isinstance(lock, asyncio.Lock):
+            lock = asyncio.Lock()
+            self._state_merge_lock = lock
+        return lock
+
+    def _schedule_alarm_manager_merge(self) -> None:
+        """Schedule one serialized merge of alarm coordinator state."""
+        existing = getattr(self, "_alarm_merge_task", None)
+        if existing is not None and not existing.done():
+            return
+        self._alarm_merge_task = self.hass.async_create_task(
+            self._async_merge_alarm_manager_state(),
+            f"{DOMAIN} merge alarm state",
+        )
+
+    async def _async_merge_alarm_manager_state(self) -> None:
+        """Merge only alarm-owned state into the public coordinator facade."""
+        manager = self._get_alarm_manager()
+        async with self._get_state_merge_lock():
+            state = dict(self.data or self._empty_state())
+            if manager.last_update_success:
+                current_plants = set((state.get("plants") or {}).keys())
+                state["alarms"] = {
+                    plant_id: deepcopy(payload)
+                    for plant_id, payload in dict(manager.data or {}).items()
+                    if plant_id in current_plants
+                }
+
+            if manager.raw_cycle:
+                self._merge_raw_api_cycle(manager.raw_cycle)
+            errors = [
+                dict(item)
+                for item in list(state.get("last_errors") or [])
+                if str(item.get("context") or "") != "alarms"
+                and not str(item.get("context") or "").startswith("alarms:")
+            ]
+            errors.extend(deepcopy(manager.last_errors))
+            state["last_errors"] = errors
+
+            for item in manager.last_errors:
+                if item.get("code") in ERROR_RATE_LIMIT_CODES | ERROR_QUOTA_CODES:
+                    self._mark_rate_limit(str(item.get("context") or "alarms"))
+
+            meta = dict(state.get("meta") or {})
+            meta.update(
+                {
+                    "alarm_scan_interval": manager.scan_interval,
+                    "alarm_last_update_attempt": manager.last_update_attempt,
+                    "alarm_last_successful_update": manager.last_successful_update,
+                    "alarm_last_update_success": manager.last_update_success,
+                    "alarm_last_error": manager.last_error,
+                    "alarm_last_errors": deepcopy(manager.last_errors),
+                    "alarm_last_api_calls": manager.last_api_calls,
+                    "alarm_reserved_calls_per_minute": (
+                        manager.estimated_calls_per_minute
+                    ),
+                }
+            )
+            state["meta"] = meta
+            state["raw_api_responses"] = self.raw_api_responses
+            self.async_set_updated_data(state)
+
+    async def async_start_alarm_polling(self) -> None:
+        """Start independent alarm polling after inventory is available."""
+        manager = self._get_alarm_manager()
+        plants = dict((self.data or {}).get("plants") or {})
+        alarms = dict((self.data or {}).get("alarms") or {})
+        has_initial_alarm_state = bool(plants) and all(
+            plant_id in alarms for plant_id in plants
+        )
+        if has_initial_alarm_state:
+            manager.data = deepcopy(alarms)
+            manager.last_update_attempt = self.last_update_attempt
+            manager.last_successful_update = self.last_successful_update
+            manager.last_update_success = True
+        if getattr(self, "_alarm_manager_unsub", None) is None:
+            self._alarm_manager_unsub = manager.async_add_listener(
+                self._schedule_alarm_manager_merge
+            )
+        if not has_initial_alarm_state:
+            await manager.async_refresh()
+        merge_task = getattr(self, "_alarm_merge_task", None)
+        if merge_task is not None:
+            await merge_task
+        else:
+            await self._async_merge_alarm_manager_state()
+
+    async def async_stop_alarm_polling(self) -> None:
+        """Stop alarm scheduling and finish any pending state merge."""
+        if unsub := getattr(self, "_alarm_manager_unsub", None):
+            unsub()
+            self._alarm_manager_unsub = None
+        merge_task = getattr(self, "_alarm_merge_task", None)
+        if merge_task is not None and not merge_task.done():
+            await merge_task
+
+    async def async_refresh_alarms_once(self) -> None:
+        """Run one alarm refresh without enabling periodic scheduling."""
+        manager = self._get_alarm_manager()
+        await manager.async_refresh()
+        await self._async_merge_alarm_manager_state()
 
     async def async_load_capability_cache(self) -> None:
         """Load cached observed realtime fields by device serial."""
@@ -302,8 +471,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
 
     def _serialize_capability_cache(self) -> dict[str, Any]:
         devices_payload: dict[str, dict[str, Any]] = {}
-        for serial_key, item in self._device_capabilities.items():
-            if not isinstance(item, dict):
+        for serial_key, raw_item in self._device_capabilities.items():
+            item: object = raw_item
+            if not isinstance(item, Mapping):
                 continue
             fields = item.get("fields") or []
             if not isinstance(fields, list) or not fields:
@@ -565,7 +735,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
 
     @staticmethod
     def _raw_cycle_error_items(
-        raw_cycle: dict[str, list[dict[str, Any]]],
+        raw_cycle: Mapping[str, Sequence[Any]],
     ) -> list[tuple[str, dict[str, Any]]]:
         items: list[tuple[str, dict[str, Any]]] = []
         for endpoint, payloads in raw_cycle.items():
@@ -588,7 +758,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         if streak <= 0:
             return 0
         base_interval = max(self._base_scan_interval, MIN_SCAN_INTERVAL)
-        candidate = base_interval * (2 ** (streak - 1))
+        candidate = int(base_interval * (2 ** (streak - 1)))
         return min(candidate, MAX_REFRESH_FAILURE_BACKOFF_SECONDS)
 
     def _select_refresh_failure_signal(
@@ -1147,7 +1317,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             device_type_name = translate(
                 self.hass,
                 f"runtime.labels.device_type.{device_type}",
-                fallback=DEVICE_TYPE_NAMES.get(device_type, "Device"),
+                fallback=DEVICE_TYPE_NAMES.get(device_type or 0, "Device"),
             )
             source = (
                 "manual"
@@ -1241,7 +1411,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             device_type_name = translate(
                 self.hass,
                 f"runtime.labels.device_type.{device_type}",
-                fallback=DEVICE_TYPE_NAMES.get(device_type, "Device"),
+                fallback=DEVICE_TYPE_NAMES.get(device_type or 0, "Device"),
             )
             devices.append(
                 {
@@ -1480,98 +1650,57 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         }
 
     def _is_night_mode(self) -> bool:
-        now = dt_util.now()
-        hour = now.hour
-        start = self._night_start_hour
-        end = self._night_end_hour
-        if start == end:
-            return False
-        if start < end:
-            return start <= hour < end
-        return hour >= start or hour < end
+        return self._get_live_view_manager().is_night_mode()
+
 
     def _expire_live_view_if_needed(self) -> None:
-        if self._live_view_until is None:
-            return
-        if dt_util.utcnow() >= self._live_view_until:
-            self._live_view_until = None
+        self._get_live_view_manager().expire_if_needed()
+
 
     @property
     def live_view_active(self) -> bool:
-        self._expire_live_view_if_needed()
-        return self._live_view_until is not None
+        return self._get_live_view_manager().active
+
 
     @property
     def live_view_remaining_seconds(self) -> int:
-        if not self.live_view_active:
-            return 0
-        remaining = int((self._live_view_until - dt_util.utcnow()).total_seconds())
-        return max(0, remaining)
+        return self._get_live_view_manager().remaining_seconds
+
 
     @property
-    def live_view_until(self):
-        self._expire_live_view_if_needed()
-        return self._live_view_until
+    def live_view_until(self) -> datetime | None:
+        return self._get_live_view_manager().until
+
 
     def _estimate_live_cycle_calls(
         self,
         plants: dict[str, dict[str, Any]],
         inventory_by_type: dict[str, list[str]],
     ) -> int:
-        plant_calls = len(plants)
-        device_calls = 0
-        for sn_list in inventory_by_type.values():
-            if not sn_list:
-                continue
-            device_calls += math.ceil(len(sn_list) / MAX_SN_PER_REQUEST)
-        estimate = plant_calls + device_calls
-        return max(1, estimate)
+        return self._get_live_view_manager().estimate_cycle_calls(
+            plants, inventory_by_type
+        )
+
 
     def _compute_safe_live_interval(
         self,
         plants: dict[str, dict[str, Any]],
         inventory_by_type: dict[str, list[str]],
     ) -> int:
-        self._estimated_live_calls_per_cycle = self._estimate_live_cycle_calls(plants, inventory_by_type)
-        safe_budget = max(
-            1,
-            min(self._live_view_call_budget_per_minute, API_RATE_LIMIT_PER_MINUTE),
+        return self._get_live_view_manager().compute_safe_interval(
+            plants, inventory_by_type
         )
-        minimum_interval = math.ceil(
-            (self._estimated_live_calls_per_cycle * 60) / safe_budget
-        )
-        target = max(
-            self._live_view_requested_interval,
-            minimum_interval,
-            MIN_LIVE_VIEW_INTERVAL,
-        )
-        if self.rate_limited:
-            target = max(target, self._base_scan_interval)
-        self._live_view_budget_adjusted = target > self._live_view_requested_interval
-        return target
+
 
     def _apply_dynamic_poll_profile(
         self,
         plants: dict[str, dict[str, Any]],
         inventory_by_type: dict[str, list[str]],
     ) -> None:
-        if self.live_view_active:
-            self._poll_profile = "live_view"
-            self._effective_scan_interval = self._compute_safe_live_interval(
-                plants,
-                inventory_by_type,
-            )
-        elif self._is_night_mode():
-            self._poll_profile = "night"
-            self._effective_scan_interval = self._night_scan_interval
-            self._live_view_budget_adjusted = False
-        else:
-            self._poll_profile = "standard"
-            self._effective_scan_interval = self._base_scan_interval
-            self._live_view_budget_adjusted = False
+        self._get_live_view_manager().apply_poll_profile(
+            plants, inventory_by_type
+        )
 
-        self._apply_refresh_backoff_to_interval()
-        self.update_interval = timedelta(seconds=self._effective_scan_interval)
 
     def _refresh_meta_state(self) -> None:
         meta = self.data.setdefault("meta", {})
@@ -1586,6 +1715,36 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         meta["live_view_budget_adjusted"] = self._live_view_budget_adjusted
         meta["live_view_call_budget_per_minute"] = self._live_view_call_budget_per_minute
         meta["live_view_estimated_calls_per_cycle"] = self._estimated_live_calls_per_cycle
+        meta["alarm_reserved_calls_per_minute"] = getattr(
+            self,
+            "_alarm_reserved_calls_per_minute",
+            0.0,
+        )
+        alarm_manager = getattr(self, "_alarm_manager", None)
+        meta["alarm_scan_interval"] = getattr(
+            alarm_manager,
+            "scan_interval",
+            getattr(self, "_alarm_scan_interval", DEFAULT_ALARM_SCAN_INTERVAL),
+        )
+        meta["alarm_last_update_attempt"] = getattr(
+            alarm_manager,
+            "last_update_attempt",
+            None,
+        )
+        meta["alarm_last_successful_update"] = getattr(
+            alarm_manager,
+            "last_successful_update",
+            None,
+        )
+        meta["alarm_last_update_success"] = getattr(
+            alarm_manager,
+            "last_update_success",
+            None,
+        )
+        meta["alarm_last_error"] = getattr(alarm_manager, "last_error", None)
+        meta["alarm_last_errors"] = deepcopy(
+            getattr(alarm_manager, "last_errors", [])
+        )
         meta["night_scan_interval"] = self._night_scan_interval
         meta["night_start_hour"] = self._night_start_hour
         meta["night_end_hour"] = self._night_end_hour
@@ -1630,64 +1789,15 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         duration_seconds: int | None = None,
         interval_seconds: int | None = None,
     ) -> dict[str, Any]:
-        duration = self._clamp_int(
-            duration_seconds,
-            default=self._live_view_default_duration,
-            min_value=MIN_LIVE_VIEW_DURATION,
-            max_value=MAX_LIVE_VIEW_DURATION,
+        return await self._get_live_view_manager().async_start(
+            duration_seconds=duration_seconds,
+            interval_seconds=interval_seconds,
         )
-        if interval_seconds is not None:
-            self._live_view_requested_interval = self._clamp_int(
-                interval_seconds,
-                default=self._live_view_requested_interval,
-                min_value=MIN_LIVE_VIEW_INTERVAL,
-                max_value=MAX_LIVE_VIEW_INTERVAL,
-            )
-        self._live_view_until = dt_util.utcnow() + timedelta(seconds=duration)
-        plants = dict((self.data or {}).get("plants") or {})
-        inventory = dict((self.data or {}).get("inventory_by_type") or {})
-        self._apply_dynamic_poll_profile(plants, inventory)
-        self._refresh_meta_state()
-        self.async_set_updated_data(dict(self.data))
-        refresh_attempt_success = True
-        refresh_error: str | None = None
-        try:
-            await self.async_request_refresh()
-        except Exception as err:  # noqa: BLE001
-            refresh_attempt_success = False
-            refresh_error = str(err)
-        return {
-            "ok": True,
-            "live_view_active": self.live_view_active,
-            "live_view_until": self._live_view_until.isoformat() if self._live_view_until else None,
-            "effective_scan_interval": self._effective_scan_interval,
-            "live_view_target_interval": self._live_view_requested_interval,
-            "live_view_budget_adjusted": self._live_view_budget_adjusted,
-            "live_view_call_budget_per_minute": self._live_view_call_budget_per_minute,
-            "live_view_estimated_calls_per_cycle": self._estimated_live_calls_per_cycle,
-            "refresh_backoff_seconds": self._refresh_backoff_seconds,
-            "poll_profile": self._poll_profile,
-            "refresh_attempt_success": refresh_attempt_success,
-            "refresh_error": refresh_error,
-        }
+
 
     async def async_stop_live_view(self) -> dict[str, Any]:
-        self._live_view_until = None
-        plants = dict((self.data or {}).get("plants") or {})
-        inventory = dict((self.data or {}).get("inventory_by_type") or {})
-        self._apply_dynamic_poll_profile(plants, inventory)
-        self._refresh_meta_state()
-        self.async_set_updated_data(dict(self.data))
-        return {
-            "ok": True,
-            "live_view_active": False,
-            "effective_scan_interval": self._effective_scan_interval,
-            "live_view_target_interval": self._live_view_requested_interval,
-            "live_view_budget_adjusted": self._live_view_budget_adjusted,
-            "live_view_call_budget_per_minute": self._live_view_call_budget_per_minute,
-            "refresh_backoff_seconds": self._refresh_backoff_seconds,
-            "poll_profile": self._poll_profile,
-        }
+        return await self._get_live_view_manager().async_stop()
+
 
     def _mark_rate_limit(self, context: str) -> None:
         self.rate_limited = True
@@ -1713,8 +1823,6 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         """Discover top-level EMS systems through their C&I child devices."""
         ems_devices: dict[str, dict[str, Any]] = {}
         for device_sn, device in list(devices.items()):
-            if not isinstance(device, Mapping):
-                continue
             business_type = self._coerce_int(device.get("businessType"))
             device_type = self._coerce_int(device.get("deviceType"))
             if business_type != 4 or device_type not in DEVICE_TYPES:
@@ -2009,8 +2117,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         self,
         plants: dict[str, dict[str, Any]],
         raw_cycle: dict[str, list[dict[str, Any]]] | None = None,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> tuple[dict[str, dict[str, Any]], list[tuple[str, Exception]]]:
         plant_realtime: dict[str, dict[str, Any]] = {}
+        errors: list[tuple[str, Exception]] = []
         for plant_id, plant in plants.items():
             business_type = int(plant.get("businessType") or 1)
             try:
@@ -2030,7 +2139,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                 result = payload.get("result") or {}
                 if isinstance(result, dict):
                     plant_realtime[plant_id] = result
-            except SolaxApiError as err:
+            except Exception as err:  # noqa: BLE001
                 self._append_raw_snapshot(
                     raw_cycle,
                     endpoint=RAW_ENDPOINT_PLANT_REALTIME_DATA,
@@ -2040,62 +2149,28 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     },
                     error=err,
                 )
-                continue
-        return plant_realtime
+                errors.append((f"plant_realtime:{plant_id}", err))
+        return plant_realtime, errors
 
     async def _refresh_alarms(
         self,
         plants: dict[str, dict[str, Any]],
         raw_cycle: dict[str, list[dict[str, Any]]] | None = None,
-    ) -> dict[str, dict[str, Any]]:
-        alarms: dict[str, dict[str, Any]] = {}
-        for plant_id, plant in plants.items():
-            business_type = int(plant.get("businessType") or 1)
-            try:
-                payload = await self.client.page_alarm_info(
-                    plant_id=plant_id,
-                    business_type=business_type,
-                    alarm_state=1,
-                    page_no=1,
-                )
-                self._append_raw_snapshot(
-                    raw_cycle,
-                    endpoint=RAW_ENDPOINT_ALARM_PAGE_ALARM_INFO,
-                    request={
-                        "plantId": plant_id,
-                        "businessType": business_type,
-                        "alarmState": 1,
-                        "pageNo": 1,
-                    },
-                    response=payload,
-                )
-                result = payload.get("result") or {}
-                records = result.get("records") or []
-                alarms[plant_id] = {
-                    "total": int(result.get("total") or len(records)),
-                    "records": records,
-                }
-            except SolaxApiError as err:
-                self._append_raw_snapshot(
-                    raw_cycle,
-                    endpoint=RAW_ENDPOINT_ALARM_PAGE_ALARM_INFO,
-                    request={
-                        "plantId": plant_id,
-                        "businessType": business_type,
-                        "alarmState": 1,
-                        "pageNo": 1,
-                    },
-                    error=err,
-                )
-                alarms[plant_id] = {"total": 0, "records": []}
-        return alarms
+    ) -> tuple[dict[str, dict[str, Any]], list[tuple[str, Exception]]]:
+        cycle = raw_cycle or self._new_raw_api_response_snapshot()
+        alarms, errors, _api_calls = await self._get_alarm_manager()._refresh_active_alarms(
+            plants, raw_cycle=cycle
+        )
+        return alarms, errors
+
 
     async def _refresh_stats(
         self,
         plants: dict[str, dict[str, Any]],
         raw_cycle: dict[str, list[dict[str, Any]]] | None = None,
-    ) -> dict[str, dict[str, Any]]:
+    ) -> tuple[dict[str, dict[str, Any]], list[tuple[str, Exception]]]:
         stats: dict[str, dict[str, Any]] = {}
+        errors: list[tuple[str, Exception]] = []
         now = dt_util.now()
         current_year = f"{now.year}"
         current_month = f"{now.year}-{now.month:02d}"
@@ -2120,6 +2195,22 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     },
                     response=year_payload,
                 )
+                stats.setdefault(plant_id, {})["year"] = year_payload.get("result") or {}
+            except Exception as err:  # noqa: BLE001
+                self._append_raw_snapshot(
+                    raw_cycle,
+                    endpoint=RAW_ENDPOINT_PLANT_STAT_DATA,
+                    request={
+                        "plantId": plant_id,
+                        "businessType": business_type,
+                        "dateType": 1,
+                        "date": current_year,
+                    },
+                    error=err,
+                )
+                errors.append((f"plant_stats_year:{plant_id}", err))
+
+            try:
                 month_payload = await self.client.plant_stat_data(
                     plant_id=plant_id,
                     business_type=business_type,
@@ -2137,24 +2228,21 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     },
                     response=month_payload,
                 )
-                stats[plant_id] = {
-                    "year": year_payload.get("result") or {},
-                    "month": month_payload.get("result") or {},
-                }
-            except SolaxApiError as err:
+                stats.setdefault(plant_id, {})["month"] = month_payload.get("result") or {}
+            except Exception as err:  # noqa: BLE001
                 self._append_raw_snapshot(
                     raw_cycle,
                     endpoint=RAW_ENDPOINT_PLANT_STAT_DATA,
                     request={
                         "plantId": plant_id,
                         "businessType": business_type,
-                        "dateType": 1,
-                        "date": current_year,
+                        "dateType": 2,
+                        "date": current_month,
                     },
                     error=err,
                 )
-                stats[plant_id] = {"year": {}, "month": {}}
-        return stats
+                errors.append((f"plant_stats_month:{plant_id}", err))
+        return stats, errors
 
     async def _refresh_device_realtime(
         self,
@@ -2284,6 +2372,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         return ems_realtime, refresh_errors
 
     async def _async_update_data(self) -> dict[str, Any]:
+        """Serialize public state refreshes with independent alarm state merges."""
+        async with self._get_state_merge_lock():
+            return await self._async_update_data_unlocked()
+
+    async def _async_update_data_unlocked(self) -> dict[str, Any]:
         """Fetch all read endpoints for telemetry model."""
         self._expire_live_view_if_needed()
         live_view_active = self.live_view_active
@@ -2317,18 +2410,46 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         plant_realtime = dict(state.get("plant_realtime") or {})
         try:
             if plants:
-                plant_realtime = await self._refresh_plant_realtime(
+                refreshed_plant_realtime, plant_realtime_errors = await self._refresh_plant_realtime(
                     plants,
                     raw_cycle=raw_cycle,
                 )
+                for context, endpoint_error in plant_realtime_errors:
+                    self._append_error(errors, endpoint_error, context)
+                if plant_realtime_errors:
+                    plant_realtime = {
+                        plant_id: plant_realtime[plant_id]
+                        for plant_id in plants
+                        if plant_id in plant_realtime
+                    }
+                    plant_realtime.update(refreshed_plant_realtime)
+                else:
+                    plant_realtime = refreshed_plant_realtime
         except Exception as err:  # noqa: BLE001
             self._append_error(errors, err, "plant_realtime")
 
         alarms = dict(state.get("alarms") or {})
-        if not live_view_active:
+        if (
+            not live_view_active
+            and getattr(self, "_alarm_manager_unsub", None) is None
+        ):
             try:
                 if plants:
-                    alarms = await self._refresh_alarms(plants, raw_cycle=raw_cycle)
+                    refreshed_alarms, alarm_errors = await self._refresh_alarms(
+                        plants,
+                        raw_cycle=raw_cycle,
+                    )
+                    for context, endpoint_error in alarm_errors:
+                        self._append_error(errors, endpoint_error, context)
+                    if alarm_errors:
+                        alarms = {
+                            plant_id: alarms[plant_id]
+                            for plant_id in plants
+                            if plant_id in alarms
+                        }
+                        alarms.update(refreshed_alarms)
+                    else:
+                        alarms = refreshed_alarms
             except Exception as err:  # noqa: BLE001
                 self._append_error(errors, err, "alarms")
 
@@ -2336,7 +2457,22 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         if not live_view_active:
             try:
                 if plants:
-                    plant_stats = await self._refresh_stats(plants, raw_cycle=raw_cycle)
+                    refreshed_stats, stats_errors = await self._refresh_stats(
+                        plants,
+                        raw_cycle=raw_cycle,
+                    )
+                    for context, endpoint_error in stats_errors:
+                        self._append_error(errors, endpoint_error, context)
+                    if stats_errors:
+                        merged_stats: dict[str, dict[str, Any]] = {}
+                        for plant_id in plants:
+                            prior = dict(plant_stats.get(plant_id) or {})
+                            prior.update(refreshed_stats.get(plant_id) or {})
+                            if prior:
+                                merged_stats[plant_id] = prior
+                        plant_stats = merged_stats
+                    else:
+                        plant_stats = refreshed_stats
             except Exception as err:  # noqa: BLE001
                 self._append_error(errors, err, "plant_stats")
 
@@ -2348,8 +2484,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     raw_cycle=raw_cycle,
                 )
                 if realtime_errors:
-                    for context, err in realtime_errors:
-                        self._append_error(errors, err, context)
+                    for context, endpoint_error in realtime_errors:
+                        self._append_error(errors, endpoint_error, context)
                     if refreshed_realtime:
                         stale_merged = dict(device_realtime)
                         stale_merged.update(refreshed_realtime)
@@ -2366,8 +2502,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     raw_cycle=raw_cycle,
                 )
                 if ems_errors:
-                    for context, err in ems_errors:
-                        self._append_error(errors, err, context)
+                    for context, endpoint_error in ems_errors:
+                        self._append_error(errors, endpoint_error, context)
                 if refreshed_ems:
                     device_realtime.update(refreshed_ems)
         except Exception as err:  # noqa: BLE001
@@ -2436,6 +2572,47 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
                     "live_view_budget_adjusted": self._live_view_budget_adjusted,
                     "live_view_call_budget_per_minute": self._live_view_call_budget_per_minute,
                     "live_view_estimated_calls_per_cycle": self._estimated_live_calls_per_cycle,
+                    "alarm_reserved_calls_per_minute": getattr(
+                        self,
+                        "_alarm_reserved_calls_per_minute",
+                        0.0,
+                    ),
+                    "alarm_scan_interval": getattr(
+                        getattr(self, "_alarm_manager", None),
+                        "scan_interval",
+                        getattr(
+                            self,
+                            "_alarm_scan_interval",
+                            DEFAULT_ALARM_SCAN_INTERVAL,
+                        ),
+                    ),
+                    "alarm_last_update_attempt": getattr(
+                        getattr(self, "_alarm_manager", None),
+                        "last_update_attempt",
+                        None,
+                    ),
+                    "alarm_last_successful_update": getattr(
+                        getattr(self, "_alarm_manager", None),
+                        "last_successful_update",
+                        None,
+                    ),
+                    "alarm_last_update_success": getattr(
+                        getattr(self, "_alarm_manager", None),
+                        "last_update_success",
+                        None,
+                    ),
+                    "alarm_last_error": getattr(
+                        getattr(self, "_alarm_manager", None),
+                        "last_error",
+                        None,
+                    ),
+                    "alarm_last_errors": deepcopy(
+                        getattr(
+                            getattr(self, "_alarm_manager", None),
+                            "last_errors",
+                            [],
+                        )
+                    ),
                     "night_scan_interval": self._night_scan_interval,
                     "night_start_hour": self._night_start_hour,
                     "night_end_hour": self._night_end_hour,
@@ -2495,84 +2672,17 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         request_sn_type: int | None = None,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch history data on demand and cache by parameter key."""
-        fetch_request_id = self._begin_fetch_request(request_id)
-        normalized_sn = normalize_sn_list(sn_list)
-        window_count = max(
-            1,
-            math.ceil(
-                max(0, int(end_time) - int(start_time))
-                / DEVICE_HISTORY_SAFE_WINDOW_MS
-            ),
+        return await self._get_history_manager().async_fetch_device_history(
+            sn_list=sn_list,
+            device_type=device_type,
+            business_type=business_type,
+            start_time=start_time,
+            end_time=end_time,
+            time_interval=time_interval,
+            request_sn_type=request_sn_type,
+            request_id=request_id,
         )
-        # Device history is intentionally fetched one serial per request because
-        # live API responses for multi-SN history calls omit per-device rows.
-        sn_request_count = max(1, len(normalized_sn))
-        estimated_request_count = window_count * sn_request_count
-        request_delay_seconds = (
-            60 / HISTORY_TARGET_CALLS_PER_MINUTE
-            if estimated_request_count > HISTORY_PACING_THRESHOLD_REQUESTS
-            else 0.0
-        )
-        try:
-            payload = await self.client.device_history_data_windowed(
-                sn_list=normalized_sn,
-                device_type=device_type,
-                business_type=business_type,
-                start_time=start_time,
-                end_time=end_time,
-                time_interval=time_interval,
-                request_sn_type=request_sn_type,
-                request_delay_seconds=request_delay_seconds,
-                cancellation_check=lambda: self._is_fetch_cancelled(fetch_request_id),
-            )
-        finally:
-            self._finish_fetch_request(fetch_request_id)
 
-        cache_key = "|".join(
-            [
-                ",".join(sorted(str(x).strip() for x in normalized_sn)),
-                str(device_type),
-                str(business_type),
-                str(start_time),
-                str(end_time),
-                str(time_interval),
-                str(request_sn_type) if request_sn_type is not None else "",
-            ]
-        )
-        window_summary = payload.get("windowSummary") or {}
-        self._history_cache[cache_key] = {
-            "updated_at": dt_util.utcnow().isoformat(),
-            "request": {
-                "snList": list(normalized_sn),
-                "deviceType": device_type,
-                "businessType": business_type,
-                "startTime": start_time,
-                "endTime": end_time,
-                "timeInterval": time_interval,
-                "requestSnType": request_sn_type,
-                "estimatedRequestCount": estimated_request_count,
-                "requestDelaySeconds": request_delay_seconds,
-                "serialIsolatedRequests": True,
-                "requestId": fetch_request_id,
-            },
-            "window_summary": window_summary,
-            "response": payload,
-        }
-
-        # Keep data model attributes current.
-        self.data.setdefault("meta", {})["history_cache_entries"] = len(self._history_cache)
-        return {
-            "ok": True,
-            "cached": True,
-            "cache_key": cache_key,
-            "result": payload.get("result") or [],
-            "code": payload.get("code"),
-            "message": payload.get("message"),
-            "window_summary": window_summary,
-            "cancelled": bool(window_summary.get("cancelled")),
-            "request_id": fetch_request_id,
-        }
 
     async def async_fetch_alarm_information(
         self,
@@ -2584,187 +2694,20 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         max_pages: int = 20,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch paged plant alarm information on demand."""
-        fetch_request_id = self._begin_fetch_request(request_id)
-        targets = self.list_alarm_targets()
-        plants = targets["plants"]
-        target_plants: list[dict[str, Any]] = []
-        normalized_plant_id = str(plant_id or "").strip()
-        normalized_device_sn = str(device_sn or "").strip()
+        return await self._get_alarm_manager().async_fetch_alarm_information(
+            plant_id=plant_id,
+            business_type=business_type,
+            alarm_state=alarm_state,
+            device_sn=device_sn,
+            max_pages=max_pages,
+            request_id=request_id,
+        )
 
-        if normalized_plant_id:
-            target_plants = [
-                dict(plant)
-                for plant in plants
-                if str(plant["plant_id"]) == normalized_plant_id
-            ]
-            if not target_plants and business_type in BUSINESS_TYPES:
-                target_plants.append(
-                    {
-                        "plant_id": normalized_plant_id,
-                        "plant_name": "",
-                        "business_type": int(business_type),
-                        "label": normalized_plant_id,
-                    }
-                )
-        elif normalized_device_sn:
-            device_plants = {
-                str(device["plant_id"])
-                for device in targets["devices"]
-                if str(device["device_sn"]) == normalized_device_sn
-            }
-            target_plants = [
-                dict(plant) for plant in plants if str(plant["plant_id"]) in device_plants
-            ]
-        else:
-            target_plants = [dict(plant) for plant in plants]
-
-        if not target_plants:
-            self._finish_fetch_request(fetch_request_id)
-            return {
-                "ok": True,
-                "records": [],
-                "count": 0,
-                "api_calls_made": 0,
-                "targets": [],
-                "available_fields": [],
-                "state_counts": {"ongoing": 0, "closed": 0},
-                "page_summaries": [],
-                "cancelled": False,
-                "request_id": fetch_request_id,
-            }
-
-        states = self._normalize_alarm_states(alarm_state)
-        bounded_max_pages = max(1, min(int(max_pages or 20), 100))
-        records: list[dict[str, Any]] = []
-        page_summaries: list[dict[str, Any]] = []
-        seen: set[tuple[Any, ...]] = set()
-        api_calls_made = 0
-
-        def _response(cancelled: bool = False) -> dict[str, Any]:
-            records.sort(
-                key=lambda item: (
-                    self._coerce_int(item.get("alarmState")),
-                    str(item.get("alarmStartTime") or ""),
-                    str(item.get("deviceSn") or ""),
-                    str(item.get("alarmName") or ""),
-                ),
-                reverse=True,
-            )
-            available_fields = sorted({key for row in records for key in row})
-            state_counts = {
-                "ongoing": sum(
-                    1 for row in records if self._coerce_int(row.get("alarmState")) == 1
-                ),
-                "closed": sum(
-                    1 for row in records if self._coerce_int(row.get("alarmState")) == 0
-                ),
-            }
-            return {
-                "ok": True,
-                "records": records,
-                "count": len(records),
-                "api_calls_made": api_calls_made,
-                "targets": target_plants,
-                "available_fields": available_fields,
-                "state_counts": state_counts,
-                "page_summaries": page_summaries,
-                "cancelled": cancelled,
-                "request_id": fetch_request_id,
-            }
-
-        try:
-            for plant in target_plants:
-                plant_id_text = str(plant["plant_id"])
-                plant_business_type = int(plant.get("business_type") or business_type or 1)
-                for state in states:
-                    page_no = 1
-                    while page_no <= bounded_max_pages:
-                        if self._is_fetch_cancelled(fetch_request_id):
-                            return _response(cancelled=True)
-                        payload = await self.client.page_alarm_info(
-                            plant_id=plant_id_text,
-                            business_type=plant_business_type,
-                            alarm_state=state,
-                            page_no=page_no,
-                            device_sn=normalized_device_sn or None,
-                        )
-                        api_calls_made += 1
-                        if self._is_fetch_cancelled(fetch_request_id):
-                            return _response(cancelled=True)
-                        result = payload.get("result") or {}
-                        if not isinstance(result, Mapping):
-                            result = {}
-                        raw_records = result.get("records") or []
-                        if not isinstance(raw_records, list):
-                            raw_records = []
-
-                        page_summaries.append(
-                            {
-                                "plant_id": plant_id_text,
-                                "business_type": plant_business_type,
-                                "alarm_state": state,
-                                "page_no": page_no,
-                                "code": payload.get("code"),
-                                "message": payload.get("message"),
-                                "total": result.get("total"),
-                                "pages": result.get("pages"),
-                                "current": result.get("current"),
-                                "size": result.get("size"),
-                                "record_count": len(raw_records),
-                            }
-                        )
-
-                        for row in raw_records:
-                            if not isinstance(row, Mapping):
-                                continue
-                            enriched = dict(row)
-                            enriched.setdefault("plantId", result.get("plantId") or plant_id_text)
-                            enriched.setdefault("businessType", plant_business_type)
-                            enriched.setdefault("queriedAlarmState", state)
-                            if enriched.get("deviceType") is not None:
-                                enriched["deviceTypeName"] = self._device_type_text(
-                                    enriched.get("deviceType")
-                                )
-                            if enriched.get("deviceModel") is not None:
-                                enriched["deviceModelName"] = self._device_model_text(
-                                    enriched.get("deviceModel"),
-                                    business_type=plant_business_type,
-                                    device_type=enriched.get("deviceType"),
-                                )
-                            dedupe_key = (
-                                enriched.get("plantId"),
-                                enriched.get("deviceSn"),
-                                enriched.get("errorCode"),
-                                enriched.get("alarmName"),
-                                enriched.get("alarmStartTime"),
-                                enriched.get("alarmState"),
-                            )
-                            if dedupe_key in seen:
-                                continue
-                            seen.add(dedupe_key)
-                            records.append(enriched)
-
-                        pages = self._coerce_int(result.get("pages")) or 1
-                        current = self._coerce_int(result.get("current")) or page_no
-                        if current >= pages or not raw_records:
-                            break
-                        page_no += 1
-            return _response()
-        finally:
-            self._finish_fetch_request(fetch_request_id)
 
     @staticmethod
     def _normalize_alarm_states(alarm_state: str | int) -> list[int]:
-        """Normalize service/card alarm-state filters to Developer API values."""
-        if isinstance(alarm_state, int):
-            return [alarm_state] if alarm_state in (0, 1) else [1, 0]
-        normalized = str(alarm_state or "all").strip().casefold()
-        if normalized in {"1", "ongoing", "active", "open"}:
-            return [1]
-        if normalized in {"0", "closed", "cleared", "resolved"}:
-            return [0]
-        return [1, 0]
+        return AlarmManager.normalize_alarm_states(alarm_state)
+
 
     async def async_fetch_plant_year_statistics(
         self,
@@ -2774,73 +2717,13 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         year: int,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch monthly plant statistics for one year and prepare chart rows."""
-        fetch_request_id = self._begin_fetch_request(request_id)
-        now = dt_util.now()
-        normalized_year = int(year)
-        month_count = now.month if normalized_year == now.year else 12
-        rows: list[dict[str, Any]] = []
-        raw_months: list[dict[str, Any]] = []
-
-        try:
-            for month in range(1, month_count + 1):
-                if self._is_fetch_cancelled(fetch_request_id):
-                    break
-                date_text = f"{normalized_year}-{month:02d}"
-                payload = await self.client.plant_stat_data(
-                    plant_id=plant_id,
-                    business_type=business_type,
-                    date_type=2,
-                    date=date_text,
-                )
-                result = payload.get("result") or {}
-                metrics = extract_plant_stat_metrics(result if isinstance(result, dict) else {})
-                timestamp = int(
-                    datetime(normalized_year, month, 1, tzinfo=timezone.utc).timestamp()
-                    * 1000
-                )
-                rows.append(
-                    {
-                        "month": date_text,
-                        "timestamp": timestamp,
-                        **metrics,
-                    }
-                )
-                raw_months.append(
-                    {
-                        "month": date_text,
-                        "code": payload.get("code"),
-                        "message": payload.get("message"),
-                        "result": result,
-                    }
-                )
-                if self._is_fetch_cancelled(fetch_request_id):
-                    break
-            cancelled = self._is_fetch_cancelled(fetch_request_id)
-        finally:
-            self._finish_fetch_request(fetch_request_id)
-
-        available_metric_names = sorted(
-            {
-                key
-                for row in rows
-                for key, value in row.items()
-                if key not in {"month", "timestamp"} and isinstance(value, (int, float))
-            }
+        return await self._get_history_manager().async_fetch_plant_year_statistics(
+            plant_id=plant_id,
+            business_type=business_type,
+            year=year,
+            request_id=request_id,
         )
-        return {
-            "ok": True,
-            "plant_id": plant_id,
-            "business_type": business_type,
-            "year": normalized_year,
-            "month_count": month_count,
-            "api_calls_made": len(raw_months),
-            "available_metric_names": available_metric_names,
-            "rows": rows,
-            "raw_months": raw_months,
-            "cancelled": cancelled,
-            "request_id": fetch_request_id,
-        }
+
 
     async def async_fetch_plant_month_statistics(
         self,
@@ -2851,100 +2734,14 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         month: int,
         request_id: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch daily plant statistics for one month and prepare chart rows."""
-        fetch_request_id = self._begin_fetch_request(request_id)
-        normalized_year = int(year)
-        normalized_month = int(month)
-        date_text = f"{normalized_year}-{normalized_month:02d}"
-        if self._is_fetch_cancelled(fetch_request_id):
-            self._finish_fetch_request(fetch_request_id)
-            return {
-                "ok": True,
-                "plant_id": plant_id,
-                "business_type": business_type,
-                "year": normalized_year,
-                "month": normalized_month,
-                "date": date_text,
-                "day_count": 0,
-                "api_calls_made": 0,
-                "available_metric_names": [],
-                "rows": [],
-                "raw_month": {},
-                "cancelled": True,
-                "request_id": fetch_request_id,
-            }
-        try:
-            payload = await self.client.plant_stat_data(
-                plant_id=plant_id,
-                business_type=business_type,
-                date_type=2,
-                date=date_text,
-            )
-            cancelled = self._is_fetch_cancelled(fetch_request_id)
-        finally:
-            self._finish_fetch_request(fetch_request_id)
-        result = payload.get("result") or {}
-        records = (
-            result.get("plantEnergyStatDataList")
-            if isinstance(result, Mapping)
-            else None
-        ) or []
-        rows: list[dict[str, Any]] = []
-
-        for index, row in enumerate(records, start=1):
-            if not isinstance(row, Mapping):
-                continue
-            metrics = extract_plant_stat_row_metrics(dict(row))
-            if not metrics:
-                continue
-            row_date, timestamp = self._plant_stat_daily_timestamp(
-                row,
-                year=normalized_year,
-                month=normalized_month,
-                fallback_day=index,
-            )
-            rows.append(
-                {
-                    "date": row_date,
-                    "day": datetime.fromtimestamp(
-                        timestamp / 1000,
-                        tz=timezone.utc,
-                    ).day,
-                    "timestamp": timestamp,
-                    **metrics,
-                }
-            )
-
-        rows.sort(key=lambda item: int(item["timestamp"]))
-        available_metric_names = sorted(
-            {
-                key
-                for row in rows
-                for key, value in row.items()
-                if key not in {"date", "day", "timestamp"}
-                and isinstance(value, (int, float))
-            }
+        return await self._get_history_manager().async_fetch_plant_month_statistics(
+            plant_id=plant_id,
+            business_type=business_type,
+            year=year,
+            month=month,
+            request_id=request_id,
         )
-        return {
-            "ok": True,
-            "plant_id": plant_id,
-            "business_type": business_type,
-            "year": normalized_year,
-            "month": normalized_month,
-            "date": date_text,
-            "day_count": len(rows),
-            "api_calls_made": 1,
-            "available_metric_names": available_metric_names,
-            "rows": rows,
-            "raw_month": {
-                "month": date_text,
-                "code": payload.get("code"),
-                "message": payload.get("message"),
-                "result": result,
-            },
-            "cancelled": cancelled,
-            "request_id": fetch_request_id,
-        }
+
 
     @staticmethod
     def _plant_stat_daily_timestamp(
@@ -2954,50 +2751,13 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
         month: int,
         fallback_day: int,
     ) -> tuple[str, int]:
-        """Return a stable UTC midnight timestamp for a plant statistics day row."""
-        for key in ("date", "statDate", "dataTime", "time", "plantLocalTime"):
-            raw = row.get(key)
-            if raw is None:
-                continue
-            if isinstance(raw, (int, float)) and math.isfinite(float(raw)):
-                timestamp = int(raw if raw > 9999999999 else raw * 1000)
-                date_text = datetime.fromtimestamp(
-                    timestamp / 1000,
-                    tz=timezone.utc,
-                ).date().isoformat()
-                return date_text, timestamp
-            text = str(raw).strip()
-            if not text:
-                continue
-            for fmt in (
-                "%Y-%m-%d",
-                "%Y/%m/%d",
-                "%Y-%m-%d %H:%M:%S",
-                "%Y-%m-%dT%H:%M:%S",
-            ):
-                try:
-                    parsed = datetime.strptime(text[:19], fmt).replace(
-                        tzinfo=timezone.utc
-                    )
-                except ValueError:
-                    continue
-                midnight = datetime(
-                    parsed.year,
-                    parsed.month,
-                    parsed.day,
-                    tzinfo=timezone.utc,
-                )
-                return midnight.date().isoformat(), int(midnight.timestamp() * 1000)
-            if text.isdigit():
-                fallback_day = int(text)
-                break
+        return HistoryManager.plant_stat_daily_timestamp(
+            row,
+            year=year,
+            month=month,
+            fallback_day=fallback_day,
+        )
 
-        safe_day = max(1, min(31, int(fallback_day)))
-        try:
-            midnight = datetime(year, month, safe_day, tzinfo=timezone.utc)
-        except ValueError:
-            midnight = datetime(year, month, 1, tzinfo=timezone.utc)
-        return midnight.date().isoformat(), int(midnight.timestamp() * 1000)
 
     async def async_query_request_result(self, request_id: str | int) -> dict[str, Any]:
         normalized_request_id = str(request_id).strip()
@@ -3062,30 +2822,145 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
     def _control_response_status_summary(payload: dict[str, Any]) -> dict[str, Any]:
         result = payload.get("result") or {}
         statuses: dict[str, dict[str, Any]] = {}
-        accepted = bool(payload.get("code") == 10000)
+        accepted = payload.get("code") in {0, 10000}
 
+        records: list[tuple[str, Any]] = []
         if isinstance(result, Mapping):
-            for serial, item in result.items():
-                status_value = None
-                if isinstance(item, Mapping):
-                    status_value = item.get("status")
-                status_int = SolaxDeveloperCoordinator._coerce_int(status_value)
-                status_accepted = (
-                    status_int in EV_CHARGER_ACCEPTED_COMMAND_STATUSES
-                    if status_int is not None
-                    else False
+            if "status" in result:
+                serial = str(
+                    result.get("sn")
+                    or result.get("deviceSn")
+                    or result.get("registerNo")
+                    or "device"
                 )
-                statuses[str(serial)] = {
-                    "status": status_int,
-                    "status_name": COMMAND_STATUS_MAP.get(status_int, "Unknown"),
-                    "accepted": status_accepted,
-                }
-            if statuses:
-                accepted = all(item["accepted"] for item in statuses.values())
+                records.append((serial, result))
+            else:
+                records.extend(
+                    (str(serial), item)
+                    for serial, item in result.items()
+                    if isinstance(item, Mapping) and "status" in item
+                )
+        elif isinstance(result, list):
+            for index, item in enumerate(result):
+                if not isinstance(item, Mapping):
+                    continue
+                serial = str(
+                    item.get("sn")
+                    or item.get("deviceSn")
+                    or item.get("registerNo")
+                    or f"device_{index + 1}"
+                )
+                records.append((serial, item))
+
+        for serial, item in records:
+            status_value = item.get("status") if isinstance(item, Mapping) else None
+            status_int = SolaxDeveloperCoordinator._coerce_int(status_value)
+            status_accepted = status_int in EV_CHARGER_ACCEPTED_COMMAND_STATUSES
+            statuses[serial] = {
+                "status": status_int,
+                "status_name": COMMAND_STATUS_MAP.get(status_int or 0, "Unknown"),
+                "accepted": status_accepted,
+                "device_acknowledged": (
+                    status_int in EV_CHARGER_DEVICE_ACKNOWLEDGED_STATUSES
+                ),
+                "failed": status_int in EV_CHARGER_FAILED_COMMAND_STATUSES,
+            }
+
+        if statuses:
+            accepted = all(item["accepted"] for item in statuses.values())
+
+        command_failed = any(item["failed"] for item in statuses.values())
+        device_acknowledged = bool(statuses) and all(
+            item["device_acknowledged"] for item in statuses.values()
+        )
+        pending = bool(statuses) and not command_failed and not device_acknowledged
 
         return {
             "accepted": accepted,
             "device_statuses": statuses,
+            "command_failed": command_failed,
+            "device_acknowledged": device_acknowledged,
+            "pending": pending,
+        }
+
+    async def _confirm_ev_charger_control(
+        self,
+        *,
+        request_id: str,
+        initial_summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        if initial_summary.get("command_failed"):
+            return {
+                "confirmation_state": "failed",
+                "confirmation_attempts": 0,
+                "confirmation_response": None,
+                "confirmation_error": None,
+                **initial_summary,
+            }
+        if initial_summary.get("device_acknowledged"):
+            return {
+                "confirmation_state": "device_acknowledged",
+                "confirmation_attempts": 0,
+                "confirmation_response": None,
+                "confirmation_error": None,
+                **initial_summary,
+            }
+        if not request_id:
+            return {
+                "confirmation_state": "unavailable",
+                "confirmation_attempts": 0,
+                "confirmation_response": None,
+                "confirmation_error": None,
+                **initial_summary,
+            }
+
+        attempts = max(
+            1,
+            EV_CHARGER_CONFIRMATION_TIMEOUT_SECONDS
+            // EV_CHARGER_CONFIRMATION_POLL_SECONDS,
+        )
+        latest_summary = dict(initial_summary)
+        latest_response: dict[str, Any] | None = None
+        latest_error: dict[str, Any] | None = None
+        completed_attempts = 0
+
+        for _ in range(attempts):
+            await asyncio.sleep(EV_CHARGER_CONFIRMATION_POLL_SECONDS)
+            completed_attempts += 1
+            try:
+                latest_response = await self.async_query_request_result(request_id)
+                latest_error = None
+            except Exception as err:  # noqa: BLE001
+                latest_error = serialize_api_error(err)
+                continue
+
+            queried_summary = self._control_response_status_summary(latest_response)
+            if queried_summary.get("device_statuses"):
+                latest_summary = queried_summary
+            if latest_summary.get("command_failed"):
+                return {
+                    "confirmation_state": "failed",
+                    "confirmation_attempts": completed_attempts,
+                    "confirmation_response": latest_response,
+                    "confirmation_error": latest_error,
+                    **latest_summary,
+                }
+            if latest_summary.get("device_acknowledged"):
+                return {
+                    "confirmation_state": "device_acknowledged",
+                    "confirmation_attempts": completed_attempts,
+                    "confirmation_response": latest_response,
+                    "confirmation_error": latest_error,
+                    **latest_summary,
+                }
+
+        confirmation_state = "query_failed" if latest_error else "pending"
+        return {
+            "confirmation_state": confirmation_state,
+            "confirmation_attempts": completed_attempts,
+            "confirmation_response": latest_response,
+            "confirmation_error": latest_error,
+            **latest_summary,
         }
 
     async def async_execute_ev_charger_control(
@@ -3104,7 +2979,12 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             path=endpoint,
             payload=payload,
         )
-        status_summary = self._control_response_status_summary(response)
+        initial_summary = self._control_response_status_summary(response)
+        request_id = str(response.get("requestId") or "").strip()
+        confirmation = await self._confirm_ev_charger_control(
+            request_id=request_id,
+            initial_summary=initial_summary,
+        )
         event = {
             "timestamp": dt_util.utcnow().isoformat(),
             "service": service,
@@ -3121,10 +3001,23 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator):
             ],
             "blocked": False,
             "sent": True,
-            "accepted": bool(status_summary["accepted"]),
-            "request_id": response.get("requestId"),
+            "accepted": bool(initial_summary["accepted"]),
+            "request_id": request_id or None,
             "response": response,
-            "device_statuses": status_summary["device_statuses"],
+            "initial_device_statuses": initial_summary["device_statuses"],
+            "device_statuses": confirmation["device_statuses"],
+            "confirmation_state": confirmation["confirmation_state"],
+            "confirmation_attempts": confirmation["confirmation_attempts"],
+            "confirmation_response": confirmation["confirmation_response"],
+            "confirmation_error": confirmation["confirmation_error"],
+            "device_acknowledged": bool(confirmation["device_acknowledged"]),
+            "execution_started": bool(confirmation["device_acknowledged"]),
+            "command_failed": bool(confirmation["command_failed"]),
+            "pending": confirmation["confirmation_state"] in {
+                "pending",
+                "query_failed",
+                "unavailable",
+            },
         }
         commands = getattr(self, "_ev_charger_control_commands", None)
         if not isinstance(commands, list):

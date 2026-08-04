@@ -2,10 +2,17 @@
 
 from __future__ import annotations
 
-from homeassistant.components.button import ButtonEntity
+from collections.abc import Mapping
+from typing import Any
 
+from homeassistant.components.button import ButtonEntity
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
+from .coordinator import SolaxDeveloperCoordinator
 from .entity import SolaxSystemCoordinatorEntity, system_identity
 from .ev_charger import SolaxEVChargerEntity, ev_charger_devices
+from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
 
@@ -16,15 +23,16 @@ EV_COMMAND_BUTTONS: tuple[tuple[str, str, int], ...] = (
     ("ev_charger_stop_charging", "stop_charging", 3),
 )
 
-EV_APPLY_BUTTONS: tuple[type["SolaxEVApplyButton"], ...] = ()
-
-
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     system_name, system_slug = system_identity(hass, entry)
     seen: set[tuple[str, str]] = set()
 
-    entities = [
+    entities: list[ButtonEntity] = [
         SolaxLiveViewBoostButton(
             hass=hass,
             coordinator=coordinator,
@@ -33,8 +41,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         ),
     ]
 
-    def _build_ev_buttons():
-        new_entities = []
+    def _build_ev_buttons() -> list[ButtonEntity]:
+        new_entities: list[ButtonEntity] = []
         for device in ev_charger_devices(coordinator):
             device_sn = str(device.get("deviceSn") or "")
             for translation_key, field_slug, work_cmd in EV_COMMAND_BUTTONS:
@@ -83,7 +91,14 @@ class SolaxLiveViewBoostButton(SolaxSystemCoordinatorEntity, ButtonEntity):
 
     _attr_translation_key = "live_view_boost"
 
-    def __init__(self, *, hass, coordinator, system_name: str, system_slug: str):
+    def __init__(
+        self,
+        *,
+        hass: HomeAssistant,
+        coordinator: SolaxDeveloperCoordinator,
+        system_name: str,
+        system_slug: str,
+    ) -> None:
         super().__init__(
             coordinator,
             system_name=system_name,
@@ -94,7 +109,7 @@ class SolaxLiveViewBoostButton(SolaxSystemCoordinatorEntity, ButtonEntity):
         self.entity_id = f"button.{system_slug}_live_view_boost"
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> Mapping[str, Any]:
         meta = (self.coordinator.data or {}).get("meta") or {}
         return {
             "poll_profile": meta.get("poll_profile"),
@@ -112,9 +127,9 @@ class SolaxEVChargeCommandButton(SolaxEVChargerEntity, ButtonEntity):
     def __init__(
         self,
         *,
-        coordinator,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
-        device,
+        device: Mapping[str, Any],
         translation_key: str,
         field_slug: str,
         work_cmd: int,
@@ -140,7 +155,13 @@ class SolaxEVApplyButton(SolaxEVChargerEntity, ButtonEntity):
 
     FIELD_SLUG = ""
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(
             coordinator,
             system_slug,

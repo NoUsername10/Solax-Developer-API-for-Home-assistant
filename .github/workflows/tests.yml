@@ -25,15 +25,40 @@ jobs:
       - name: Install test tools
         run: pip install --quiet pytest pytest-asyncio pytest-cov ruff
       - name: Compile
-        run: python -m compileall -q custom_components tests scripts
+        run: python -m compileall -q custom_components tests tests_ha scripts
       - name: Translation validation
         run: python scripts/check_translation_keys.py
       - name: Ruff
-        run: ruff check custom_components tests scripts
+        run: ruff check custom_components tests tests_ha scripts
       - name: Tests and coverage
         run: >-
           pytest -q
           --cov=custom_components/solax_developer_api
           --cov-report=term-missing
           --cov-report=xml
-          --cov-fail-under=95
+          --cov-report=json:coverage.json
+          --cov-fail-under=96
+      - name: Per-module coverage
+        run: python scripts/check_module_coverage.py coverage.json --minimum 95
+
+  home-assistant-lifecycle:
+    name: Home Assistant lifecycle fixtures
+    runs-on: ubuntu-latest
+    container: ghcr.io/home-assistant/home-assistant:stable
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Home Assistant fixture tools
+        run: pip install --quiet -r requirements_test_ha.txt
+      - name: Lifecycle tests
+        run: pytest -q tests_ha
+
+  strict-typing:
+    name: Home Assistant strict typing
+    runs-on: ubuntu-latest
+    container: ghcr.io/home-assistant/home-assistant:stable
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install mypy
+        run: pip install --quiet mypy==1.19.1
+      - name: Strict type check
+        run: mypy --config-file mypy.ini custom_components/solax_developer_api

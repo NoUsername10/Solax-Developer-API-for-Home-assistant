@@ -1,3 +1,10 @@
+import {
+  cardLanguage,
+  loadCardTranslations,
+  localizeCardMetadata,
+  translateCard,
+} from "./solax-card-i18n.js";
+
 class SolaxAlarmViewerCard extends HTMLElement {
   static getStubConfig() {
     return {};
@@ -9,7 +16,9 @@ class SolaxAlarmViewerCard extends HTMLElement {
     this._hass = undefined;
     this._connected = false;
     this._entryId = undefined;
-    this._name = "SolaX Alarms";
+    this._name = undefined;
+    this._translations = {};
+    this._translationLanguage = undefined;
     this._maxPages = 20;
     this._plants = [];
     this._devices = [];
@@ -37,7 +46,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
       this._selectedDeviceKey = "";
     }
     this._entryId = nextEntryId;
-    this._name = this._cleanString(cfg.name) || "SolaX Alarms";
+    this._name = this._cleanString(cfg.name);
     this._maxPages = this._toInt(cfg.max_pages, 20, 1, 100);
     this._render();
   }
@@ -45,6 +54,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
   set hass(hass) {
     const hadHass = Boolean(this._hass);
     this._hass = hass;
+    void this._loadTranslations();
     if (this._connected && !hadHass) {
       this._loadTargets();
       this._render();
@@ -53,6 +63,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
 
   connectedCallback() {
     this._connected = true;
+    void this._loadTranslations();
     this._loadTargets();
     this._render();
   }
@@ -70,6 +81,33 @@ class SolaxAlarmViewerCard extends HTMLElement {
       columns: "full",
       min_columns: 6,
     };
+  }
+
+  async _loadTranslations() {
+    const language = cardLanguage(this._hass);
+    if (!this._hass || language === this._translationLanguage) return;
+    this._translationLanguage = language;
+    this._translations = await loadCardTranslations(this._hass);
+    localizeCardMetadata(
+      "solax-alarm-viewer",
+      this._translations,
+      "alarm",
+      "SolaX Alarm Viewer",
+      "Get SolaX alarms from your SolaX account."
+    );
+    if (this._connected) this._render();
+  }
+
+  _t(key, fallback, placeholders = {}) {
+    return translateCard(this._translations, `alarm.${key}`, fallback, placeholders);
+  }
+
+  _displayName() {
+    return this._name || this._t("title", "SolaX Alarms");
+  }
+
+  _locale() {
+    return this._hass?.locale?.language || this._hass?.language || undefined;
   }
 
   _cleanString(raw) {
@@ -118,7 +156,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
     );
     if (response === undefined) {
       throw new Error(
-        "Home Assistant did not return service response data. Update Home Assistant or reload the dashboard resource."
+        this._t(
+          "service_response_missing",
+          "Home Assistant did not return service response data. Update Home Assistant or reload the dashboard resource."
+        )
       );
     }
     return response;
@@ -136,8 +177,15 @@ class SolaxAlarmViewerCard extends HTMLElement {
       const entries = Array.isArray(response?.entries) ? response.entries : [];
       if (entries.length === 0) {
         this._lastError = this._entryId
-          ? `No loaded SolaX Developer API integration matches entry_id "${this._entryId}". Remove entry_id from the card or use the exact config entry id.`
-          : "No loaded SolaX Developer API integration is available yet.";
+          ? this._t(
+              "entry_not_found",
+              'No loaded SolaX Developer API integration matches entry_id "{entry_id}". Remove entry_id from the card or use the exact config entry id.',
+              { entry_id: this._entryId }
+            )
+          : this._t(
+              "integration_unavailable",
+              "No loaded SolaX Developer API integration is available yet."
+            );
         this._plants = [];
         this._devices = [];
         this._targetsLoaded = false;
@@ -279,14 +327,14 @@ class SolaxAlarmViewerCard extends HTMLElement {
 
   _formatDate(raw) {
     if (!raw) {
-      return "None";
+      return this._t("none", "None");
     }
     const text = String(raw);
     const timestamp = Date.parse(text.replace(" ", "T"));
     if (!Number.isFinite(timestamp)) {
       return text;
     }
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(this._locale(), {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -297,12 +345,12 @@ class SolaxAlarmViewerCard extends HTMLElement {
   _stateLabel(value) {
     const state = Number(value);
     if (state === 1) {
-      return "Ongoing";
+      return this._t("ongoing", "Ongoing");
     }
     if (state === 0) {
-      return "Closed";
+      return this._t("closed", "Closed");
     }
-    return "Unknown";
+    return this._t("unknown", "Unknown");
   }
 
   _stateClass(value) {
@@ -319,7 +367,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
   _shortSerial(raw) {
     const text = String(raw || "").trim();
     if (!text) {
-      return "Unknown device";
+      return this._t("unknown_device", "Unknown device");
     }
     if (text.length <= 12) {
       return text;
@@ -328,7 +376,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
   }
 
   _mappedValue(rawValue, mappedValue) {
-    const raw = rawValue ?? "Unknown";
+    const raw = rawValue ?? this._t("unknown", "Unknown");
     const mapped = String(mappedValue || "").trim();
     if (!mapped || mapped === String(raw)) {
       return String(raw);
@@ -359,14 +407,14 @@ class SolaxAlarmViewerCard extends HTMLElement {
     if (plant) {
       return plant.label || plant.plant_id;
     }
-    return "All plants";
+    return this._t("all_plants", "All plants");
   }
 
   _lastFetchLabel() {
     if (!this._lastFetchAt) {
-      return "Never";
+      return this._t("never", "Never");
     }
-    return new Intl.DateTimeFormat(undefined, {
+    return new Intl.DateTimeFormat(this._locale(), {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
@@ -378,9 +426,13 @@ class SolaxAlarmViewerCard extends HTMLElement {
       return;
     }
     const statusClass = this._lastError ? "error" : this._fetching ? "loading" : "ready";
-    const statusLabel = this._lastError ? "Error" : this._fetching ? "Fetching" : "Ready";
+    const statusLabel = this._lastError
+      ? this._t("status_error", "Error")
+      : this._fetching
+        ? this._t("status_fetching", "Fetching")
+        : this._t("status_ready", "Ready");
     const plantOptions = [
-      `<option value="all"${this._selectedPlantKey === "all" ? " selected" : ""}>All plants</option>`,
+      `<option value="all"${this._selectedPlantKey === "all" ? " selected" : ""}>${this._escape(this._t("all_plants", "All plants"))}</option>`,
       ...this._plants.map(
         (plant) =>
           `<option value="${this._escape(this._plantKey(plant))}"${
@@ -389,7 +441,7 @@ class SolaxAlarmViewerCard extends HTMLElement {
       ),
     ].join("");
     const deviceOptions = [
-      `<option value=""${this._selectedDeviceKey === "" ? " selected" : ""}>All devices</option>`,
+      `<option value=""${this._selectedDeviceKey === "" ? " selected" : ""}>${this._escape(this._t("all_devices", "All devices"))}</option>`,
       ...this._devicesForSelectedPlant().map(
         (device) =>
           `<option value="${this._escape(this._deviceKey(device))}"${
@@ -739,8 +791,8 @@ class SolaxAlarmViewerCard extends HTMLElement {
                 </svg>
               </div>
               <div>
-                <h2>${this._escape(this._name)}</h2>
-                <div class="subtitle">Get SolaX alarms from your SolaX account.</div>
+                <h2>${this._escape(this._displayName())}</h2>
+                <div class="subtitle">${this._escape(this._t("subtitle", "Get SolaX alarms from your SolaX account."))}</div>
               </div>
             </div>
             <div class="status ${statusClass}">${statusLabel}</div>
@@ -748,52 +800,52 @@ class SolaxAlarmViewerCard extends HTMLElement {
 
           <div class="controls">
             <label>
-              Plant
+              ${this._escape(this._t("plant", "Plant"))}
               <select id="plant">
                 ${plantOptions}
               </select>
             </label>
             <label>
-              Device
+              ${this._escape(this._t("device", "Device"))}
               <select id="device">
                 ${deviceOptions}
               </select>
             </label>
             <label>
-              Alarm State
+              ${this._escape(this._t("alarm_state", "Alarm State"))}
               <select id="alarm-state">
-                <option value="all"${this._alarmState === "all" ? " selected" : ""}>All</option>
-                <option value="ongoing"${this._alarmState === "ongoing" ? " selected" : ""}>Ongoing</option>
-                <option value="closed"${this._alarmState === "closed" ? " selected" : ""}>Closed</option>
+                <option value="all"${this._alarmState === "all" ? " selected" : ""}>${this._escape(this._t("all", "All"))}</option>
+                <option value="ongoing"${this._alarmState === "ongoing" ? " selected" : ""}>${this._escape(this._t("ongoing", "Ongoing"))}</option>
+                <option value="closed"${this._alarmState === "closed" ? " selected" : ""}>${this._escape(this._t("closed", "Closed"))}</option>
               </select>
             </label>
           </div>
           <div class="fetch-row">
             <button id="fetch" class="${this._fetching ? "cancel" : ""}" ${!this._fetching && (!this._targetsLoaded || !this._plants.length) ? "disabled" : ""}>
-              ${this._fetching ? "Cancel Fetch" : "Fetch Alarms"}
+              ${this._escape(this._fetching ? this._t("cancel_fetch", "Cancel Fetch") : this._t("fetch_alarms", "Fetch Alarms"))}
             </button>
           </div>
 
           <div class="summary">
             <div class="tile">
-              <div class="label">Target</div>
+              <div class="label">${this._escape(this._t("target", "Target"))}</div>
               <div class="value">${this._escape(this._targetLabel())}</div>
-              <div class="hint">${this._plants.length} plant(s), ${this._devices.length} device(s)</div>
+              <div class="hint">${this._escape(this._t("plant_device_count", "{plants} plant(s), {devices} device(s)", { plants: this._plants.length, devices: this._devices.length }))}</div>
             </div>
             <div class="tile">
-              <div class="label">Alarm Rows</div>
+              <div class="label">${this._escape(this._t("alarm_rows", "Alarm Rows"))}</div>
               <div class="value">${this._records.length}</div>
-              <div class="hint">${Number(this._lastMeta?.api_calls_made || 0)} API call(s)</div>
+              <div class="hint">${this._escape(this._t("api_calls", "{count} API call(s)", { count: Number(this._lastMeta?.api_calls_made || 0) }))}</div>
             </div>
             <div class="tile">
-              <div class="label">Ongoing / Closed</div>
+              <div class="label">${this._escape(this._t("ongoing_closed", "Ongoing / Closed"))}</div>
               <div class="value">${this._summaryValue("ongoing")} / ${this._summaryValue("closed")}</div>
-              <div class="hint">Based on returned alarmState</div>
+              <div class="hint">${this._escape(this._t("alarm_state_help", "Based on returned alarmState"))}</div>
             </div>
             <div class="tile">
-              <div class="label">Last Fetch</div>
+              <div class="label">${this._escape(this._t("last_fetch", "Last Fetch"))}</div>
               <div class="value">${this._escape(this._lastFetchLabel())}</div>
-              <div class="hint">Manual fetch only</div>
+              <div class="hint">${this._escape(this._t("manual_fetch_only", "Manual fetch only"))}</div>
             </div>
           </div>
 
@@ -807,10 +859,10 @@ class SolaxAlarmViewerCard extends HTMLElement {
 
   _renderRecords() {
     if (!this._lastFetchAt && !this._records.length) {
-      return `<div class="empty">Fetch alarms to show returned alarm records.</div>`;
+      return `<div class="empty">${this._escape(this._t("fetch_first", "Fetch alarms to show returned alarm records."))}</div>`;
     }
     if (!this._records.length) {
-      return `<div class="empty">No alarm records returned for this filter.</div>`;
+      return `<div class="empty">${this._escape(this._t("no_records", "No alarm records returned for this filter."))}</div>`;
     }
     return `
       <div class="records">
@@ -835,21 +887,21 @@ class SolaxAlarmViewerCard extends HTMLElement {
     return `
       <article class="record">
         <div class="record-head">
-          <div class="record-title">${this._escape(record.alarmName || "Unnamed alarm")}</div>
+          <div class="record-title">${this._escape(record.alarmName || this._t("unnamed_alarm", "Unnamed alarm"))}</div>
           <div class="pill ${stateClass}">${this._escape(this._stateLabel(record.alarmState))}</div>
         </div>
         <div class="record-grid">
-          <div class="kv"><span>Started</span><strong>${this._escape(this._formatDate(record.alarmStartTime))}</strong></div>
-          <div class="kv"><span>Recovered</span><strong>${this._escape(this._formatDate(record.alarmEndTime))}</strong></div>
-          <div class="kv"><span>Device</span><strong>${this._escape(this._shortSerial(record.deviceSn))}</strong></div>
-          <div class="kv"><span>Code / Level</span><strong>${this._escape(record.errorCode ?? "Unknown")} / ${this._escape(record.alarmLevel ?? "Unknown")}</strong></div>
-          <div class="kv"><span>Type</span><strong>${this._escape(record.alarmType || "Unknown")}</strong></div>
-          <div class="kv"><span>Device Type</span><strong>${this._escape(this._mappedValue(record.deviceType, record.deviceTypeName))}</strong></div>
-          <div class="kv"><span>Device Model</span><strong>${this._escape(this._mappedValue(record.deviceModel, record.deviceModelName))}</strong></div>
-          <div class="kv"><span>Plant</span><strong>${this._escape(record.plantId || "Unknown")}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("started", "Started"))}</span><strong>${this._escape(this._formatDate(record.alarmStartTime))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("recovered", "Recovered"))}</span><strong>${this._escape(this._formatDate(record.alarmEndTime))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("device", "Device"))}</span><strong>${this._escape(this._shortSerial(record.deviceSn))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("code_level", "Code / Level"))}</span><strong>${this._escape(record.errorCode ?? this._t("unknown", "Unknown"))} / ${this._escape(record.alarmLevel ?? this._t("unknown", "Unknown"))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("type", "Type"))}</span><strong>${this._escape(record.alarmType || this._t("unknown", "Unknown"))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("device_type", "Device Type"))}</span><strong>${this._escape(this._mappedValue(record.deviceType, record.deviceTypeName))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("device_model", "Device Model"))}</span><strong>${this._escape(this._mappedValue(record.deviceModel, record.deviceModelName))}</strong></div>
+          <div class="kv"><span>${this._escape(this._t("plant", "Plant"))}</span><strong>${this._escape(record.plantId || this._t("unknown", "Unknown"))}</strong></div>
         </div>
         <details>
-          <summary>Show all returned fields</summary>
+          <summary>${this._escape(this._t("show_all_fields", "Show all returned fields"))}</summary>
           <div class="field-list">${fields}</div>
         </details>
       </article>

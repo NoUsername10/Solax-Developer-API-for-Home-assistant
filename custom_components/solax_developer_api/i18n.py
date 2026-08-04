@@ -69,7 +69,7 @@ def _read_catalog_from_disk(language: str) -> dict[str, Any]:
     return catalog
 
 
-async def async_ensure_catalog_loaded(hass, language: str | None = None) -> None:
+async def async_ensure_catalog_loaded(hass: Any, language: str | None = None) -> None:
     """Load active + fallback catalogs via executor to avoid loop blocking."""
     lang = _normalize_lang(language or getattr(getattr(hass, "config", None), "language", None))
     targets = [lang]
@@ -83,7 +83,7 @@ async def async_ensure_catalog_loaded(hass, language: str | None = None) -> None
         _CATALOG_CACHE[target] = payload if isinstance(payload, dict) else {}
 
 
-def _schedule_catalog_load(hass, language: str | None = None) -> None:
+def _schedule_catalog_load(hass: Any, language: str | None = None) -> None:
     if hass is None or not hasattr(hass, "async_create_task"):
         return
     lang = _normalize_lang(language or getattr(getattr(hass, "config", None), "language", None))
@@ -120,7 +120,7 @@ def _resolve_key(catalog: dict[str, Any], key: str) -> str | None:
 
 
 def translate(
-    hass,
+    hass: Any,
     key: str,
     *,
     placeholders: dict[str, Any] | None = None,

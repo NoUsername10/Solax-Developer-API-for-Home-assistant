@@ -13,8 +13,8 @@
           "api_region": "Regione API"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Client ID dell'applicazione nel portale SolaX Developer.",
+          "client_secret": "Client Secret della stessa applicazione nel portale SolaX Developer.",
           "system_name": "Nome del sistema",
           "scan_interval": "Intervallo di polling (secondi)",
           "api_region": "Regione API"
@@ -29,8 +29,8 @@
           "api_region": "Regione API"
         },
         "data_description": {
-          "client_id": "Client ID for the existing SolaX Developer API application.",
-          "client_secret": "Current Client Secret for the application.",
+          "client_id": "Client ID dell'applicazione SolaX Developer API esistente.",
+          "client_secret": "Client Secret attuale dell'applicazione.",
           "api_region": "Regione API"
         }
       },
@@ -44,27 +44,27 @@
           "api_region": "Regione API"
         },
         "data_description": {
-          "client_id": "Client ID to use after reconfiguration.",
-          "client_secret": "Client Secret to use after reconfiguration.",
+          "client_id": "Client ID da usare dopo la riconfigurazione.",
+          "client_secret": "Client Secret da usare dopo la riconfigurazione.",
           "system_name": "Nome del sistema",
           "api_region": "Regione API"
         }
       }
     },
     "abort": {
-      "already_configured": "Integration is already configured",
-      "invalid_credentials": "Invalid credentials",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "reauth_successful": "SolaX Developer API was reconnected successfully",
-      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+      "already_configured": "L'integrazione è già configurata",
+      "invalid_credentials": "Credenziali non valide",
+      "cannot_connect": "Impossibile connettersi a SolaX Developer API",
+      "cannot_read_data": "Le credenziali sono valide, ma non è stato restituito alcun dato leggibile dell'impianto",
+      "reauth_successful": "SolaX Developer API è stata riconnessa correttamente",
+      "reconfigure_successful": "SolaX Developer API è stata riconfigurata correttamente"
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned"
+      "invalid_credentials": "Credenziali non valide",
+      "invalid_system_name": "Il nome del sistema è obbligatorio",
+      "invalid_region": "Regione non valida",
+      "cannot_connect": "Impossibile connettersi a SolaX Developer API",
+      "cannot_read_data": "Le credenziali sono valide, ma non è stato restituito alcun dato leggibile dell'impianto"
     }
   },
   "options": {
@@ -81,7 +81,7 @@
       },
       "credentials": {
         "title": "Credenziali & System",
-        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "description": "Aggiorna l'account Developer API, la regione e il nome del sistema Home Assistant.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -89,8 +89,8 @@
           "api_region": "Regione API"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Client ID dell'applicazione nel portale SolaX Developer.",
+          "client_secret": "Client Secret della stessa applicazione nel portale SolaX Developer.",
           "system_name": "Nome del sistema",
           "api_region": "Regione API"
         }
@@ -100,84 +100,86 @@
         "description": "Configura il polling standard, il polling temporaneo Live View e il profilo notte.",
         "data": {
           "scan_interval": "Intervallo di polling (secondi)",
-          "live_view_default_duration": "Live View Default Duration (seconds)",
-          "live_view_interval": "Live View Target Interval (seconds)",
-          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
-          "night_scan_interval": "Night Scan Interval (seconds)",
+          "live_view_default_duration": "Durata predefinita di Live View (secondi)",
+          "live_view_interval": "Intervallo desiderato di Live View (secondi)",
+          "live_view_call_budget_per_minute": "Budget di chiamate per Live View (chiamate/min)",
+          "night_scan_interval": "Intervallo di polling notturno (secondi)",
           "night_start_hour": "Notte Modalità Avvia Hour (0-23)",
           "night_end_hour": "Notte Modalità End Hour (0-23)"
         },
         "data_description": {
           "scan_interval": "Intervallo di polling (secondi)",
-          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
-          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
-          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
-          "night_scan_interval": "Polling interval used during the configured night period.",
-          "night_start_hour": "Local hour when night polling starts.",
-          "night_end_hour": "Local hour when night polling ends."
+          "live_view_default_duration": "Durata di attivazione di Live View quando non viene specificata una durata diversa.",
+          "live_view_interval": "Intervallo di polling richiesto per Live View. L'intervallo effettivo può essere aumentato per non superare il budget API.",
+          "live_view_call_budget_per_minute": "Numero massimo di chiamate API al minuto riservate a Live View.",
+          "night_scan_interval": "Intervallo di polling usato durante il periodo notturno configurato.",
+          "night_start_hour": "Ora locale di inizio del polling notturno.",
+          "night_end_hour": "Ora locale di fine del polling notturno."
         }
       },
       "manual_devices": {
         "title": "Manuale dispositivi",
         "description": "Aggiungi dispositivi che l'account può leggere ma che gli endpoint di inventario non restituiscono. Ogni dispositivo viene verificato prima del salvataggio.",
         "data": {
-          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_serials_add": "Aggiungi seriali di contatori manuali (uno per riga, |businessType facoltativo)",
           "manual_meter_remove_serial": "Contatore manuale da rimuovere",
           "manual_meter_remove_confirm": "Rimuovi contatore manuale selezionato",
-          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_systems_add": "Aggiungi sistemi EMS manuali (seriale EMS|ID impianto, uno per riga)",
           "manual_ems_remove_serial": "Sistema EMS manuale da rimuovere",
           "manual_ems_remove_confirm": "Rimuovi sistema EMS manuale selezionato"
         },
         "data_description": {
-          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_serials_add": "Inserisci un seriale di contatore accessibile per riga. Aggiungi |1 o |4 solo per forzare un tipo di attività.",
           "manual_meter_remove_serial": "Contatore manuale da rimuovere",
           "manual_meter_remove_confirm": "Rimuovi contatore manuale selezionato",
-          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_systems_add": "Inserisci un seriale EMS e un ID impianto per riga nel formato SERIAL|PLANT_ID.",
           "manual_ems_remove_serial": "Sistema EMS manuale da rimuovere",
           "manual_ems_remove_confirm": "Rimuovi sistema EMS manuale selezionato"
         }
       },
       "advanced": {
         "title": "Avanzate & diagnostica",
-        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "description": "Configura le notifiche di diagnostica e le funzioni avanzate dell'integrazione.",
         "data": {
           "rate_limit_notifications": "Limite di frequenza Notifiche",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "ev_charger_controls_enabled": "Controlli della stazione di ricarica EV",
+          "alarm_notifications": "Notifiche degli allarmi",
+          "alarm_scan_interval": "Intervallo di controllo degli allarmi"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "Mostra una notifica di Home Assistant quando SolaX segnala un limite di frequenza o di quota.",
+          "ev_charger_controls_enabled": "Consenti richieste di scrittura reali solo per i servizi di controllo della stazione di ricarica EV. Se l'opzione è disattivata, anche questi servizi restano bloccati in modalità dry-run come gli altri servizi di controllo.",
+          "alarm_notifications": "Mostra notifiche persistenti di Home Assistant quando SolaX segnala allarmi attivi.",
+          "alarm_scan_interval": "Ogni quanti secondi controllare la presenza di allarmi attivi in SolaX."
         }
       }
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
-      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
-      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
-      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
-      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
-      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
-      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
-      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+      "invalid_credentials": "Credenziali non valide",
+      "invalid_system_name": "Il nome del sistema è obbligatorio",
+      "invalid_region": "Regione non valida",
+      "cannot_connect": "Impossibile connettersi a SolaX Developer API",
+      "cannot_read_data": "Le credenziali sono valide, ma non è stato restituito alcun dato leggibile dell'impianto",
+      "invalid_manual_meter_serials": "Formato del seriale del contatore manuale non valido. Usa un seriale per riga, facoltativamente SERIAL|1 o SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Convalida del seriale del contatore manuale non riuscita. Impossibile verificare i dati in tempo reale del contatore.",
+      "manual_meter_serial_validation_unavailable": "La convalida dei contatori manuali non è disponibile finché l'integrazione non è completamente caricata.",
+      "manual_meter_remove_target_required": "Seleziona un contatore manuale prima di rimuoverlo.",
+      "manual_meter_remove_target_missing": "Il contatore manuale selezionato non è presente nelle impostazioni attuali.",
+      "invalid_manual_ems_systems": "Formato del sistema EMS manuale non valido. Usa un seriale EMS e un ID impianto per riga: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Convalida del sistema EMS manuale non riuscita. L'endpoint degli attributi EMS non ha verificato il seriale e l'impianto.",
+      "manual_ems_validation_unavailable": "La convalida dei sistemi EMS manuali non è disponibile finché l'integrazione non è completamente caricata.",
+      "manual_ems_remove_target_required": "Seleziona un sistema EMS manuale prima di rimuoverlo.",
+      "manual_ems_remove_target_missing": "Il sistema EMS manuale selezionato non è presente nelle impostazioni attuali."
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "SolaX Developer API rate limit is active",
-      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+      "title": "Il limite di frequenza di SolaX Developer API è attivo",
+      "description": "SolaX ha rifiutato le chiamate perché è attivo un limite di frequenza o di quota. Aree interessate: {contexts}. Riduci il polling o l'uso di Live View e attendi il ripristino del limite."
     },
     "api_permission": {
-      "title": "SolaX Developer API access is incomplete",
-      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+      "title": "L'accesso a SolaX Developer API è incompleto",
+      "description": "SolaX ha negato l'accesso a uno o più endpoint di lettura. Aree interessate: {contexts}. Verifica i permessi del client e gli impianti autorizzati nel portale SolaX Developer."
     }
   },
   "entity": {
@@ -194,36 +196,36 @@
         "name": "Avvia Live View Boost"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "Blocca stazione di ricarica"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "Imposta stazione di ricarica come disponibile"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "Avvia ricarica"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "Arresta ricarica"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "Applica scenario di ricarica"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "Applica codice QR"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "Applica ricarica programmata"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "Work Modalità"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "Avvia Modalità"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "Scenario di ricarica"
       }
     },
     "sensor": {
@@ -233,46 +235,46 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "Corrente Limite"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "Corrente di ricarica programmata"
       }
     },
     "text": {
       "ev_charger_qr_code": {
-        "name": "QR Code"
+        "name": "Codice QR"
       },
       "ev_charger_ocpp_url": {
         "name": "OCPP URL"
       },
       "ev_charger_ocpp_charger_id": {
-        "name": "OCPP Charger ID"
+        "name": "ID stazione di ricarica OCPP"
       }
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "Ora di inizio della ricarica programmata"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "Ora di fine della ricarica programmata"
       }
     }
   },
   "services": {
     "manual_refresh": {
       "name": "Manuale Aggiornamento",
-      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "description": "Avvia un aggiornamento immediato per tutte le voci SolaX Developer API configurate.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
-          "description": "Optional config entry id; if omitted, all entries are refreshed."
+          "description": "ID facoltativo della voce di configurazione; se omesso, vengono aggiornate tutte le voci."
         }
       }
     },
     "start_live_view": {
       "name": "Avvia Live View",
-      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "description": "Attiva temporaneamente il polling in tempo reale con arresto automatico.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -280,17 +282,17 @@
         },
         "duration_seconds": {
           "name": "Durata (secondi)",
-          "description": "Optional live mode duration override."
+          "description": "Durata facoltativa che sostituisce quella della modalità Live View."
         },
         "interval_seconds": {
           "name": "Intervallo target (secondi)",
-          "description": "Optional live mode target interval override."
+          "description": "Intervallo desiderato facoltativo che sostituisce quello della modalità Live View."
         }
       }
     },
     "stop_live_view": {
       "name": "Ferma Live View",
-      "description": "Disable live polling and return to standard/night profile timing.",
+      "description": "Disattiva il polling Live View e ripristina la temporizzazione del profilo standard o notturno.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -299,28 +301,28 @@
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "Elenca dispositivi per lo storico",
+      "description": "Elenca i dispositivi attualmente rilevati che possono essere interrogati tramite l'endpoint dello storico della Developer API. Non effettua chiamate all'API SolaX.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "ID voce",
+          "description": "ID facoltativo della voce di configurazione. Se omesso, vengono incluse tutte le voci caricate."
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "Elenca impianti per le statistiche",
+      "description": "Elenca gli impianti attualmente rilevati che possono essere interrogati tramite l'endpoint delle statistiche della Developer API. Non effettua chiamate all'API SolaX.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "ID voce",
+          "description": "ID facoltativo della voce di configurazione. Se omesso, vengono incluse tutte le voci caricate."
         }
       }
     },
     "fetch_device_history": {
       "name": "Recupera Device Storico",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "description": "Legge la telemetria storica dalla Developer API e memorizza il risultato nella cache. Gli intervalli temporali lunghi vengono suddivisi automaticamente in finestre compatibili con i limiti API.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -328,111 +330,111 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+          "description": "Elenco di SN dei dispositivi, da 1 a 200. Le richieste vengono suddivise automaticamente."
         },
         "device_type": {
           "name": "Tipo dispositivo",
-          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+          "description": "1 inverter, 2 batteria, 3 contatore, 4 stazione di ricarica EV."
         },
         "business_type": {
           "name": "Tipo business",
-          "description": "1 residential, 4 commercial & industrial."
+          "description": "1 residenziale, 4 commerciale e industriale."
         },
         "start_time": {
           "name": "Ora di inizio",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "Timestamp Unix UTC a 13 cifre, in millisecondi."
         },
         "end_time": {
           "name": "Ora di fine",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "Timestamp Unix UTC a 13 cifre, in millisecondi."
         },
         "time_interval": {
           "name": "Intervallo di tempo",
-          "description": "5, 10, 15, 30, 60 minutes."
+          "description": "5, 10, 15, 30 o 60 minuti."
         },
         "request_sn_type": {
           "name": "Tipo request SN",
-          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+          "description": "Modalità facoltativa di interrogazione della batteria (1 SN inverter / 2 SN batteria)."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "ID richiesta",
+          "description": "ID richiesta facoltativo usato dalle schede incluse per l'annullamento cooperativo."
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Recupera statistiche annuali dell'impianto",
+      "description": "Legge dalla Developer API le statistiche mensili dell'impianto per un anno. Solo visualizzazione: non scrive nel Recorder di Home Assistant.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "ID voce",
+          "description": "ID voce di configurazione opzionale."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "ID impianto",
+          "description": "ID impianto restituito da list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Tipo business",
+          "description": "1 residenziale, 4 commerciale e industriale."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "name": "Anno",
+          "description": "Anno solare da recuperare. Per l'anno corrente vengono recuperati i dati fino a oggi; per gli anni precedenti tutti i 12 mesi."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "ID richiesta",
+          "description": "ID richiesta facoltativo usato dalle schede incluse per l'annullamento cooperativo."
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Recupera statistiche mensili dell'impianto",
+      "description": "Legge dalla Developer API le statistiche giornaliere dell'impianto per un mese. Solo visualizzazione: non scrive nel Recorder di Home Assistant.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "ID voce",
+          "description": "ID voce di configurazione opzionale."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "ID impianto",
+          "description": "ID impianto restituito da list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Tipo business",
+          "description": "1 residenziale, 4 commerciale e industriale."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch."
+          "name": "Anno",
+          "description": "Anno solare da recuperare."
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "Mese",
+          "description": "Mese da recuperare, da 1 a 12. I mesi futuri dell'anno corrente vengono rifiutati."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "ID richiesta",
+          "description": "ID richiesta facoltativo usato dalle schede incluse per l'annullamento cooperativo."
         }
       }
     },
     "query_request_result": {
       "name": "Interroga Request Risultato",
-      "description": "Query asynchronous command request status by string requestId.",
+      "description": "Interroga lo stato di una richiesta di comando asincrona tramite il valore testuale requestId.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
           "description": "ID voce di configurazione opzionale."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "ID richiesta",
+          "description": "ID richiesta restituito da una chiamata API di controllo. Sono accettati valori testuali e numerici."
         }
       }
     },
     "query_master_control_device": {
       "name": "Interroga Master Controllo Device",
-      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "description": "Legge il dispositivo master di controllo principale (solo commerciale e industriale, businessType=4).",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -446,7 +448,7 @@
         },
         "business_type": {
           "name": "Tipo business",
-          "description": "Must be 4 (commercial & industrial)."
+          "description": "Deve essere 4 (commerciale e industriale)."
         }
       }
     },
@@ -460,11 +462,11 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "device_type": {
           "name": "Tipo dispositivo",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Obbligatorio. Tipo di dispositivo della Developer API, ad esempio 1 per inverter."
         },
         "is_enable": {
           "name": "Flag di abilitazione",
@@ -472,7 +474,7 @@
         },
         "limit_value": {
           "name": "Valore limite",
-          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+          "description": "Obbligatorio. Limite di esportazione in kW; sono accettati valori con un massimo di due decimali."
         },
         "business_type": {
           "name": "Tipo business",
@@ -494,11 +496,11 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "device_type": {
           "name": "Tipo dispositivo",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Obbligatorio. Tipo di dispositivo della Developer API, ad esempio 1 per inverter."
         },
         "is_enable": {
           "name": "Flag di abilitazione",
@@ -524,10 +526,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "SOC minimo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_from_grid_enable": {
@@ -535,7 +537,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "SOC massimo di ricarica",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -544,19 +546,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "enable_time_period2": {
           "name": "Abilita Ora Period 2",
@@ -564,19 +566,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         }
       }
     },
@@ -590,14 +592,14 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "SOC minimo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "SOC massimo di ricarica",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -606,19 +608,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "enable_time_period2": {
           "name": "Abilita Ora Period 2",
@@ -626,19 +628,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         }
       }
     },
@@ -652,10 +654,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "SOC minimo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_from_grid_enable": {
@@ -663,7 +665,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "SOC massimo di ricarica",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -672,19 +674,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Avvia Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Ora Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "enable_time_period2": {
           "name": "Abilita Ora Period 2",
@@ -692,19 +694,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Avvia Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Ora Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Facoltativo. Valore orario nel formato HH:MM."
         }
       }
     },
@@ -718,7 +720,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "manual_mode": {
           "name": "Manuale Modalità",
@@ -731,7 +733,7 @@
       }
     },
     "self_use_mode": {
-      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "name": "A1-Hybrid-G2 autoconsumo (dry-run)",
       "description": "Solo Dry-Run. Valida il payload e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -740,7 +742,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "business_type": {
           "name": "Tipo business",
@@ -749,7 +751,7 @@
       }
     },
     "feed_in_priority": {
-      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "name": "A1-Hybrid-G2 priorità di immissione (dry-run)",
       "description": "Solo Dry-Run. Valida il payload e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -758,7 +760,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "business_type": {
           "name": "Tipo business",
@@ -767,7 +769,7 @@
       }
     },
     "back_up_mode": {
-      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "name": "A1-Hybrid-G2 backup (dry-run)",
       "description": "Solo Dry-Run. Valida il payload e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -776,7 +778,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "back_up_grid_enable": {
           "name": "Back Up Grid Abilita",
@@ -784,11 +786,11 @@
         },
         "back_up_charge_start_time": {
           "name": "Back Up Charge Avvia Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "back_up_charge_end_time": {
           "name": "Back Up Charge End Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "business_type": {
           "name": "Tipo business",
@@ -806,7 +808,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "demand_grid_enable": {
           "name": "Demand Grid Abilita",
@@ -822,30 +824,30 @@
         },
         "demand_discharge_start_time1": {
           "name": "Demand Discharge Avvia Ora 1",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "demand_discharge_end_time1": {
           "name": "Demand Discharge End Ora 1",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "demand_discharge_start_time2": {
           "name": "Demand Discharge Avvia Ora 2",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "demand_discharge_end_time2": {
           "name": "Demand Discharge End Ora 2",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "charger_power_limit": {
           "name": "Charger Potenza Limite",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "demand_max_soc": {
-          "name": "Demand Max SOC",
+          "name": "SOC massimo della domanda",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "reserve_soc": {
-          "name": "Reserve SOC",
+          "name": "SOC di riserva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -864,7 +866,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "const_power_grid_enable": {
           "name": "Const Potenza Grid Abilita",
@@ -876,19 +878,19 @@
         },
         "const_power_charge_start_time": {
           "name": "Const Potenza Charge Avvia Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "const_power_charge_end_time": {
           "name": "Const Potenza Charge End Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "const_power_discharge_start_time": {
           "name": "Const Potenza Discharge Avvia Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "const_power_discharge_end_time": {
           "name": "Const Potenza Discharge End Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "business_type": {
           "name": "Tipo business",
@@ -906,7 +908,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "business_type": {
           "name": "Tipo business",
@@ -924,7 +926,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "active_power_target": {
           "name": "Active Potenza Target",
@@ -954,10 +956,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "target_engergy": {
-          "name": "Target Engergy",
+          "name": "Energia obiettivo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_discharg_power": {
@@ -980,10 +982,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "target_soc": {
-          "name": "Target SOC",
+          "name": "SOC obiettivo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "charge_discharg_power": {
@@ -1006,7 +1008,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "battery_power": {
           "name": "Battery Potenza",
@@ -1017,7 +1019,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1036,14 +1038,14 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "time_of_duration": {
           "name": "Ora Of Durata",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1053,7 +1055,7 @@
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "name": "VPP autoconsumo con carica/scarica (dry-run)",
       "description": "Solo Dry-Run. Valida il payload e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -1062,14 +1064,14 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "time_of_duration": {
           "name": "Ora Of Durata",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1079,7 +1081,7 @@
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "name": "VPP autoconsumo con sola carica (dry-run)",
       "description": "Solo Dry-Run. Valida il payload e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -1088,14 +1090,14 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "time_of_duration": {
           "name": "Ora Of Durata",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1114,7 +1116,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "battery_power": {
           "name": "Battery Potenza",
@@ -1129,7 +1131,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1148,7 +1150,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "battery_power": {
           "name": "Battery Potenza",
@@ -1159,7 +1161,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "target_soc": {
-          "name": "Target SOC",
+          "name": "SOC obiettivo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "time_of_duration": {
@@ -1167,7 +1169,7 @@
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Azione successiva",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1177,8 +1179,8 @@
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Imposta scenario della stazione di ricarica EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1186,10 +1188,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "charger_scene": {
-          "name": "Charger Scene",
+          "name": "Scenario della stazione di ricarica",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1197,18 +1199,18 @@
           "description": "Obbligatorio. 1 residenziale o 4 commerciale e industriale."
         },
         "ocpp_url": {
-          "name": "OCPP Url",
+          "name": "URL OCPP",
           "description": "Opzionale. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "ocpp_charger_id": {
-          "name": "OCPP Charger Id",
+          "name": "ID stazione di ricarica OCPP",
           "description": "Opzionale. Campo intero del payload usato dalla validazione Dry-Run."
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Imposta codice QR della stazione di ricarica EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1216,10 +1218,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "qr_code": {
-          "name": "QR Code",
+          "name": "Codice QR",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1229,8 +1231,8 @@
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Imposta modalità operativa della stazione di ricarica EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1238,7 +1240,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "work_mode": {
           "name": "Work Modalità",
@@ -1255,8 +1257,8 @@
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Imposta modalità di avvio della stazione di ricarica EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1264,7 +1266,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "start_mode": {
           "name": "Avvia Modalità",
@@ -1277,8 +1279,8 @@
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Imposta comando di ricarica della stazione EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1286,10 +1288,10 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "work_cmd": {
-          "name": "Work Cmd",
+          "name": "Comando operativo",
           "description": "Obbligatorio. Campo intero del payload usato dalla validazione Dry-Run."
         },
         "business_type": {
@@ -1299,8 +1301,8 @@
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Programma ricarica della stazione EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1308,15 +1310,15 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "charge_start_time": {
           "name": "Charge Avvia Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "charge_end_time": {
           "name": "Charge End Ora",
-          "description": "Required. HH:MM time value."
+          "description": "Obbligatorio. Valore orario nel formato HH:MM."
         },
         "charge_current": {
           "name": "Charge Corrente",
@@ -1329,8 +1331,8 @@
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Limite di corrente della stazione di ricarica EV",
+      "description": "Esegue un comando reale della stazione di ricarica EV quando i relativi controlli sono abilitati. In caso contrario convalida il payload e lo blocca come dry-run.",
       "fields": {
         "entry_id": {
           "name": "ID voce",
@@ -1338,7 +1340,7 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi. La convalida in fase di esecuzione accetta da 1 a 10 seriali."
         },
         "current_limit": {
           "name": "Corrente Limite",
@@ -1351,7 +1353,7 @@
       }
     },
     "set_battery_heating": {
-      "name": "Battery Heating Settings (Dry-Run)",
+      "name": "Impostazioni di riscaldamento della batteria (dry-run)",
       "description": "Solo Dry-Run. Valida il battery heating settings e blocca la scrittura.",
       "fields": {
         "entry_id": {
@@ -1360,31 +1362,31 @@
         },
         "sn_list": {
           "name": "Elenco seriali dispositivo",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "description": "Obbligatorio. Elenco di SN dei dispositivi, da 1 a 10."
         },
         "heating_enable": {
           "name": "Heating Abilita",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "description": "Obbligatorio. 0 disattiva il riscaldamento della batteria; 1 lo attiva."
         },
         "heating_level": {
-          "name": "Heating Level",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "name": "Livello di riscaldamento",
+          "description": "Obbligatorio quando la funzione è attiva. I valori supportati sono 0, 1 e 2."
         },
         "heating_period1_start_time": {
           "name": "Heating Period 1 Avvia",
-          "description": "Required when enabled. HH:MM time value."
+          "description": "Obbligatorio quando la funzione è attiva. Valore orario nel formato HH:MM."
         },
         "heating_period1_end_time": {
-          "name": "Heating Period 1 End",
-          "description": "Required when enabled and must be later than period 1 start."
+          "name": "Fine del periodo di riscaldamento 1",
+          "description": "Obbligatorio quando la funzione è attiva e deve essere successivo all'inizio del periodo 1."
         },
         "heating_period2_start_time": {
           "name": "Heating Period 2 Avvia",
-          "description": "Optional second heating period start. HH:MM time value."
+          "description": "Inizio facoltativo del secondo periodo di riscaldamento. Valore orario nel formato HH:MM."
         },
         "heating_period2_end_time": {
-          "name": "Heating Period 2 End",
-          "description": "Required when period 2 start is supplied."
+          "name": "Fine del periodo di riscaldamento 2",
+          "description": "Obbligatorio quando è indicato l'inizio del periodo 2."
         },
         "business_type": {
           "name": "Tipo business",
@@ -1402,146 +1404,146 @@
         },
         "device_type": {
           "name": "Tipo dispositivo",
-          "description": "Required. Fixed value 100 for EMS System."
+          "description": "Obbligatorio. Valore fisso 100 per il sistema EMS."
         },
         "business_type": {
           "name": "Tipo business",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+          "description": "Obbligatorio. Valore fisso 4 per i sistemi EMS commerciali e industriali."
         },
         "param_list": {
-          "name": "EMS Parameters",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+          "name": "Parametri EMS",
+          "description": "Obbligatorio. Elenco da 1 a 10 oggetti EMS con registerNo, manualMode e i valori condizionali power/targetSoc."
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "Elenca destinazioni degli allarmi",
+      "description": "Elenca gli impianti e i dispositivi rilevati che possono essere interrogati tramite l'endpoint degli allarmi della Developer API. Non effettua chiamate all'API SolaX.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "ID voce",
+          "description": "ID facoltativo della voce di configurazione. Se omesso, vengono incluse tutte le voci caricate."
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Recupera informazioni sugli allarmi",
+      "description": "Legge dalla Developer API le informazioni sugli allarmi suddivise in pagine. Solo visualizzazione: non scrive nel Recorder di Home Assistant.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "ID voce",
+          "description": "ID voce di configurazione opzionale."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "name": "ID impianto",
+          "description": "ID impianto facoltativo restituito da list_alarm_targets. Se omesso, vengono interrogati tutti gli impianti caricati."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "Tipo business",
+          "description": "Tipo di attività facoltativo per le interrogazioni esplicite degli impianti. 1 residenziale, 4 commerciale e industriale."
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "Stato di allarme",
+          "description": "Filtro dello stato dell'allarme. Usa all, ongoing, closed, 1 oppure 0."
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "SN dispositivo",
+          "description": "Filtro facoltativo per il seriale del dispositivo."
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "Numero massimo di pagine",
+          "description": "Numero massimo di pagine da recuperare per impianto e stato dell'allarme, da 1 a 100."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "ID richiesta",
+          "description": "ID richiesta facoltativo usato dalle schede incluse per l'annullamento cooperativo."
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "Annulla recupero",
+      "description": "Richiede l'annullamento cooperativo di un recupero di storico, statistiche o allarmi avviato da una scheda.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "ID voce",
+          "description": "ID voce di configurazione opzionale."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "name": "ID richiesta",
+          "description": "ID richiesta generato dall'azione di recupero della scheda da annullare."
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "No active {domain} entry for {entry_id}"
+      "message": "Nessuna voce {domain} attiva per {entry_id}"
     },
     "no_configured_entries": {
-      "message": "No configured SolaX Developer API entries"
+      "message": "Nessuna voce SolaX Developer API configurata"
     },
     "history_end_before_start": {
-      "message": "end_time must be greater than start_time"
+      "message": "end_time deve essere successivo a start_time"
     },
     "master_control_requires_ci": {
-      "message": "query_master_control_device supports business_type=4 only"
+      "message": "query_master_control_device supporta solo business_type=4"
     },
     "system_name_required": {
-      "message": "System name is required"
+      "message": "Il nome del sistema è obbligatorio"
     },
     "control_unknown_service": {
-      "message": "{service}: unknown control service"
+      "message": "{service}: servizio di controllo sconosciuto"
     },
     "control_field_name_invalid": {
-      "message": "{service}: service fields must use snake_case names"
+      "message": "{service}: i campi del servizio devono avere nomi in snake_case"
     },
     "control_missing_required_field": {
-      "message": "{service}: missing required field {field}"
+      "message": "{service}: manca il campo obbligatorio {field}"
     },
     "control_field_must_be_int": {
-      "message": "{service}: field {field} must be int"
+      "message": "{service}: il campo {field} deve essere un numero intero"
     },
     "control_field_type_mismatch": {
-      "message": "{service}: field {field} must be {expected_type}"
+      "message": "{service}: il campo {field} deve essere di tipo {expected_type}"
     },
     "control_sn_list_empty": {
-      "message": "{service}: snList must contain at least one serial"
+      "message": "{service}: snList deve contenere almeno un seriale"
     },
     "control_sn_list_too_long": {
-      "message": "{service}: snList supports max {max} serials"
+      "message": "{service}: snList supporta al massimo {max} seriali"
     },
     "control_business_type_invalid": {
-      "message": "{service}: businessType must be 1 or 4"
+      "message": "{service}: businessType deve essere 1 o 4"
     },
     "control_time_format_invalid": {
-      "message": "{service}: field {field} must use HH:MM format"
+      "message": "{service}: il campo {field} deve usare il formato HH:MM"
     },
     "control_not_available": {
-      "message": "{service}: no compatible device capability is available in this integration"
+      "message": "{service}: nell'integrazione non è disponibile alcuna funzionalità compatibile del dispositivo"
     },
     "control_field_number_invalid": {
-      "message": "{service}: field {field} must be a finite number"
+      "message": "{service}: il campo {field} deve essere un numero finito"
     },
     "control_field_value_invalid": {
-      "message": "{service}: field {field} has an unsupported value"
+      "message": "{service}: il campo {field} contiene un valore non supportato"
     },
     "control_time_order_invalid": {
-      "message": "{service}: {end_field} must be later than {start_field}"
+      "message": "{service}: {end_field} deve essere successivo a {start_field}"
     },
     "control_ems_context_invalid": {
-      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+      "message": "{service}: i controlli EMS richiedono deviceType 100 e businessType 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+      "message": "{service}: paramList deve contenere da 1 a {max} sistemi EMS"
     },
     "control_param_list_item_invalid": {
-      "message": "{service}: paramList item {index} must be an object"
+      "message": "{service}: l'elemento {index} di paramList deve essere un oggetto"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "year deve essere compreso tra {min_year} e {max_year}"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "month deve essere compreso tra {min_month} e {max_month}"
     }
   }
 }

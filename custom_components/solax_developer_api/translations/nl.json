@@ -13,8 +13,8 @@
           "api_region": "API-regio"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Client-ID van je toepassing in SolaX Developer Portal.",
+          "client_secret": "Client Secret van dezelfde toepassing in Developer Portal.",
           "system_name": "Systeemnaam",
           "scan_interval": "Pollinginterval (seconden)",
           "api_region": "API-regio"
@@ -29,8 +29,8 @@
           "api_region": "API-regio"
         },
         "data_description": {
-          "client_id": "Client ID for the existing SolaX Developer API application.",
-          "client_secret": "Current Client Secret for the application.",
+          "client_id": "Client-ID van de bestaande SolaX Developer API-toepassing.",
+          "client_secret": "Huidige Client Secret van de toepassing.",
           "api_region": "API-regio"
         }
       },
@@ -44,8 +44,8 @@
           "api_region": "API-regio"
         },
         "data_description": {
-          "client_id": "Client ID to use after reconfiguration.",
-          "client_secret": "Client Secret to use after reconfiguration.",
+          "client_id": "Client-ID die na de herconfiguratie wordt gebruikt.",
+          "client_secret": "Client Secret die na de herconfiguratie wordt gebruikt.",
           "system_name": "Systeemnaam",
           "api_region": "API-regio"
         }
@@ -56,8 +56,8 @@
       "invalid_credentials": "Ongeldige inloggegevens",
       "cannot_connect": "Kan geen verbinding maken met SolaX Developer API",
       "cannot_read_data": "De inloggegevens zijn geldig, maar er zijn geen leesbare installatiegegevens teruggegeven",
-      "reauth_successful": "SolaX Developer API was reconnected successfully",
-      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+      "reauth_successful": "De verbinding met SolaX Developer API is hersteld",
+      "reconfigure_successful": "SolaX Developer API is opnieuw geconfigureerd"
     },
     "error": {
       "invalid_credentials": "Ongeldige inloggegevens",
@@ -81,7 +81,7 @@
       },
       "credentials": {
         "title": "Inloggegevens & System",
-        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "description": "Werk het Developer API-account, de regio en de Home Assistant-systeemnaam bij.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -89,8 +89,8 @@
           "api_region": "API-regio"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Client-ID van je toepassing in SolaX Developer Portal.",
+          "client_secret": "Client Secret van dezelfde toepassing in Developer Portal.",
           "system_name": "Systeemnaam",
           "api_region": "API-regio"
         }
@@ -100,55 +100,57 @@
         "description": "Configureer standaardpolling, tijdelijke Live View-polling en het nachtprofiel.",
         "data": {
           "scan_interval": "Pollinginterval (seconden)",
-          "live_view_default_duration": "Live View Default Duration (seconds)",
-          "live_view_interval": "Live View Target Interval (seconds)",
-          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
-          "night_scan_interval": "Night Scan Interval (seconds)",
+          "live_view_default_duration": "Standaardduur van Live View (seconden)",
+          "live_view_interval": "Doelinterval van Live View (seconden)",
+          "live_view_call_budget_per_minute": "Aanroepbudget voor Live View (aanroepen/min)",
+          "night_scan_interval": "Nachtelijk pollinginterval (seconden)",
           "night_start_hour": "Nacht Modus Start Hour (0-23)",
           "night_end_hour": "Nacht Modus End Hour (0-23)"
         },
         "data_description": {
           "scan_interval": "Pollinginterval (seconden)",
-          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
-          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
-          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
-          "night_scan_interval": "Polling interval used during the configured night period.",
-          "night_start_hour": "Local hour when night polling starts.",
-          "night_end_hour": "Local hour when night polling ends."
+          "live_view_default_duration": "Hoe lang Live View actief blijft als geen afwijkende duur is opgegeven.",
+          "live_view_interval": "Het gevraagde pollinginterval voor Live View. Het werkelijke interval kan worden verhoogd om het API-budget te bewaken.",
+          "live_view_call_budget_per_minute": "Het maximale aantal API-aanroepen per minuut dat voor Live View is gereserveerd.",
+          "night_scan_interval": "Het pollinginterval dat tijdens de ingestelde nachtperiode wordt gebruikt.",
+          "night_start_hour": "Het lokale uur waarop nachtelijke polling begint.",
+          "night_end_hour": "Het lokale uur waarop nachtelijke polling eindigt."
         }
       },
       "manual_devices": {
         "title": "Handmatig apparaten",
         "description": "Voeg apparaten toe die het account kan lezen maar die niet door de inventaris-endpoints worden teruggegeven. Elk apparaat wordt gecontroleerd voordat het wordt opgeslagen.",
         "data": {
-          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_serials_add": "Handmatige meterserienummers toevoegen (één per regel, optioneel |businessType)",
           "manual_meter_remove_serial": "Te verwijderen handmatige meter",
           "manual_meter_remove_confirm": "Geselecteerde handmatige meter verwijderen",
-          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_systems_add": "Handmatige EMS-systemen toevoegen (EMS-serienummer|installatie-ID, één per regel)",
           "manual_ems_remove_serial": "Te verwijderen handmatig EMS-systeem",
           "manual_ems_remove_confirm": "Geselecteerd handmatig EMS-systeem verwijderen"
         },
         "data_description": {
-          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_serials_add": "Voer per regel één toegankelijk meterserienummer in. Voeg alleen |1 of |4 toe als het bedrijfstype moet worden afgedwongen.",
           "manual_meter_remove_serial": "Te verwijderen handmatige meter",
           "manual_meter_remove_confirm": "Geselecteerde handmatige meter verwijderen",
-          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_systems_add": "Voer per regel één EMS-serienummer en installatie-ID in als SERIAL|PLANT_ID.",
           "manual_ems_remove_serial": "Te verwijderen handmatig EMS-systeem",
           "manual_ems_remove_confirm": "Geselecteerd handmatig EMS-systeem verwijderen"
         }
       },
       "advanced": {
         "title": "Geavanceerd & diagnose",
-        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "description": "Configureer diagnostische meldingen en geavanceerd gedrag van de integratie.",
         "data": {
           "rate_limit_notifications": "Ratelimiet Meldingen",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "ev_charger_controls_enabled": "Bediening van EV-lader",
+          "alarm_notifications": "Alarmmeldingen",
+          "alarm_scan_interval": "Pollinginterval voor alarmen"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "Toon Home Assistant-meldingen wanneer SolaX een snelheids- of quotumlimiet meldt.",
+          "ev_charger_controls_enabled": "Sta echte schrijfopdrachten alleen toe voor bedieningsservices van de EV-lader. Als dit is uitgeschakeld, blijven de EV-laderservices net als de andere bedieningsservices als dry-run geblokkeerd.",
+          "alarm_notifications": "Toon blijvende Home Assistant-meldingen wanneer SolaX actieve alarmen meldt.",
+          "alarm_scan_interval": "Hoe vaak SolaX op actieve alarmen wordt gecontroleerd, in seconden."
         }
       }
     },
@@ -158,26 +160,26 @@
       "invalid_region": "Ongeldige regio",
       "cannot_connect": "Kan geen verbinding maken met SolaX Developer API",
       "cannot_read_data": "De inloggegevens zijn geldig, maar er zijn geen leesbare installatiegegevens teruggegeven",
-      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
-      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
-      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
-      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
-      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
-      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
-      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
-      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+      "invalid_manual_meter_serials": "Ongeldige indeling voor een handmatig meterserienummer. Gebruik één serienummer per regel, eventueel SERIAL|1 of SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Validatie van het handmatige meterserienummer is mislukt. De realtime metergegevens konden niet worden geverifieerd.",
+      "manual_meter_serial_validation_unavailable": "Validatie van handmatige meters is pas beschikbaar als de integratie volledig is geladen.",
+      "manual_meter_remove_target_required": "Selecteer een handmatige meter voordat je deze verwijdert.",
+      "manual_meter_remove_target_missing": "De geselecteerde handmatige meter is niet gevonden in de huidige instellingen.",
+      "invalid_manual_ems_systems": "Ongeldige indeling voor een handmatig EMS-systeem. Gebruik één EMS-serienummer en installatie-ID per regel: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Validatie van het handmatige EMS-systeem is mislukt. Het EMS-kenmerkendpoint kon dit serienummer en deze installatie niet verifiëren.",
+      "manual_ems_validation_unavailable": "Validatie van handmatige EMS-systemen is pas beschikbaar als de integratie volledig is geladen.",
+      "manual_ems_remove_target_required": "Selecteer een handmatig EMS-systeem voordat je het verwijdert.",
+      "manual_ems_remove_target_missing": "Het geselecteerde handmatige EMS-systeem is niet gevonden in de huidige instellingen."
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "SolaX Developer API rate limit is active",
-      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+      "title": "De snelheidslimiet van SolaX Developer API is actief",
+      "description": "SolaX heeft aanroepen geweigerd omdat een snelheids- of quotumlimiet actief is. Betrokken onderdelen: {contexts}. Verminder polling of het gebruik van Live View en wacht tot de limiet is hersteld."
     },
     "api_permission": {
-      "title": "SolaX Developer API access is incomplete",
-      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+      "title": "De toegang tot SolaX Developer API is onvolledig",
+      "description": "SolaX heeft toegang tot een of meer leesendpoints geweigerd. Betrokken onderdelen: {contexts}. Controleer de clientmachtigingen en toegestane installaties in SolaX Developer Portal."
     }
   },
   "entity": {
@@ -191,39 +193,39 @@
     },
     "button": {
       "live_view_boost": {
-        "name": "Start Live View Boost"
+        "name": "Live View-versnelling starten"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "Lader vergrendelen"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "Lader beschikbaar maken"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "Laden starten"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "Laden stoppen"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "Laadscenario toepassen"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "QR-code toepassen"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "Geplande lading toepassen"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "Work Modus"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "Start Modus"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "Laadscenario"
       }
     },
     "sensor": {
@@ -233,29 +235,29 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "Stroom Limiet"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "Stroom voor geplande lading"
       }
     },
     "text": {
       "ev_charger_qr_code": {
-        "name": "QR Code"
+        "name": "QR-code"
       },
       "ev_charger_ocpp_url": {
         "name": "OCPP URL"
       },
       "ev_charger_ocpp_charger_id": {
-        "name": "OCPP Charger ID"
+        "name": "OCPP-lader-ID"
       }
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "Begintijd van geplande lading"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "Eindtijd van geplande lading"
       }
     }
   },
@@ -266,12 +268,12 @@
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
-          "description": "Optional config entry id; if omitted, all entries are refreshed."
+          "description": "Optionele ID van de configuratievermelding. Als deze wordt weggelaten, worden alle vermeldingen vernieuwd."
         }
       }
     },
     "start_live_view": {
-      "name": "Start Live View",
+      "name": "Live View starten",
       "description": "Schakel tijdelijk realtimegericht pollen in met automatische timeout.",
       "fields": {
         "entry_id": {
@@ -280,16 +282,16 @@
         },
         "duration_seconds": {
           "name": "Duur (seconden)",
-          "description": "Optional live mode duration override."
+          "description": "Optionele afwijkende duur voor Live View."
         },
         "interval_seconds": {
           "name": "Doelinterval (seconden)",
-          "description": "Optional live mode target interval override."
+          "description": "Optioneel afwijkend doelinterval voor Live View."
         }
       }
     },
     "stop_live_view": {
-      "name": "Stop Live View",
+      "name": "Live View stoppen",
       "description": "Schakel live polling uit en keer terug naar standaard-/nachtprofiel-timing.",
       "fields": {
         "entry_id": {
@@ -299,28 +301,28 @@
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "Apparaten voor geschiedenis tonen",
+      "description": "Toon de gevonden apparaten die via het geschiedenisendpoint van de Developer API kunnen worden opgevraagd. Roept de SolaX API niet aan.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Entry-ID",
+          "description": "Optionele ID van de configuratievermelding. Als deze wordt weggelaten, worden alle geladen vermeldingen opgenomen."
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "Installaties voor statistieken tonen",
+      "description": "Toon de gevonden installaties die via het statistiekendpoint van de Developer API kunnen worden opgevraagd. Roept de SolaX API niet aan.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Entry-ID",
+          "description": "Optionele ID van de configuratievermelding. Als deze wordt weggelaten, worden alle geladen vermeldingen opgenomen."
         }
       }
     },
     "fetch_device_history": {
       "name": "Ophalen Device Geschiedenis",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "description": "Lees historische telemetrie uit de Developer API en sla het resultaat tijdelijk op. Lange perioden worden automatisch opgesplitst in vensters die binnen de API-limieten vallen.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -332,107 +334,107 @@
         },
         "device_type": {
           "name": "Apparaattype",
-          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+          "description": "1 omvormer, 2 accu, 3 meter, 4 EV-lader."
         },
         "business_type": {
           "name": "Bedrijfstype",
-          "description": "1 residential, 4 commercial & industrial."
+          "description": "1 residentieel, 4 commercieel en industrieel."
         },
         "start_time": {
           "name": "Starttijd",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-cijferige Unix-tijd in UTC, in milliseconden."
         },
         "end_time": {
           "name": "Eindtijd",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-cijferige Unix-tijd in UTC, in milliseconden."
         },
         "time_interval": {
           "name": "Tijdsinterval",
-          "description": "5, 10, 15, 30, 60 minutes."
+          "description": "5, 10, 15, 30 of 60 minuten."
         },
         "request_sn_type": {
           "name": "Request-SN-type",
-          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+          "description": "Optionele opvraagmodus voor de accu (1 omvormer-SN / 2 accu-SN)."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Verzoek-ID",
+          "description": "Optionele verzoek-ID die de meegeleverde kaarten gebruiken voor gecoördineerd annuleren."
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Jaarstatistieken van installatie ophalen",
+      "description": "Lees maandelijkse installatiestatistieken voor één jaar uit de Developer API. Alleen voor weergave; schrijft niet naar Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Installatie-ID",
+          "description": "Installatie-ID die door list_plant_statistics_targets is geretourneerd."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Bedrijfstype",
+          "description": "1 residentieel, 4 commercieel en industrieel."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "name": "Jaar",
+          "description": "Het kalenderjaar dat moet worden opgehaald. Voor het huidige jaar worden gegevens tot nu toe opgehaald; voor eerdere jaren alle 12 maanden."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Verzoek-ID",
+          "description": "Optionele verzoek-ID die de meegeleverde kaarten gebruiken voor gecoördineerd annuleren."
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Maandstatistieken van installatie ophalen",
+      "description": "Lees dagelijkse installatiestatistieken voor één maand uit de Developer API. Alleen voor weergave; schrijft niet naar Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Installatie-ID",
+          "description": "Installatie-ID die door list_plant_statistics_targets is geretourneerd."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Bedrijfstype",
+          "description": "1 residentieel, 4 commercieel en industrieel."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch."
+          "name": "Jaar",
+          "description": "Het kalenderjaar dat moet worden opgehaald."
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "Maand",
+          "description": "De kalendermaand die moet worden opgehaald, 1-12. Toekomstige maanden in het huidige jaar worden geweigerd."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Verzoek-ID",
+          "description": "Optionele verzoek-ID die de meegeleverde kaarten gebruiken voor gecoördineerd annuleren."
         }
       }
     },
     "query_request_result": {
       "name": "Opvragen Request Resultaat",
-      "description": "Query asynchronous command request status by string requestId.",
+      "description": "Vraag de status van een asynchrone opdracht op met de tekenreeks requestId.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
           "description": "Optionele configuratie-entry-ID."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "Verzoek-ID",
+          "description": "Verzoek-ID die door een bedieningsaanroep van de API is geretourneerd. Tekst en getallen worden geaccepteerd."
         }
       }
     },
     "query_master_control_device": {
       "name": "Opvragen Master Besturing Device",
-      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "description": "Lees het bovenste hoofdbedieningsapparaat (alleen commercieel en industrieel, businessType=4).",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -446,7 +448,7 @@
         },
         "business_type": {
           "name": "Bedrijfstype",
-          "description": "Must be 4 (commercial & industrial)."
+          "description": "Moet 4 zijn (commercieel en industrieel)."
         }
       }
     },
@@ -464,7 +466,7 @@
         },
         "device_type": {
           "name": "Apparaattype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Verplicht. Apparaattype van de Developer API, bijvoorbeeld 1 voor een omvormer."
         },
         "is_enable": {
           "name": "Inschakelvlag",
@@ -472,7 +474,7 @@
         },
         "limit_value": {
           "name": "Limietwaarde",
-          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+          "description": "Verplicht. Terugleverlimiet in kW; decimalen met maximaal twee cijfers worden ondersteund."
         },
         "business_type": {
           "name": "Bedrijfstype",
@@ -498,7 +500,7 @@
         },
         "device_type": {
           "name": "Apparaattype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Verplicht. Apparaattype van de Developer API, bijvoorbeeld 1 voor een omvormer."
         },
         "is_enable": {
           "name": "Inschakelvlag",
@@ -527,7 +529,7 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimale SOC",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "charge_from_grid_enable": {
@@ -535,7 +537,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Bovengrens SOC bij laden",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -544,19 +546,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "enable_time_period2": {
           "name": "Inschakelen Tijd Period 2",
@@ -564,19 +566,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         }
       }
     },
@@ -593,11 +595,11 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimale SOC",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Bovengrens SOC bij laden",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -606,19 +608,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "enable_time_period2": {
           "name": "Inschakelen Tijd Period 2",
@@ -626,19 +628,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         }
       }
     },
@@ -655,7 +657,7 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimale SOC",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "charge_from_grid_enable": {
@@ -663,7 +665,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Bovengrens SOC bij laden",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -672,19 +674,19 @@
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tijd Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "enable_time_period2": {
           "name": "Inschakelen Tijd Period 2",
@@ -692,19 +694,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tijd Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Optioneel. Tijd in de notatie HH:MM."
         }
       }
     },
@@ -731,7 +733,7 @@
       }
     },
     "self_use_mode": {
-      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "name": "A1-Hybrid-G2 eigen verbruik (dry-run)",
       "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -749,7 +751,7 @@
       }
     },
     "feed_in_priority": {
-      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "name": "A1-Hybrid-G2 terugleverprioriteit (dry-run)",
       "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -767,7 +769,7 @@
       }
     },
     "back_up_mode": {
-      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "name": "A1-Hybrid-G2 noodstroom (dry-run)",
       "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -784,11 +786,11 @@
         },
         "back_up_charge_start_time": {
           "name": "Back Up Charge Start Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "back_up_charge_end_time": {
           "name": "Back Up Charge End Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "business_type": {
           "name": "Bedrijfstype",
@@ -822,30 +824,30 @@
         },
         "demand_discharge_start_time1": {
           "name": "Demand Discharge Start Tijd 1",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "demand_discharge_end_time1": {
           "name": "Demand Discharge End Tijd 1",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "demand_discharge_start_time2": {
           "name": "Demand Discharge Start Tijd 2",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "demand_discharge_end_time2": {
           "name": "Demand Discharge End Tijd 2",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "charger_power_limit": {
           "name": "Charger Vermogen Limiet",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "demand_max_soc": {
-          "name": "Demand Max SOC",
+          "name": "Maximale SOC voor vraagsturing",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "reserve_soc": {
-          "name": "Reserve SOC",
+          "name": "Reserve-SOC",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -876,19 +878,19 @@
         },
         "const_power_charge_start_time": {
           "name": "Const Vermogen Charge Start Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "const_power_charge_end_time": {
           "name": "Const Vermogen Charge End Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "const_power_discharge_start_time": {
           "name": "Const Vermogen Discharge Start Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "const_power_discharge_end_time": {
           "name": "Const Vermogen Discharge End Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "business_type": {
           "name": "Bedrijfstype",
@@ -1017,7 +1019,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1043,7 +1045,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1053,7 +1055,7 @@
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "name": "VPP eigen verbruik met laden/ontladen (dry-run)",
       "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -1069,7 +1071,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1079,7 +1081,7 @@
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "name": "VPP eigen verbruik met alleen laden (dry-run)",
       "description": "Alleen Dry-Run. Valideert de payload en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -1095,7 +1097,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1129,7 +1131,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1167,7 +1169,7 @@
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Volgende actie",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1177,8 +1179,8 @@
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Laadscenario van EV-lader instellen",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1189,7 +1191,7 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "charger_scene": {
-          "name": "Charger Scene",
+          "name": "Laadscenario",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1197,18 +1199,18 @@
           "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
         },
         "ocpp_url": {
-          "name": "OCPP Url",
+          "name": "OCPP-URL",
           "description": "Optioneel. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
         },
         "ocpp_charger_id": {
-          "name": "OCPP Charger Id",
+          "name": "OCPP-lader-ID",
           "description": "Optioneel. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "QR-code van EV-lader instellen",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1219,7 +1221,7 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "qr_code": {
-          "name": "QR Code",
+          "name": "QR-code",
           "description": "Vereist. Tekstveld in de payload gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1229,8 +1231,8 @@
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Werkmodus van EV-lader instellen",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1255,8 +1257,8 @@
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Startmodus van EV-lader instellen",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1277,8 +1279,8 @@
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Laadopdracht van EV-lader instellen",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1289,7 +1291,7 @@
           "description": "Vereist. Apparaten-SN-lijst. Runtimevalidatie staat 1 tot 10 serienummers toe."
         },
         "work_cmd": {
-          "name": "Work Cmd",
+          "name": "Werkopdracht",
           "description": "Vereist. Integer payloadveld gebruikt voor Dry-Run-validatie."
         },
         "business_type": {
@@ -1299,8 +1301,8 @@
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Geplande lading van EV-lader",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1312,11 +1314,11 @@
         },
         "charge_start_time": {
           "name": "Charge Start Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "charge_end_time": {
           "name": "Charge End Tijd",
-          "description": "Required. HH:MM time value."
+          "description": "Verplicht. Tijd in de notatie HH:MM."
         },
         "charge_current": {
           "name": "Charge Stroom",
@@ -1329,8 +1331,8 @@
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Stroomlimiet van EV-lader",
+      "description": "Voert een echte opdracht voor de EV-lader uit als de bediening daarvan is ingeschakeld. Anders wordt de payload gevalideerd en als dry-run geblokkeerd.",
       "fields": {
         "entry_id": {
           "name": "Entry-ID",
@@ -1351,7 +1353,7 @@
       }
     },
     "set_battery_heating": {
-      "name": "Battery Heating Settings (Dry-Run)",
+      "name": "Instellingen voor accuverwarming (dry-run)",
       "description": "Alleen Dry-Run. Valideert batterijverwarmingsinstellingen en blokkeert schrijven.",
       "fields": {
         "entry_id": {
@@ -1360,31 +1362,31 @@
         },
         "sn_list": {
           "name": "Lijst met apparaatserienummers",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "description": "Verplicht. Lijst met apparaat-SN's, minimaal 1 en maximaal 10."
         },
         "heating_enable": {
           "name": "Heating Inschakelen",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "description": "Verplicht. 0 schakelt accuverwarming uit; 1 schakelt deze in."
         },
         "heating_level": {
-          "name": "Heating Level",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "name": "Verwarmingsniveau",
+          "description": "Verplicht wanneer ingeschakeld. Ondersteunde waarden zijn 0, 1 en 2."
         },
         "heating_period1_start_time": {
-          "name": "Heating Period 1 Start",
-          "description": "Required when enabled. HH:MM time value."
+          "name": "Begin van verwarmingsperiode 1",
+          "description": "Verplicht wanneer ingeschakeld. Tijd in de notatie HH:MM."
         },
         "heating_period1_end_time": {
-          "name": "Heating Period 1 End",
-          "description": "Required when enabled and must be later than period 1 start."
+          "name": "Einde van verwarmingsperiode 1",
+          "description": "Verplicht wanneer ingeschakeld en moet later zijn dan het begin van periode 1."
         },
         "heating_period2_start_time": {
-          "name": "Heating Period 2 Start",
-          "description": "Optional second heating period start. HH:MM time value."
+          "name": "Begin van verwarmingsperiode 2",
+          "description": "Optioneel begin van een tweede verwarmingsperiode. Tijd in de notatie HH:MM."
         },
         "heating_period2_end_time": {
-          "name": "Heating Period 2 End",
-          "description": "Required when period 2 start is supplied."
+          "name": "Einde van verwarmingsperiode 2",
+          "description": "Verplicht als het begin van periode 2 is opgegeven."
         },
         "business_type": {
           "name": "Bedrijfstype",
@@ -1402,146 +1404,146 @@
         },
         "device_type": {
           "name": "Apparaattype",
-          "description": "Required. Fixed value 100 for EMS System."
+          "description": "Verplicht. Vaste waarde 100 voor een EMS-systeem."
         },
         "business_type": {
           "name": "Bedrijfstype",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+          "description": "Verplicht. Vaste waarde 4 voor commerciële en industriële EMS-systemen."
         },
         "param_list": {
-          "name": "EMS Parameters",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+          "name": "EMS-parameters",
+          "description": "Verplicht. Lijst met 1 tot 10 EMS-objecten met registerNo, manualMode en voorwaardelijke power/targetSoc."
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "Alarmdoelen tonen",
+      "description": "Toon gevonden installaties en apparaten die via het alarmendpoint van de Developer API kunnen worden opgevraagd. Roept de SolaX API niet aan.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Entry-ID",
+          "description": "Optionele ID van de configuratievermelding. Als deze wordt weggelaten, worden alle geladen vermeldingen opgenomen."
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Alarminformatie ophalen",
+      "description": "Lees gepagineerde alarminformatie uit de Developer API. Alleen voor weergave; schrijft niet naar Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "name": "Installatie-ID",
+          "description": "Optionele installatie-ID die door list_alarm_targets is geretourneerd. Als deze wordt weggelaten, worden alle geladen installaties opgevraagd."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "Bedrijfstype",
+          "description": "Optioneel bedrijfstype voor gerichte installatieverzoeken. 1 residentieel, 4 commercieel en industrieel."
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "Alarmstatus",
+          "description": "Filter voor alarmstatus. Gebruik all, ongoing, closed, 1 of 0."
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "Apparaat-SN",
+          "description": "Optioneel filter voor het serienummer van een apparaat."
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "Maximumaantal pagina's",
+          "description": "Maximumaantal pagina's dat per installatie en alarmstatus wordt opgehaald, 1-100."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Verzoek-ID",
+          "description": "Optionele verzoek-ID die de meegeleverde kaarten gebruiken voor gecoördineerd annuleren."
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "Ophalen annuleren",
+      "description": "Vraag gecoördineerd annuleren aan voor het ophalen van geschiedenis, statistieken of alarmen vanuit een kaart.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Entry-ID",
+          "description": "Optionele configuratie-entry-ID."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "name": "Verzoek-ID",
+          "description": "De verzoek-ID die is aangemaakt door de ophaalactie van de kaart die moet worden geannuleerd."
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "No active {domain} entry for {entry_id}"
+      "message": "Geen actieve {domain}-vermelding voor {entry_id}"
     },
     "no_configured_entries": {
       "message": "Geen SolaX Developer API-items geconfigureerd"
     },
     "history_end_before_start": {
-      "message": "end_time must be greater than start_time"
+      "message": "end_time moet later zijn dan start_time"
     },
     "master_control_requires_ci": {
-      "message": "query_master_control_device supports business_type=4 only"
+      "message": "query_master_control_device ondersteunt alleen business_type=4"
     },
     "system_name_required": {
       "message": "Systeemnaam is vereist"
     },
     "control_unknown_service": {
-      "message": "{service}: unknown control service"
+      "message": "{service}: onbekende bedieningsservice"
     },
     "control_field_name_invalid": {
-      "message": "{service}: service fields must use snake_case names"
+      "message": "{service}: servicevelden moeten namen in snake_case gebruiken"
     },
     "control_missing_required_field": {
-      "message": "{service}: missing required field {field}"
+      "message": "{service}: verplicht veld {field} ontbreekt"
     },
     "control_field_must_be_int": {
-      "message": "{service}: field {field} must be int"
+      "message": "{service}: veld {field} moet een geheel getal zijn"
     },
     "control_field_type_mismatch": {
-      "message": "{service}: field {field} must be {expected_type}"
+      "message": "{service}: veld {field} moet van het type {expected_type} zijn"
     },
     "control_sn_list_empty": {
-      "message": "{service}: snList must contain at least one serial"
+      "message": "{service}: snList moet minimaal één serienummer bevatten"
     },
     "control_sn_list_too_long": {
-      "message": "{service}: snList supports max {max} serials"
+      "message": "{service}: snList ondersteunt maximaal {max} serienummers"
     },
     "control_business_type_invalid": {
-      "message": "{service}: businessType must be 1 or 4"
+      "message": "{service}: businessType moet 1 of 4 zijn"
     },
     "control_time_format_invalid": {
-      "message": "{service}: field {field} must use HH:MM format"
+      "message": "{service}: veld {field} moet de notatie HH:MM gebruiken"
     },
     "control_not_available": {
-      "message": "{service}: no compatible device capability is available in this integration"
+      "message": "{service}: er is geen compatibele apparaatfunctie beschikbaar in deze integratie"
     },
     "control_field_number_invalid": {
-      "message": "{service}: field {field} must be a finite number"
+      "message": "{service}: veld {field} moet een eindig getal zijn"
     },
     "control_field_value_invalid": {
-      "message": "{service}: field {field} has an unsupported value"
+      "message": "{service}: veld {field} heeft een niet-ondersteunde waarde"
     },
     "control_time_order_invalid": {
-      "message": "{service}: {end_field} must be later than {start_field}"
+      "message": "{service}: {end_field} moet later zijn dan {start_field}"
     },
     "control_ems_context_invalid": {
-      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+      "message": "{service}: EMS-bediening vereist deviceType 100 en businessType 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+      "message": "{service}: paramList moet 1 tot {max} EMS-systemen bevatten"
     },
     "control_param_list_item_invalid": {
-      "message": "{service}: paramList item {index} must be an object"
+      "message": "{service}: item {index} in paramList moet een object zijn"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "year moet tussen {min_year} en {max_year} liggen"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "month moet tussen {min_month} en {max_month} liggen"
     }
   }
 }

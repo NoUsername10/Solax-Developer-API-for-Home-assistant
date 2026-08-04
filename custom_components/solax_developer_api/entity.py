@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
-
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -15,9 +14,18 @@ from .const import (
     config_value,
 )
 from .i18n import translate
+from .runtime import SolaxConfigEntry
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .coordinator import SolaxDeveloperCoordinator
 
 
-def system_identity(hass: Any, entry: Any) -> tuple[str, str]:
+def system_identity(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+) -> tuple[str, str]:
     """Return the configured system name and stable entity prefix."""
     system_name = str(
         config_value(entry, CONF_SYSTEM_NAME, DEFAULT_SYSTEM_NAME) or ""
@@ -42,8 +50,8 @@ def system_identity(hass: Any, entry: Any) -> tuple[str, str]:
 
 
 def system_device_info(
-    hass: Any,
-    coordinator: Any,
+    hass: HomeAssistant,
+    coordinator: SolaxDeveloperCoordinator,
     system_name: str,
     system_slug: str,
 ) -> DeviceInfo:
@@ -78,14 +86,14 @@ def system_device_info(
     )
 
 
-class SolaxSystemCoordinatorEntity(CoordinatorEntity):
+class SolaxSystemCoordinatorEntity(CoordinatorEntity["SolaxDeveloperCoordinator"]):
     """Coordinator entity attached to the shared System Totals device."""
 
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: SolaxDeveloperCoordinator,
         *,
         system_name: str,
         system_slug: str,

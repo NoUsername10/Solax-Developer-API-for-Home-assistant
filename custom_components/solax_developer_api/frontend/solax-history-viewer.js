@@ -1,3 +1,10 @@
+import {
+  cardLanguage,
+  loadCardTranslations,
+  localizeCardMetadata,
+  translateCard,
+} from "./solax-card-i18n.js";
+
 class SolaxHistoryViewerCard extends HTMLElement {
   static MODE_DEVICE_HISTORY = "device_history";
   static MODE_PLANT_STATISTICS = "plant_statistics";
@@ -28,7 +35,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
     this._hass = undefined;
     this._connected = false;
     this._entryId = undefined;
-    this._name = "SolaX History";
+    this._name = undefined;
+    this._translations = {};
+    this._translationLanguage = undefined;
     this._mode = SolaxHistoryViewerCard.MODE_DEVICE_HISTORY;
     this._plantView = SolaxHistoryViewerCard.PLANT_VIEW_YEAR;
     this._defaultRangeHours = 6;
@@ -73,7 +82,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._clearMetadataRetry();
     }
     this._entryId = nextEntryId;
-    this._name = this._cleanString(cfg.name) || "SolaX History";
+    this._name = this._cleanString(cfg.name);
     this._defaultRangeHours = this._rangePresetForHours(
       this._toInt(cfg.default_range_hours, 6, 1, 168)
     ).hours;
@@ -88,6 +97,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
   set hass(hass) {
     const hadHass = Boolean(this._hass);
     this._hass = hass;
+    void this._loadTranslations();
     if (this._connected && !hadHass) {
       this._loadMetadata();
       this._render();
@@ -96,6 +106,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   connectedCallback() {
     this._connected = true;
+    void this._loadTranslations();
     this._loadMetadata();
     this._render();
   }
@@ -114,6 +125,45 @@ class SolaxHistoryViewerCard extends HTMLElement {
       columns: "full",
       min_columns: 6,
     };
+  }
+
+  async _loadTranslations() {
+    const language = cardLanguage(this._hass);
+    if (!this._hass || language === this._translationLanguage) return;
+    this._translationLanguage = language;
+    this._translations = await loadCardTranslations(this._hass);
+    localizeCardMetadata(
+      "solax-history-viewer",
+      this._translations,
+      "history",
+      "SolaX History Viewer",
+      "Get SolaX account history and statistics from your SolaX account."
+    );
+    if (this._connected) this._render();
+  }
+
+  _t(key, fallback, placeholders = {}) {
+    return translateCard(this._translations, `history.${key}`, fallback, placeholders);
+  }
+
+  _displayName() {
+    return this._name || this._t("title", "SolaX History");
+  }
+
+  _locale() {
+    return this._hass?.locale?.language || this._hass?.language || undefined;
+  }
+
+  _rangeLabel(preset) {
+    return this._t(`range_${preset.hours}`, preset.label);
+  }
+
+  _deviceTypeName(type) {
+    return this._t(
+      `device_type_${type}`,
+      SolaxHistoryViewerCard.DEVICE_TYPE_NAMES[type] || `Device ${type}`,
+      { type }
+    );
   }
 
   _cleanString(raw) {
@@ -218,9 +268,16 @@ class SolaxHistoryViewerCard extends HTMLElement {
       return undefined;
     }
     if (this._entryId) {
-      return `No loaded SolaX Developer API integration matches entry_id "${this._entryId}". Remove entry_id from the card or use the exact config entry id.`;
+      return this._t(
+        "entry_not_found",
+        'No loaded SolaX Developer API integration matches entry_id "{entry_id}". Remove entry_id from the card or use the exact config entry id.',
+        { entry_id: this._entryId }
+      );
     }
-    return "No loaded SolaX Developer API integration is available yet. The card will retry automatically.";
+    return this._t(
+      "integration_unavailable",
+      "No loaded SolaX Developer API integration is available yet. The card will retry automatically."
+    );
   }
 
   async _callService(service, payload) {
@@ -245,7 +302,10 @@ class SolaxHistoryViewerCard extends HTMLElement {
     );
     if (response === undefined) {
       throw new Error(
-        "Home Assistant did not return service response data. Update Home Assistant or reload the dashboard resource."
+        this._t(
+          "service_response_missing",
+          "Home Assistant did not return service response data. Update Home Assistant or reload the dashboard resource."
+        )
       );
     }
     return response;
@@ -389,13 +449,19 @@ class SolaxHistoryViewerCard extends HTMLElement {
     }
     const devices = this._selectedDevices();
     if (!devices.length) {
-      this._lastError = "Select at least one history-capable device first.";
+      this._lastError = this._t(
+        "select_device_first",
+        "Select at least one history-capable device first."
+      );
       this._render();
       return;
     }
     const groups = this._historyRequestGroups(devices);
     if (!groups.length) {
-      this._lastError = "Selected devices cannot be queried together.";
+      this._lastError = this._t(
+        "devices_incompatible",
+        "Selected devices cannot be queried together."
+      );
       this._render();
       return;
     }
@@ -438,7 +504,10 @@ class SolaxHistoryViewerCard extends HTMLElement {
       }
       this._lastResultMeta = {
         requestCount,
-        helper: `${range.label || this._rangePreset().label} at ${interval} min`,
+        helper: this._t("range_at_interval", "{range} at {interval} min", {
+          range: range.label || this._rangeLabel(this._rangePreset()),
+          interval,
+        }),
       };
       this._lastFetchAt = new Date();
       this._processHistoryRows(allRows, interval, range.start);
@@ -462,7 +531,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
   _relativeHistoryRange() {
     const end = Date.now();
     const start = end - this._rangeHours * 60 * 60 * 1000;
-    return { start, end, label: this._rangePreset().label };
+    return { start, end, label: this._rangeLabel(this._rangePreset()) };
   }
 
   _historyRequestGroups(devices) {
@@ -488,7 +557,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
     }
     const plant = this._selectedPlant();
     if (!plant) {
-      this._lastError = "Select a plant first.";
+      this._lastError = this._t("select_plant_first", "Select a plant first.");
       this._render();
       return;
     }
@@ -529,8 +598,12 @@ class SolaxHistoryViewerCard extends HTMLElement {
         requestCount: response?.api_calls_made,
         helper:
           this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH
-            ? `${response?.date || this._yearMonthText()}, daily`
-            : `${response?.year || this._selectedYear}, monthly`,
+            ? this._t("period_daily", "{period}, daily", {
+                period: response?.date || this._yearMonthText(),
+              })
+            : this._t("period_monthly", "{period}, monthly", {
+                period: response?.year || this._selectedYear,
+              }),
       };
       this._lastFetchAt = new Date();
       this._processPlantRows(rows);
@@ -585,7 +658,11 @@ class SolaxHistoryViewerCard extends HTMLElement {
     this._customHistoryRange = {
       start,
       end,
-      label: date.toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" }),
+      label: date.toLocaleDateString(this._locale(), {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
     };
     this._clearSeries();
     await this._fetchHistory({ range: this._customHistoryRange, interval: 15 });
@@ -911,7 +988,11 @@ class SolaxHistoryViewerCard extends HTMLElement {
     } else if (selected.size < this._maxSelectedFields) {
       selected.add(field);
     } else {
-      this._lastError = `Maximum ${this._maxSelectedFields} chart fields can be selected.`;
+      this._lastError = this._t(
+        "max_fields",
+        "Maximum {count} chart fields can be selected.",
+        { count: this._maxSelectedFields }
+      );
     }
     this._selectedFields = selected;
     this._render();
@@ -971,9 +1052,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _formatDateTime(timestamp) {
     if (!Number.isFinite(timestamp)) {
-      return "Unknown";
+      return this._t("unknown", "Unknown");
     }
-    return new Date(timestamp).toLocaleString();
+    return new Date(timestamp).toLocaleString(this._locale());
   }
 
   _formatAxisTime(timestamp) {
@@ -983,19 +1064,19 @@ class SolaxHistoryViewerCard extends HTMLElement {
     const date = new Date(timestamp);
     if (this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS) {
       if (this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH) {
-        return date.toLocaleDateString([], { day: "numeric", timeZone: "UTC" });
+        return date.toLocaleDateString(this._locale(), { day: "numeric", timeZone: "UTC" });
       }
-      return date.toLocaleDateString([], { month: "short", timeZone: "UTC" });
+      return date.toLocaleDateString(this._locale(), { month: "short", timeZone: "UTC" });
     }
     if (this._customHistoryRange || this._rangeHours > 24) {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+      return date.toLocaleDateString(this._locale(), { month: "short", day: "numeric" });
     }
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString(this._locale(), { hour: "2-digit", minute: "2-digit" });
   }
 
   _formatValue(value) {
     if (!Number.isFinite(value)) {
-      return "n/a";
+      return this._t("not_available", "n/a");
     }
     if (Math.abs(value) >= 1000) {
       return value.toFixed(0);
@@ -1008,18 +1089,18 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _formatTooltipTime(timestamp) {
     if (!Number.isFinite(timestamp)) {
-      return "Unknown";
+      return this._t("unknown", "Unknown");
     }
     const date = new Date(timestamp);
     if (this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS) {
       if (this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_YEAR) {
-        return date.toLocaleDateString([], {
+        return date.toLocaleDateString(this._locale(), {
           month: "long",
           year: "numeric",
           timeZone: "UTC",
         });
       }
-      return date.toLocaleDateString([], {
+      return date.toLocaleDateString(this._locale(), {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -1027,7 +1108,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
         timeZone: "UTC",
       });
     }
-    return date.toLocaleString([], {
+    return date.toLocaleString(this._locale(), {
       month: "short",
       day: "numeric",
       hour: "2-digit",
@@ -1146,7 +1227,11 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._chartModel = undefined;
       return `
         <div class="chart-empty">
-          ${this._rows.length ? "Select at least one field to draw the chart." : `Fetch ${this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS ? "statistics" : "history"} to draw the chart.`}
+          ${this._escape(this._rows.length
+            ? this._t("select_field_chart", "Select at least one field to draw the chart.")
+            : this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS
+              ? this._t("fetch_statistics_chart", "Fetch statistics to draw the chart.")
+              : this._t("fetch_history_chart", "Fetch history to draw the chart."))}
         </div>
       `;
     }
@@ -1167,7 +1252,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
     }
     if (!values.length) {
       this._chartModel = undefined;
-      return `<div class="chart-empty">Selected fields have no numeric values in this result.</div>`;
+      return `<div class="chart-empty">${this._escape(this._t("no_numeric_values", "Selected fields have no numeric values in this result."))}</div>`;
     }
     const { minY, maxY } = this._chartYDomain(values);
     const xScale = (timestamp) =>
@@ -1198,7 +1283,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
     return `
       <div class="chart-wrap" data-role="chart-wrap">
-        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="SolaX history chart" data-role="chart-svg">
+        <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${this._escape(this._t("chart_aria", "SolaX history chart"))}" data-role="chart-svg">
           <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${height - pad.bottom}" class="axis" />
           <line x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}" class="axis" />
           <line x1="${pad.left}" y1="${pad.top}" x2="${width - pad.right}" y2="${pad.top}" class="grid-line" />
@@ -1282,8 +1367,14 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _renderModeSwitch() {
     const modes = [
-      { id: SolaxHistoryViewerCard.MODE_DEVICE_HISTORY, label: "Device History" },
-      { id: SolaxHistoryViewerCard.MODE_PLANT_STATISTICS, label: "Plant Statistics" },
+      {
+        id: SolaxHistoryViewerCard.MODE_DEVICE_HISTORY,
+        label: this._t("device_history", "Device History"),
+      },
+      {
+        id: SolaxHistoryViewerCard.MODE_PLANT_STATISTICS,
+        label: this._t("plant_statistics", "Plant Statistics"),
+      },
     ];
     return `
       <div class="mode-switch" role="tablist">
@@ -1302,8 +1393,8 @@ class SolaxHistoryViewerCard extends HTMLElement {
 
   _renderPlantViewSwitch() {
     const views = [
-      { id: SolaxHistoryViewerCard.PLANT_VIEW_YEAR, label: "Year" },
-      { id: SolaxHistoryViewerCard.PLANT_VIEW_MONTH, label: "Month" },
+      { id: SolaxHistoryViewerCard.PLANT_VIEW_YEAR, label: this._t("year", "Year") },
+      { id: SolaxHistoryViewerCard.PLANT_VIEW_MONTH, label: this._t("month", "Month") },
     ];
     return `
       <div class="small-switch" role="tablist">
@@ -1323,19 +1414,19 @@ class SolaxHistoryViewerCard extends HTMLElement {
   _renderDeviceTypeOptions() {
     const types = this._deviceTypes();
     if (!types.length) {
-      return `<option value="">No devices</option>`;
+      return `<option value="">${this._escape(this._t("no_devices", "No devices"))}</option>`;
     }
     return types
       .map((type) => {
         const selected = Number(type) === Number(this._selectedDeviceType) ? "selected" : "";
-        return `<option value="${type}" ${selected}>${this._escape(SolaxHistoryViewerCard.DEVICE_TYPE_NAMES[type] || `Device ${type}`)}</option>`;
+        return `<option value="${type}" ${selected}>${this._escape(this._deviceTypeName(type))}</option>`;
       })
       .join("");
   }
 
   _renderPlantOptions() {
     if (!this._plants.length) {
-      return `<option value="">No plants found</option>`;
+      return `<option value="">${this._escape(this._t("no_plants", "No plants found"))}</option>`;
     }
     return this._plants
       .map((plant) => {
@@ -1355,7 +1446,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
   }
 
   _renderMonthOptions() {
-    const formatter = new Intl.DateTimeFormat(undefined, { month: "long" });
+    const formatter = new Intl.DateTimeFormat(this._locale(), { month: "long" });
     const maxMonth = this._selectedYear === this._currentYear() ? new Date().getMonth() + 1 : 12;
     return Array.from({ length: maxMonth }, (_, index) => index + 1)
       .map((month) => {
@@ -1368,13 +1459,13 @@ class SolaxHistoryViewerCard extends HTMLElement {
   _renderDeviceSelector() {
     const devices = this._familyDevices();
     if (!devices.length) {
-      return `<div class="chips-empty compact">No devices in this family.</div>`;
+      return `<div class="chips-empty compact">${this._escape(this._t("no_family_devices", "No devices in this family."))}</div>`;
     }
     return `
       <div class="device-actions">
-        <button type="button" class="mini-action" id="select-all-devices">Select all</button>
-        <button type="button" class="mini-action" id="select-no-devices">Clear</button>
-        <span>${this._selectedDevices().length} selected</span>
+        <button type="button" class="mini-action" id="select-all-devices">${this._escape(this._t("select_all", "Select all"))}</button>
+        <button type="button" class="mini-action" id="select-no-devices">${this._escape(this._t("clear", "Clear"))}</button>
+        <span>${this._escape(this._t("selected_count", "{count} selected", { count: this._selectedDevices().length }))}</span>
       </div>
       <div class="device-chips">
         ${devices
@@ -1384,7 +1475,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
             return `
               <button type="button" class="device-chip ${selected ? "selected" : ""}" data-device-key="${this._escape(key)}">
                 <span>${this._escape(device.label)}</span>
-                <small>${this._escape(device.source || "inventory")}</small>
+                <small>${this._escape(device.source || this._t("inventory", "inventory"))}</small>
               </button>
             `;
           })
@@ -1397,7 +1488,9 @@ class SolaxHistoryViewerCard extends HTMLElement {
     if (!this._fields.length) {
       return `
         <div class="chips-empty">
-          Fetch ${this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS ? "statistics" : "history"} first. Available chart fields are built from the returned API rows.
+          ${this._escape(this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS
+            ? this._t("fetch_statistics_fields", "Fetch statistics first. Available chart fields are built from the returned API rows.")
+            : this._t("fetch_history_fields", "Fetch history first. Available chart fields are built from the returned API rows."))}
         </div>
       `;
     }
@@ -1422,19 +1515,19 @@ class SolaxHistoryViewerCard extends HTMLElement {
     return `
       <div class="scale-panel">
         <div>
-          <div class="field-title">Chart Scale</div>
+          <div class="field-title">${this._escape(this._t("chart_scale", "Chart Scale"))}</div>
           <div class="scale-helper">
             ${autoZoom
-              ? "Auto zoom uses the selected data range so stable values like grid frequency show small changes."
-              : "Zero baseline keeps power and energy graphs anchored to 0."}
+              ? this._escape(this._t("auto_zoom_help", "Auto zoom uses the selected data range so stable values like grid frequency show small changes."))
+              : this._escape(this._t("zero_baseline_help", "Zero baseline keeps power and energy graphs anchored to 0."))}
           </div>
         </div>
-        <div class="scale-buttons" role="group" aria-label="Chart scale">
+        <div class="scale-buttons" role="group" aria-label="${this._escape(this._t("chart_scale", "Chart Scale"))}">
           <button type="button" class="scale-button ${!autoZoom ? "active" : ""}" data-scale="${SolaxHistoryViewerCard.CHART_SCALE_ZERO}">
-            Zero baseline
+            ${this._escape(this._t("zero_baseline", "Zero baseline"))}
           </button>
           <button type="button" class="scale-button ${autoZoom ? "active" : ""}" data-scale="${SolaxHistoryViewerCard.CHART_SCALE_AUTO}">
-            Auto zoom
+            ${this._escape(this._t("auto_zoom", "Auto zoom"))}
           </button>
         </div>
       </div>
@@ -1449,14 +1542,14 @@ class SolaxHistoryViewerCard extends HTMLElement {
     for (const row of this._rows) {
       const date = new Date(row.timestamp);
       const start = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-      days.set(start, date.toLocaleDateString([], { month: "short", day: "numeric" }));
+      days.set(start, date.toLocaleDateString(this._locale(), { month: "short", day: "numeric" }));
     }
     if (days.size <= 1) {
       return "";
     }
     return `
       <div class="day-panel">
-        <div class="field-title">Day Drilldown</div>
+        <div class="field-title">${this._escape(this._t("day_drilldown", "Day Drilldown"))}</div>
         <div class="chips">
           ${Array.from(days.entries())
             .map(
@@ -1475,40 +1568,40 @@ class SolaxHistoryViewerCard extends HTMLElement {
     if (this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS) {
       return `
         <div class="controls plant-controls">
-          <label>View
+          <label>${this._escape(this._t("view", "View"))}
             ${this._renderPlantViewSwitch()}
           </label>
-          <label>Plant
+          <label>${this._escape(this._t("plant", "Plant"))}
             <select id="plant" ${this._loadingPlants || !this._plants.length ? "disabled" : ""}>
               ${this._renderPlantOptions()}
             </select>
           </label>
-          <label>Year
+          <label>${this._escape(this._t("year", "Year"))}
             <select id="year">${this._renderYearOptions()}</select>
           </label>
-          <label class="${this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? "" : "hidden"}">Month
+          <label class="${this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? "" : "hidden"}">${this._escape(this._t("month", "Month"))}
             <select id="month">${this._renderMonthOptions()}</select>
           </label>
-          <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !selectedPlant ? "disabled" : ""}>${this._fetching ? "Cancel Fetch" : "Fetch Statistics"}</button>
+          <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !selectedPlant ? "disabled" : ""}>${this._escape(this._fetching ? this._t("cancel_fetch", "Cancel Fetch") : this._t("fetch_statistics", "Fetch Statistics"))}</button>
         </div>
       `;
     }
     return `
       <div class="controls history-controls">
-        <label>Device Family
+        <label>${this._escape(this._t("device_family", "Device Family"))}
           <select id="device-type" ${this._loadingDevices || !this._devices.length ? "disabled" : ""}>
             ${this._renderDeviceTypeOptions()}
           </select>
         </label>
-        <label>Range
+        <label>${this._escape(this._t("range", "Range"))}
           <select id="range">
-            ${SolaxHistoryViewerCard.RANGE_PRESETS.map((preset) => `<option value="${preset.hours}" ${preset.hours === this._rangeHours ? "selected" : ""}>${this._escape(preset.label)}</option>`).join("")}
+            ${SolaxHistoryViewerCard.RANGE_PRESETS.map((preset) => `<option value="${preset.hours}" ${preset.hours === this._rangeHours ? "selected" : ""}>${this._escape(this._rangeLabel(preset))}</option>`).join("")}
           </select>
         </label>
-        <label>Resolution
+        <label>${this._escape(this._t("resolution", "Resolution"))}
           <div class="readonly-control">${this._recommendedInterval(this._rangeHours)} min</div>
         </label>
-        <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !this._selectedDevices().length ? "disabled" : ""}>${this._fetching ? "Cancel Fetch" : "Fetch History"}</button>
+        <button type="button" class="fetch ${this._fetching ? "cancel" : ""}" id="fetch" ${!this._fetching && !this._selectedDevices().length ? "disabled" : ""}>${this._escape(this._fetching ? this._t("cancel_fetch", "Cancel Fetch") : this._t("fetch_history", "Fetch History"))}</button>
       </div>
       <div class="device-panel">${this._renderDeviceSelector()}</div>
     `;
@@ -1521,20 +1614,20 @@ class SolaxHistoryViewerCard extends HTMLElement {
       const periodLabel = this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? this._yearMonthText() : String(this._selectedYear);
       return `
         <div class="metrics">
-          ${this._renderMetric("Plant", selectedPlant?.label || "None", selectedPlant ? `business ${selectedPlant.business_type}` : "Select a plant")}
-          ${this._renderMetric(this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? "Days" : "Months", String(this._rows.length), requests ? `${requests} API request(s)` : "No fetch yet")}
-          ${this._renderMetric("Fields", String(this._fields.length), `${this._selectedFields.size} selected`)}
-          ${this._renderMetric("Last Fetch", this._lastFetchAt ? this._formatDateTime(this._lastFetchAt.getTime()) : "Never", this._lastResultMeta?.helper || periodLabel)}
+          ${this._renderMetric(this._t("plant", "Plant"), selectedPlant?.label || this._t("none", "None"), selectedPlant ? this._t("business_type", "business {type}", { type: selectedPlant.business_type }) : this._t("select_plant", "Select a plant"))}
+          ${this._renderMetric(this._plantView === SolaxHistoryViewerCard.PLANT_VIEW_MONTH ? this._t("days", "Days") : this._t("months", "Months"), String(this._rows.length), requests ? this._t("api_requests", "{count} API request(s)", { count: requests }) : this._t("no_fetch_yet", "No fetch yet"))}
+          ${this._renderMetric(this._t("fields", "Fields"), String(this._fields.length), this._t("selected_count", "{count} selected", { count: this._selectedFields.size }))}
+          ${this._renderMetric(this._t("last_fetch", "Last Fetch"), this._lastFetchAt ? this._formatDateTime(this._lastFetchAt.getTime()) : this._t("never", "Never"), this._lastResultMeta?.helper || periodLabel)}
         </div>
       `;
     }
     const devices = this._selectedDevices();
     return `
       <div class="metrics">
-        ${this._renderMetric("Devices", String(devices.length), devices.length ? `${SolaxHistoryViewerCard.DEVICE_TYPE_NAMES[this._selectedDeviceType] || "Device"} selected` : "Select devices")}
-        ${this._renderMetric("Rows", String(this._rows.length), requests ? `${requests} API request(s)` : `~${this._estimatedRequestCount()} request(s)`)}
-        ${this._renderMetric("Fields", String(this._fields.length), `${this._selectedFields.size} selected`)}
-        ${this._renderMetric("Last Fetch", this._lastFetchAt ? this._formatDateTime(this._lastFetchAt.getTime()) : "Never", this._lastResultMeta?.helper || `${this._rangePreset().label} at ${this._recommendedInterval(this._rangeHours)} min`)}
+        ${this._renderMetric(this._t("devices", "Devices"), String(devices.length), devices.length ? this._t("device_type_selected", "{type} selected", { type: this._deviceTypeName(this._selectedDeviceType) }) : this._t("select_devices", "Select devices"))}
+        ${this._renderMetric(this._t("rows", "Rows"), String(this._rows.length), requests ? this._t("api_requests", "{count} API request(s)", { count: requests }) : this._t("estimated_requests", "~{count} request(s)", { count: this._estimatedRequestCount() }))}
+        ${this._renderMetric(this._t("fields", "Fields"), String(this._fields.length), this._t("selected_count", "{count} selected", { count: this._selectedFields.size }))}
+        ${this._renderMetric(this._t("last_fetch", "Last Fetch"), this._lastFetchAt ? this._formatDateTime(this._lastFetchAt.getTime()) : this._t("never", "Never"), this._lastResultMeta?.helper || this._t("range_at_interval", "{range} at {interval} min", { range: this._rangeLabel(this._rangePreset()), interval: this._recommendedInterval(this._rangeHours) }))}
       </div>
     `;
   }
@@ -1547,7 +1640,13 @@ class SolaxHistoryViewerCard extends HTMLElement {
       this._updateDynamicContent();
       return;
     }
-    const statusText = this._lastError ? "Error" : this._fetching ? "Fetching" : this._rows.length ? "Ready" : "Idle";
+    const statusText = this._lastError
+      ? this._t("status_error", "Error")
+      : this._fetching
+        ? this._t("status_fetching", "Fetching")
+        : this._rows.length
+          ? this._t("status_ready", "Ready")
+          : this._t("status_idle", "Idle");
     const statusClass = this._lastError ? "error" : this._fetching ? "starting" : this._rows.length ? "active" : "idle";
     this.shadowRoot.innerHTML = `
       <style>
@@ -1813,8 +1912,8 @@ class SolaxHistoryViewerCard extends HTMLElement {
             <div class="brand">
               <div class="icon-wrap"><ha-icon icon="mdi:chart-line"></ha-icon></div>
               <div>
-                <h2 class="title" data-role="title">${this._escape(this._name)}</h2>
-                <div class="subtitle">Get SolaX account history and statistics from your SolaX account.</div>
+                <h2 class="title" data-role="title">${this._escape(this._displayName())}</h2>
+                <div class="subtitle" data-role="subtitle">${this._escape(this._t("subtitle", "Get SolaX account history and statistics from your SolaX account."))}</div>
               </div>
             </div>
             <div class="status ${statusClass}" data-role="status">
@@ -1829,7 +1928,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
           <div data-section="days">${this._renderDayDrilldowns()}</div>
 
           <div class="field-panel">
-            <div class="field-title">Available Fields</div>
+            <div class="field-title">${this._escape(this._t("available_fields", "Available Fields"))}</div>
             <div class="chips" data-section="chips">${this._renderFieldChips()}</div>
           </div>
 
@@ -1878,11 +1977,24 @@ class SolaxHistoryViewerCard extends HTMLElement {
   }
 
   _updateDynamicContentUnsafe() {
-    const statusText = this._lastError ? "Error" : this._fetching ? "Fetching" : this._rows.length ? "Ready" : "Idle";
+    const statusText = this._lastError
+      ? this._t("status_error", "Error")
+      : this._fetching
+        ? this._t("status_fetching", "Fetching")
+        : this._rows.length
+          ? this._t("status_ready", "Ready")
+          : this._t("status_idle", "Idle");
     const statusClass = this._lastError ? "error" : this._fetching ? "starting" : this._rows.length ? "active" : "idle";
     const title = this.shadowRoot.querySelector('[data-role="title"]');
     if (title) {
-      title.textContent = this._name;
+      title.textContent = this._displayName();
+    }
+    const subtitle = this.shadowRoot.querySelector('[data-role="subtitle"]');
+    if (subtitle) {
+      subtitle.textContent = this._t(
+        "subtitle",
+        "Get SolaX account history and statistics from your SolaX account."
+      );
     }
     const status = this.shadowRoot.querySelector('[data-role="status"]');
     if (status) {
@@ -1953,7 +2065,7 @@ class SolaxHistoryViewerCard extends HTMLElement {
       `
         )
         .join("")}
-      ${this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS ? `<div class="tooltip-hint">Click to drill down</div>` : ""}
+      ${this._mode === SolaxHistoryViewerCard.MODE_PLANT_STATISTICS ? `<div class="tooltip-hint">${this._escape(this._t("click_drilldown", "Click to drill down"))}</div>` : ""}
     `;
     tooltip.style.display = "block";
     const wrapRect = wrap.getBoundingClientRect();

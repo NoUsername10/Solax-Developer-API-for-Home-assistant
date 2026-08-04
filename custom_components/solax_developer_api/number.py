@@ -2,22 +2,33 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
 from homeassistant.const import UnitOfElectricCurrent
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .coordinator import SolaxDeveloperCoordinator
 from .entity import system_identity
 from .ev_charger import SolaxEVChargerEntity, ev_charger_devices
+from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     _system_name, system_slug = system_identity(hass, entry)
     seen: set[tuple[str, str]] = set()
 
-    def _build_entities():
-        new_entities = []
+    def _build_entities() -> list[NumberEntity]:
+        new_entities: list[NumberEntity] = []
         for device in ev_charger_devices(coordinator):
             device_sn = str(device.get("deviceSn") or "")
             for cls in (SolaxEVCurrentLimitNumber, SolaxEVReserveCurrentNumber):
@@ -57,7 +68,13 @@ class SolaxEVCurrentLimitNumber(SolaxEVChargerEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "number")
 
     @property
@@ -68,6 +85,8 @@ class SolaxEVCurrentLimitNumber(SolaxEVChargerEntity, NumberEntity):
             self._device_sn,
         ) or {}
         value = payload.get("currentLimit")
+        if value is None:
+            return None
         try:
             return float(value)
         except (TypeError, ValueError):
@@ -93,7 +112,13 @@ class SolaxEVReserveCurrentNumber(SolaxEVChargerEntity, NumberEntity):
     _attr_mode = NumberMode.BOX
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
 
-    def __init__(self, *, coordinator, system_slug: str, device) -> None:
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        device: Mapping[str, Any],
+    ) -> None:
         super().__init__(coordinator, system_slug, device, self.FIELD_SLUG, "number")
         self._ev_gui_state.setdefault("reserve_current", 16)
 

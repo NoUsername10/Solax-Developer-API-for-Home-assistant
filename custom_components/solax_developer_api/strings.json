@@ -143,12 +143,14 @@
         "data": {
           "rate_limit_notifications": "Rate Limit Notifications",
           "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "alarm_notifications": "Alarm Notifications",
+          "alarm_scan_interval": "Alarm Polling Interval"
         },
         "data_description": {
           "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
           "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms.",
+          "alarm_scan_interval": "How often to check SolaX for active alarms, in seconds."
         }
       }
     },

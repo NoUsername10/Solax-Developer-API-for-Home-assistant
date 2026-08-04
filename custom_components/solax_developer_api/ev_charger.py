@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -20,6 +21,7 @@ from .const import (
 )
 from .i18n import translate
 from .validation import ControlValidationError, validate_control_payload
+from .coordinator import SolaxDeveloperCoordinator
 
 EV_CHARGER_DEVICE_TYPE = 4
 
@@ -59,7 +61,9 @@ CONTROL_VALUE_ERROR_FALLBACKS = {
 }
 
 
-def ev_charger_devices(coordinator: Any) -> list[dict[str, Any]]:
+def ev_charger_devices(
+    coordinator: SolaxDeveloperCoordinator,
+) -> list[dict[str, Any]]:
     """Return discovered EV chargers from coordinator state."""
     devices: list[dict[str, Any]] = []
     for serial, payload in (coordinator.data.get("devices") or {}).items():
@@ -93,7 +97,7 @@ def ev_control_unique_suffix(field_slug: str, device_sn: str) -> str:
     return f"{field_slug}_device_{slugify(device_sn)}"
 
 
-def _device_type_text(hass: Any, value: Any) -> str:
+def _device_type_text(hass: HomeAssistant, value: Any) -> str:
     try:
         device_type = int(value)
     except (TypeError, ValueError):
@@ -110,16 +114,16 @@ def _device_type_text(hass: Any, value: Any) -> str:
 
 
 def _device_model_text(
-    hass: Any,
+    hass: HomeAssistant,
     value: Any,
     *,
     business_type: Any = None,
     device_type: Any = None,
-) -> Any:
+) -> str:
     try:
         model_id = int(value)
     except (TypeError, ValueError):
-        return value
+        return str(value or "")
     try:
         context_key = (int(business_type), int(device_type), model_id)
     except (TypeError, ValueError):
@@ -140,7 +144,7 @@ def _device_model_text(
 
 
 def _runtime_error(
-    hass: Any,
+    hass: HomeAssistant,
     key: str,
     *,
     placeholders: dict[str, Any] | None = None,
@@ -154,14 +158,14 @@ def _runtime_error(
     )
 
 
-class SolaxEVChargerEntity(CoordinatorEntity):
+class SolaxEVChargerEntity(CoordinatorEntity[SolaxDeveloperCoordinator]):
     """Base class for entities attached to a discovered EV charger."""
 
     _attr_has_entity_name = True
 
     def __init__(
         self,
-        coordinator: Any,
+        coordinator: SolaxDeveloperCoordinator,
         system_slug: str,
         device: Mapping[str, Any],
         field_slug: str,
@@ -222,14 +226,19 @@ class SolaxEVChargerEntity(CoordinatorEntity):
 
     @property
     def _ev_gui_state(self) -> dict[str, Any]:
-        state = getattr(self.coordinator, "_ev_charger_gui_state", None)
-        if not isinstance(state, dict):
-            state = {}
-            setattr(self.coordinator, "_ev_charger_gui_state", state)
-        device_state = state.setdefault(self._device_sn, {})
-        if not isinstance(device_state, dict):
-            device_state = {}
+        raw_state: object = getattr(self.coordinator, "_ev_charger_gui_state", None)
+        if not isinstance(raw_state, dict):
+            state: dict[str, Any] = {}
+            self.coordinator._ev_charger_gui_state = state
+        else:
+            state = raw_state
+
+        raw_device_state: object = state.get(self._device_sn)
+        if not isinstance(raw_device_state, dict):
+            device_state: dict[str, Any] = {}
             state[self._device_sn] = device_state
+        else:
+            device_state = raw_device_state
         return device_state
 
     def _payload_base(self) -> dict[str, Any]:
@@ -305,7 +314,7 @@ class SolaxEVChargerEntity(CoordinatorEntity):
                 )
             ) from err
 
-        if not bool(event.get("accepted")):
+        if not bool(event.get("accepted")) or bool(event.get("command_failed")):
             statuses = event.get("device_statuses") or {}
             status_text = ", ".join(
                 f"{serial}: {item.get('status_name') or item.get('status')}"
@@ -315,13 +324,20 @@ class SolaxEVChargerEntity(CoordinatorEntity):
             raise HomeAssistantError(
                 _runtime_error(
                     self.coordinator.hass,
-                    "ev_charger_command_not_accepted",
+                    (
+                        "ev_charger_command_failed"
+                        if event.get("command_failed")
+                        else "ev_charger_command_not_accepted"
+                    ),
                     placeholders={
                         "service": service,
                         "statuses": status_text or "unknown",
                     },
                     fallback=(
-                        "{service}: SolaX did not accept the EV charger command "
+                        "{service}: SolaX reported an EV charger command failure "
+                        "({statuses})"
+                        if event.get("command_failed")
+                        else "{service}: SolaX did not accept the EV charger command "
                         "({statuses})"
                     ),
                 )
@@ -331,7 +347,12 @@ class SolaxEVChargerEntity(CoordinatorEntity):
         return event
 
 
-def translated_option(hass: Any, group: str, key: str, fallback: str) -> str:
+def translated_option(
+    hass: HomeAssistant,
+    group: str,
+    key: str,
+    fallback: str,
+) -> str:
     """Translate an EV charger select option."""
     return translate(
         hass,

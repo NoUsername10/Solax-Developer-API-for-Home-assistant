@@ -13,8 +13,8 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Klient-ID fra applikasjonen i SolaX Developer Portal.",
+          "client_secret": "Klienthemmelighet fra den samme applikasjonen i Developer Portal.",
           "system_name": "Systemnavn",
           "scan_interval": "Pollingintervall (sekunder)",
           "api_region": "API-region"
@@ -29,8 +29,8 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID for the existing SolaX Developer API application.",
-          "client_secret": "Current Client Secret for the application.",
+          "client_id": "Klient-ID for den eksisterende SolaX Developer API-applikasjonen.",
+          "client_secret": "Gjeldende klienthemmelighet for applikasjonen.",
           "api_region": "API-region"
         }
       },
@@ -44,27 +44,27 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID to use after reconfiguration.",
-          "client_secret": "Client Secret to use after reconfiguration.",
+          "client_id": "Klient-ID som skal brukes etter omkonfigurering.",
+          "client_secret": "Klienthemmelighet som skal brukes etter omkonfigurering.",
           "system_name": "Systemnavn",
           "api_region": "API-region"
         }
       }
     },
     "abort": {
-      "already_configured": "Integration is already configured",
-      "invalid_credentials": "Invalid credentials",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "reauth_successful": "SolaX Developer API was reconnected successfully",
-      "reconfigure_successful": "SolaX Developer API was reconfigured successfully"
+      "already_configured": "Integrasjonen er allerede konfigurert",
+      "invalid_credentials": "Ugyldig påloggingsinformasjon",
+      "cannot_connect": "Kan ikke koble til SolaX Developer API",
+      "cannot_read_data": "Påloggingsinformasjonen er gyldig, men ingen lesbare anleggsdata ble returnert",
+      "reauth_successful": "Tilkoblingen til SolaX Developer API ble gjenopprettet",
+      "reconfigure_successful": "SolaX Developer API ble konfigurert på nytt"
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned"
+      "invalid_credentials": "Ugyldig påloggingsinformasjon",
+      "invalid_system_name": "Systemnavn er påkrevd",
+      "invalid_region": "Ugyldig region",
+      "cannot_connect": "Kan ikke koble til SolaX Developer API",
+      "cannot_read_data": "Påloggingsinformasjonen er gyldig, men ingen lesbare anleggsdata ble returnert"
     }
   },
   "options": {
@@ -81,7 +81,7 @@
       },
       "credentials": {
         "title": "Innloggingsdetaljer & System",
-        "description": "Update the Developer API account, region, and Home Assistant system name.",
+        "description": "Oppdater Developer API-kontoen, regionen og systemnavnet i Home Assistant.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -89,8 +89,8 @@
           "api_region": "API-region"
         },
         "data_description": {
-          "client_id": "Client ID from your SolaX Developer Portal application.",
-          "client_secret": "Client Secret from the same Developer Portal application.",
+          "client_id": "Klient-ID fra applikasjonen i SolaX Developer Portal.",
+          "client_secret": "Klienthemmelighet fra den samme applikasjonen i Developer Portal.",
           "system_name": "Systemnavn",
           "api_region": "API-region"
         }
@@ -100,84 +100,86 @@
         "description": "Konfigurer standardpolling, midlertidig Live View-polling og nattprofilen.",
         "data": {
           "scan_interval": "Pollingintervall (sekunder)",
-          "live_view_default_duration": "Live View Default Duration (seconds)",
-          "live_view_interval": "Live View Target Interval (seconds)",
-          "live_view_call_budget_per_minute": "Live View Call Budget (calls/min)",
-          "night_scan_interval": "Night Scan Interval (seconds)",
+          "live_view_default_duration": "Standard varighet for Live View (sekunder)",
+          "live_view_interval": "Ønsket intervall for Live View (sekunder)",
+          "live_view_call_budget_per_minute": "Kallbudsjett for Live View (kall/min)",
+          "night_scan_interval": "Avspørringsintervall om natten (sekunder)",
           "night_start_hour": "Natt Modus Start Hour (0-23)",
           "night_end_hour": "Natt Modus End Hour (0-23)"
         },
         "data_description": {
           "scan_interval": "Pollingintervall (sekunder)",
-          "live_view_default_duration": "How long Live View remains active when no duration override is supplied.",
-          "live_view_interval": "Requested Live View polling interval. The effective interval may be increased to protect the API budget.",
-          "live_view_call_budget_per_minute": "Maximum API calls per minute reserved for Live View.",
-          "night_scan_interval": "Polling interval used during the configured night period.",
-          "night_start_hour": "Local hour when night polling starts.",
-          "night_end_hour": "Local hour when night polling ends."
+          "live_view_default_duration": "Hvor lenge Live View forblir aktiv når ingen annen varighet er angitt.",
+          "live_view_interval": "Ønsket avspørringsintervall for Live View. Det faktiske intervallet kan økes for å beskytte API-budsjettet.",
+          "live_view_call_budget_per_minute": "Maksimalt antall API-kall per minutt reservert for Live View.",
+          "night_scan_interval": "Avspørringsintervallet som brukes i den konfigurerte nattperioden.",
+          "night_start_hour": "Lokalt klokkeslett når nattavspørring starter.",
+          "night_end_hour": "Lokalt klokkeslett når nattavspørring slutter."
         }
       },
       "manual_devices": {
         "title": "Manuell enheter",
         "description": "Legg til enheter kontoen kan lese, men som inventar-endepunktene ikke returnerer. Hver enhet verifiseres før den lagres.",
         "data": {
-          "manual_meter_serials_add": "Add Manual Meter Serials (one per line, optional |businessType)",
+          "manual_meter_serials_add": "Legg til målerserienumre manuelt (ett per linje, valgfritt |businessType)",
           "manual_meter_remove_serial": "Manuell måler som skal fjernes",
           "manual_meter_remove_confirm": "Fjern valgt manuell måler",
-          "manual_ems_systems_add": "Add Manual EMS Systems (EMS serial|plant ID, one per line)",
+          "manual_ems_systems_add": "Legg til EMS-systemer manuelt (EMS-serienummer|anleggs-ID, ett per linje)",
           "manual_ems_remove_serial": "Manuelt EMS-system som skal fjernes",
           "manual_ems_remove_confirm": "Fjern valgt manuelt EMS-system"
         },
         "data_description": {
-          "manual_meter_serials_add": "Enter one accessible meter serial per line. Add |1 or |4 only when a business type must be forced.",
+          "manual_meter_serials_add": "Skriv inn ett tilgjengelig målerserienummer per linje. Legg bare til |1 eller |4 når virksomhetstypen må overstyres.",
           "manual_meter_remove_serial": "Manuell måler som skal fjernes",
           "manual_meter_remove_confirm": "Fjern valgt manuell måler",
-          "manual_ems_systems_add": "Enter one EMS serial and plant ID per line as SERIAL|PLANT_ID.",
+          "manual_ems_systems_add": "Skriv inn ett EMS-serienummer og én anleggs-ID per linje som SERIAL|PLANT_ID.",
           "manual_ems_remove_serial": "Manuelt EMS-system som skal fjernes",
           "manual_ems_remove_confirm": "Fjern valgt manuelt EMS-system"
         }
       },
       "advanced": {
         "title": "Avansert & diagnostikk",
-        "description": "Configure diagnostic notifications and advanced integration behavior.",
+        "description": "Konfigurer diagnostikkvarsler og avansert integrasjonsatferd.",
         "data": {
           "rate_limit_notifications": "Rate limit Varsler",
-          "ev_charger_controls_enabled": "EV Charger Controls",
-          "alarm_notifications": "Alarm Notifications"
+          "ev_charger_controls_enabled": "Styring av EV-lader",
+          "alarm_notifications": "Alarmvarsler",
+          "alarm_scan_interval": "Intervall for alarmkontroll"
         },
         "data_description": {
-          "rate_limit_notifications": "Show Home Assistant notifications when SolaX reports a rate or quota limit.",
-          "ev_charger_controls_enabled": "Allow real write requests for EV charger control services only. When disabled, EV charger services stay dry-run blocked like the other control services.",
-          "alarm_notifications": "Show Home Assistant persistent notifications when SolaX reports active alarms."
+          "rate_limit_notifications": "Vis Home Assistant-varsler når SolaX rapporterer en frekvens- eller kvotegrense.",
+          "ev_charger_controls_enabled": "Tillat reelle skriveforespørsler bare for styringstjenester for EV-ladere. Når dette er deaktivert, forblir EV-ladertjenestene blokkert som dry-run, på samme måte som de andre styringstjenestene.",
+          "alarm_notifications": "Vis vedvarende Home Assistant-varsler når SolaX rapporterer aktive alarmer.",
+          "alarm_scan_interval": "Hvor ofte SolaX skal kontrolleres for aktive alarmer, i sekunder."
         }
       }
     },
     "error": {
-      "invalid_credentials": "Invalid credentials",
-      "invalid_system_name": "System name is required",
-      "invalid_region": "Invalid region",
-      "cannot_connect": "Cannot connect to SolaX Developer API",
-      "cannot_read_data": "Credentials are valid but no readable plant data was returned",
-      "invalid_manual_meter_serials": "Invalid manual meter serial format. Use one serial per line, optionally SERIAL|1 or SERIAL|4.",
-      "manual_meter_serial_validation_failed": "Manual meter serial validation failed. Meter realtime data could not be verified.",
-      "manual_meter_serial_validation_unavailable": "Manual meter validation is unavailable until the integration is fully loaded.",
-      "manual_meter_remove_target_required": "Select a manual meter before using remove.",
-      "manual_meter_remove_target_missing": "Selected manual meter was not found in current settings.",
-      "invalid_manual_ems_systems": "Invalid manual EMS format. Use one EMS serial and plant ID per line: SERIAL|PLANT_ID.",
-      "manual_ems_validation_failed": "Manual EMS validation failed. The EMS attribute endpoint did not verify this serial and plant.",
-      "manual_ems_validation_unavailable": "Manual EMS validation is unavailable until the integration is fully loaded.",
-      "manual_ems_remove_target_required": "Select a manual EMS system before using remove.",
-      "manual_ems_remove_target_missing": "Selected manual EMS system was not found in current settings."
+      "invalid_credentials": "Ugyldig påloggingsinformasjon",
+      "invalid_system_name": "Systemnavn er påkrevd",
+      "invalid_region": "Ugyldig region",
+      "cannot_connect": "Kan ikke koble til SolaX Developer API",
+      "cannot_read_data": "Påloggingsinformasjonen er gyldig, men ingen lesbare anleggsdata ble returnert",
+      "invalid_manual_meter_serials": "Ugyldig format for manuelt målerserienummer. Bruk ett serienummer per linje, eventuelt SERIAL|1 eller SERIAL|4.",
+      "manual_meter_serial_validation_failed": "Validering av manuelt målerserienummer mislyktes. Målerens sanntidsdata kunne ikke bekreftes.",
+      "manual_meter_serial_validation_unavailable": "Validering av manuelle målere er ikke tilgjengelig før integrasjonen er fullstendig lastet inn.",
+      "manual_meter_remove_target_required": "Velg en manuelt lagt til måler før du fjerner den.",
+      "manual_meter_remove_target_missing": "Den valgte manuelle måleren finnes ikke i gjeldende innstillinger.",
+      "invalid_manual_ems_systems": "Ugyldig format for manuelt EMS-system. Bruk ett EMS-serienummer og én anleggs-ID per linje: SERIAL|PLANT_ID.",
+      "manual_ems_validation_failed": "Validering av manuelt EMS-system mislyktes. EMS-attributtendepunktet kunne ikke bekrefte serienummeret og anlegget.",
+      "manual_ems_validation_unavailable": "Validering av manuelle EMS-systemer er ikke tilgjengelig før integrasjonen er fullstendig lastet inn.",
+      "manual_ems_remove_target_required": "Velg et manuelt EMS-system før du fjerner det.",
+      "manual_ems_remove_target_missing": "Det valgte manuelle EMS-systemet finnes ikke i gjeldende innstillinger."
     }
   },
   "issues": {
     "api_rate_limit": {
-      "title": "SolaX Developer API rate limit is active",
-      "description": "SolaX rejected calls because a rate or quota limit is active. Affected areas: {contexts}. Reduce polling or Live View use and allow the limit to recover."
+      "title": "Frekvensgrensen for SolaX Developer API er aktiv",
+      "description": "SolaX avviste kall fordi en frekvens- eller kvotegrense er aktiv. Berørte områder: {contexts}. Reduser avspørringen eller bruken av Live View, og vent til grensen tilbakestilles."
     },
     "api_permission": {
-      "title": "SolaX Developer API access is incomplete",
-      "description": "SolaX denied access to one or more read endpoints. Affected areas: {contexts}. Verify the client permissions and authorized plants in the SolaX Developer Portal."
+      "title": "Tilgangen til SolaX Developer API er ufullstendig",
+      "description": "SolaX nektet tilgang til ett eller flere leseendepunkter. Berørte områder: {contexts}. Kontroller klienttillatelsene og autoriserte anlegg i SolaX Developer Portal."
     }
   },
   "entity": {
@@ -191,39 +193,39 @@
     },
     "button": {
       "live_view_boost": {
-        "name": "Start Live View Boost"
+        "name": "Start Live View-forsterkning"
       },
       "ev_charger_lock": {
-        "name": "Lock Charger"
+        "name": "Lås laderen"
       },
       "ev_charger_available": {
-        "name": "Set Charger Available"
+        "name": "Gjør laderen tilgjengelig"
       },
       "ev_charger_start_charging": {
-        "name": "Start Charging"
+        "name": "Start lading"
       },
       "ev_charger_stop_charging": {
-        "name": "Stop Charging"
+        "name": "Stopp lading"
       },
       "ev_charger_apply_charge_scene": {
-        "name": "Apply Charge Scene"
+        "name": "Bruk ladescenario"
       },
       "ev_charger_apply_qr_code": {
-        "name": "Apply QR Code"
+        "name": "Bruk QR-kode"
       },
       "ev_charger_apply_reserve_charge": {
-        "name": "Apply Reserve Charge"
+        "name": "Bruk planlagt lading"
       }
     },
     "select": {
       "ev_charger_work_mode": {
-        "name": "Work Mode"
+        "name": "Work Modus"
       },
       "ev_charger_start_mode": {
-        "name": "Start Mode"
+        "name": "Start Modus"
       },
       "ev_charger_charge_scene": {
-        "name": "Charge Scene"
+        "name": "Ladescenario"
       }
     },
     "sensor": {
@@ -233,46 +235,46 @@
     },
     "number": {
       "ev_charger_current_limit": {
-        "name": "Current Limit"
+        "name": "Strøm Grense"
       },
       "ev_charger_reserve_current": {
-        "name": "Reserve Charge Current"
+        "name": "Strøm for planlagt lading"
       }
     },
     "text": {
       "ev_charger_qr_code": {
-        "name": "QR Code"
+        "name": "QR-kode"
       },
       "ev_charger_ocpp_url": {
         "name": "OCPP URL"
       },
       "ev_charger_ocpp_charger_id": {
-        "name": "OCPP Charger ID"
+        "name": "OCPP-lader-ID"
       }
     },
     "time": {
       "ev_charger_reserve_start_time": {
-        "name": "Reserve Charge Start Time"
+        "name": "Starttid for planlagt lading"
       },
       "ev_charger_reserve_end_time": {
-        "name": "Reserve Charge End Time"
+        "name": "Sluttid for planlagt lading"
       }
     }
   },
   "services": {
     "manual_refresh": {
       "name": "Manuell Oppdatering",
-      "description": "Trigger an immediate refresh for all configured SolaX Developer API entries.",
+      "description": "Utløs en umiddelbar oppdatering av alle konfigurerte SolaX Developer API-oppføringer.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
-          "description": "Optional config entry id; if omitted, all entries are refreshed."
+          "description": "Valgfri ID for konfigurasjonsoppføringen. Hvis den utelates, oppdateres alle oppføringer."
         }
       }
     },
     "start_live_view": {
       "name": "Start Live View",
-      "description": "Enable temporary realtime-focused polling with an automatic timeout.",
+      "description": "Aktiver midlertidig avspørring med fokus på sanntidsdata og automatisk tidsavbrudd.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -280,17 +282,17 @@
         },
         "duration_seconds": {
           "name": "Varighet (sekunder)",
-          "description": "Optional live mode duration override."
+          "description": "Valgfri overstyring av varigheten for Live View."
         },
         "interval_seconds": {
           "name": "Målintervall (sekunder)",
-          "description": "Optional live mode target interval override."
+          "description": "Valgfri overstyring av ønsket intervall for Live View."
         }
       }
     },
     "stop_live_view": {
       "name": "Stopp Live View",
-      "description": "Disable live polling and return to standard/night profile timing.",
+      "description": "Deaktiver Live View-avspørring og gå tilbake til intervallet for standard- eller nattprofilen.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -299,28 +301,28 @@
       }
     },
     "list_history_devices": {
-      "name": "List History Devices",
-      "description": "List currently discovered devices that can be queried by the Developer API history endpoint. Does not call the SolaX API.",
+      "name": "Vis enheter for historikk",
+      "description": "Vis oppdagede enheter som kan spørres via historikkendepunktet i Developer API. Kaller ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Oppførings-ID",
+          "description": "Valgfri ID for konfigurasjonsoppføringen. Hvis den utelates, tas alle innlastede oppføringer med."
         }
       }
     },
     "list_plant_statistics_targets": {
-      "name": "List Plant Statistics Targets",
-      "description": "List currently discovered plants that can be queried by the Developer API plant statistics endpoint. Does not call the SolaX API.",
+      "name": "Vis anlegg for statistikk",
+      "description": "Vis oppdagede anlegg som kan spørres via endepunktet for anleggsstatistikk i Developer API. Kaller ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Oppførings-ID",
+          "description": "Valgfri ID for konfigurasjonsoppføringen. Hvis den utelates, tas alle innlastede oppføringer med."
         }
       }
     },
     "fetch_device_history": {
       "name": "Hent Device Historikk",
-      "description": "Read historical telemetry from the Developer API and cache the result. Long time ranges are automatically split into API-safe windows.",
+      "description": "Les historisk telemetri fra Developer API og mellomlagre resultatet. Lange tidsrom deles automatisk inn i perioder som er trygge for API-et.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -328,111 +330,111 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Device SN list, min 1 max 200. Requests are chunked automatically."
+          "description": "Liste over enhets-SN, minst 1 og maksimalt 200. Forespørsler deles automatisk opp."
         },
         "device_type": {
           "name": "Enhetstype",
-          "description": "1 inverter, 2 battery, 3 meter, 4 EV charger."
+          "description": "1 vekselretter, 2 batteri, 3 måler, 4 EV-lader."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "1 residential, 4 commercial & industrial."
+          "description": "1 bolig, 4 næring og industri."
         },
         "start_time": {
           "name": "Starttid",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-sifret Unix-tid i UTC, i millisekunder."
         },
         "end_time": {
           "name": "Sluttid",
-          "description": "13-digit UTC unix milliseconds."
+          "description": "13-sifret Unix-tid i UTC, i millisekunder."
         },
         "time_interval": {
           "name": "Tidsintervall",
-          "description": "5, 10, 15, 30, 60 minutes."
+          "description": "5, 10, 15, 30 eller 60 minutter."
         },
         "request_sn_type": {
           "name": "Request SN-type",
-          "description": "Optional battery query mode (1 inverter SN / 2 battery SN)."
+          "description": "Valgfri spørremodus for batteri (1 vekselretter-SN / 2 batteri-SN)."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Forespørsels-ID",
+          "description": "Valgfri forespørsels-ID som de medfølgende kortene bruker for samordnet avbrytelse."
         }
       }
     },
     "fetch_plant_year_statistics": {
-      "name": "Fetch Plant Year Statistics",
-      "description": "Read monthly plant statistics for one year from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent årsstatistikk for anlegg",
+      "description": "Les månedlig anleggsstatistikk for ett år fra Developer API. Bare for visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Oppførings-ID",
+          "description": "Valgfri konfigurasjonsoppføring-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anleggs-ID",
+          "description": "Anleggs-ID returnert av list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Forretningstype",
+          "description": "1 bolig, 4 næring og industri."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch. Current year fetches year-to-date; previous years fetch all 12 months."
+          "name": "År",
+          "description": "Kalenderåret som skal hentes. For inneværende år hentes data hittil i år; for tidligere år hentes alle 12 måneder."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Forespørsels-ID",
+          "description": "Valgfri forespørsels-ID som de medfølgende kortene bruker for samordnet avbrytelse."
         }
       }
     },
     "fetch_plant_month_statistics": {
-      "name": "Fetch Plant Month Statistics",
-      "description": "Read daily plant statistics for one month from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent månedsstatistikk for anlegg",
+      "description": "Les daglig anleggsstatistikk for én måned fra Developer API. Bare for visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Oppførings-ID",
+          "description": "Valgfri konfigurasjonsoppføring-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Plant ID returned by list_plant_statistics_targets."
+          "name": "Anleggs-ID",
+          "description": "Anleggs-ID returnert av list_plant_statistics_targets."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "1 residential, 4 commercial & industrial."
+          "name": "Forretningstype",
+          "description": "1 bolig, 4 næring og industri."
         },
         "year": {
-          "name": "Year",
-          "description": "Calendar year to fetch."
+          "name": "År",
+          "description": "Kalenderåret som skal hentes."
         },
         "month": {
-          "name": "Month",
-          "description": "Calendar month to fetch, 1-12. Future months in the current year are rejected."
+          "name": "Måned",
+          "description": "Kalendermåneden som skal hentes, 1–12. Fremtidige måneder i inneværende år avvises."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Forespørsels-ID",
+          "description": "Valgfri forespørsels-ID som de medfølgende kortene bruker for samordnet avbrytelse."
         }
       }
     },
     "query_request_result": {
       "name": "Spørr Request Resultat",
-      "description": "Query asynchronous command request status by string requestId.",
+      "description": "Spør etter status for en asynkron kommando med tekstverdien requestId.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
           "description": "Valgfri konfigurasjonsoppføring-ID."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID returned by a control API call. String and numeric inputs are accepted."
+          "name": "Forespørsels-ID",
+          "description": "Forespørsels-ID returnert av et kontroll-API-kall. Både tekst og tall godtas."
         }
       }
     },
     "query_master_control_device": {
       "name": "Spørr Master Kontroll Device",
-      "description": "Read the top-level master control device (C&I only, businessType=4).",
+      "description": "Les den overordnede hovedkontrollenheten (bare næring og industri, businessType=4).",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -446,7 +448,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Must be 4 (commercial & industrial)."
+          "description": "Må være 4 (næring og industri)."
         }
       }
     },
@@ -460,11 +462,11 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "device_type": {
           "name": "Enhetstype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Påkrevd. Enhetstype i Developer API, for eksempel 1 for vekselretter."
         },
         "is_enable": {
           "name": "Aktiveringsflagg",
@@ -472,11 +474,11 @@
         },
         "limit_value": {
           "name": "Grenseverdi",
-          "description": "Required. Export limit in kW; decimal values with up to two places are supported."
+          "description": "Påkrevd. Eksportgrense i kW; desimaltall med opptil to desimaler støttes."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "control_mode": {
           "name": "Kontrollmodus",
@@ -494,11 +496,11 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "device_type": {
           "name": "Enhetstype",
-          "description": "Required. Developer API device type, for example 1 inverter."
+          "description": "Påkrevd. Enhetstype i Developer API, for eksempel 1 for vekselretter."
         },
         "is_enable": {
           "name": "Aktiveringsflagg",
@@ -510,7 +512,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -524,10 +526,10 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimum SOC",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "charge_from_grid_enable": {
@@ -535,28 +537,28 @@
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Øvre SOC-grense for lading",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "enable_time_period2": {
           "name": "Aktiver Tid Period 2",
@@ -564,19 +566,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         }
       }
     },
@@ -590,35 +592,35 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimum SOC",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Øvre SOC-grense for lading",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "enable_time_period2": {
           "name": "Aktiver Tid Period 2",
@@ -626,19 +628,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         }
       }
     },
@@ -652,10 +654,10 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "min_soc": {
-          "name": "Min SOC",
+          "name": "Minimum SOC",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "charge_from_grid_enable": {
@@ -663,28 +665,28 @@
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "charge_upper_soc": {
-          "name": "Charge Upper SOC",
+          "name": "Øvre SOC-grense for lading",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "charge_start_time_period1": {
           "name": "Charge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period1": {
           "name": "Charge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period1": {
           "name": "Discharge Start Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period1": {
           "name": "Discharge End Tid Period 1",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "enable_time_period2": {
           "name": "Aktiver Tid Period 2",
@@ -692,19 +694,19 @@
         },
         "charge_start_time_period2": {
           "name": "Charge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time_period2": {
           "name": "Charge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_start_time_period2": {
           "name": "Discharge Start Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         },
         "discharge_end_time_period2": {
           "name": "Discharge End Tid Period 2",
-          "description": "Optional. HH:MM time value."
+          "description": "Valgfritt. Klokkeslett i formatet HH:MM."
         }
       }
     },
@@ -718,7 +720,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "manual_mode": {
           "name": "Manuell Modus",
@@ -726,12 +728,12 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "self_use_mode": {
-      "name": "A1-Hybrid-G2 Self Use (Dry-Run)",
+      "name": "A1-Hybrid-G2 egetforbruk (dry-run)",
       "description": "Kun Dry-Run. Validerer payload og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -740,16 +742,16 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "feed_in_priority": {
-      "name": "A1-Hybrid-G2 Feed-in Priority (Dry-Run)",
+      "name": "A1-Hybrid-G2 innmatingsprioritet (dry-run)",
       "description": "Kun Dry-Run. Validerer payload og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -758,16 +760,16 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "back_up_mode": {
-      "name": "A1-Hybrid-G2 Back Up (Dry-Run)",
+      "name": "A1-Hybrid-G2 reservestrøm (dry-run)",
       "description": "Kun Dry-Run. Validerer payload og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -776,7 +778,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "back_up_grid_enable": {
           "name": "Back Up Grid Aktiver",
@@ -784,15 +786,15 @@
         },
         "back_up_charge_start_time": {
           "name": "Back Up Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "back_up_charge_end_time": {
           "name": "Back Up Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -806,7 +808,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "demand_grid_enable": {
           "name": "Demand Grid Aktiver",
@@ -822,35 +824,35 @@
         },
         "demand_discharge_start_time1": {
           "name": "Demand Discharge Start Tid 1",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "demand_discharge_end_time1": {
           "name": "Demand Discharge End Tid 1",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "demand_discharge_start_time2": {
           "name": "Demand Discharge Start Tid 2",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "demand_discharge_end_time2": {
           "name": "Demand Discharge End Tid 2",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "charger_power_limit": {
           "name": "Charger Effekt Grense",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "demand_max_soc": {
-          "name": "Demand Max SOC",
+          "name": "Maksimal SOC for effektbehov",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "reserve_soc": {
-          "name": "Reserve SOC",
+          "name": "Reserve-SOC",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -864,7 +866,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "const_power_grid_enable": {
           "name": "Const Effekt Grid Aktiver",
@@ -876,23 +878,23 @@
         },
         "const_power_charge_start_time": {
           "name": "Const Effekt Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "const_power_charge_end_time": {
           "name": "Const Effekt Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "const_power_discharge_start_time": {
           "name": "Const Effekt Discharge Start Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "const_power_discharge_end_time": {
           "name": "Const Effekt Discharge End Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -906,11 +908,11 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -924,7 +926,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "active_power_target": {
           "name": "Active Effekt Mål",
@@ -940,7 +942,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -954,7 +956,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "target_engergy": {
           "name": "Mål Engergy",
@@ -966,7 +968,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -980,7 +982,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "target_soc": {
           "name": "Mål SOC",
@@ -992,7 +994,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -1006,7 +1008,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "battery_power": {
           "name": "Battery Effekt",
@@ -1017,12 +1019,12 @@
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -1036,24 +1038,24 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "time_of_duration": {
           "name": "Tid Of Varighet",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "self_consume_charge_or_discharge_mode": {
-      "name": "VPP Self-Consume Charge/Discharge (Dry-Run)",
+      "name": "VPP egetforbruk med lading/utlading (dry-run)",
       "description": "Kun Dry-Run. Validerer payload og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -1062,24 +1064,24 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "time_of_duration": {
           "name": "Tid Of Varighet",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "self_consume_charge_only_mode": {
-      "name": "VPP Self-Consume Charge Only (Dry-Run)",
+      "name": "VPP egetforbruk med bare lading (dry-run)",
       "description": "Kun Dry-Run. Validerer payload og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -1088,19 +1090,19 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "time_of_duration": {
           "name": "Tid Of Varighet",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -1114,7 +1116,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "battery_power": {
           "name": "Battery Effekt",
@@ -1129,12 +1131,12 @@
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -1148,7 +1150,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "battery_power": {
           "name": "Battery Effekt",
@@ -1167,18 +1169,18 @@
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "next_motion": {
-          "name": "Next Motion",
+          "name": "Neste handling",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_charge_scene": {
-      "name": "EV Charger Set Charge Scene",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Angi ladescenario for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1186,29 +1188,29 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "charger_scene": {
-          "name": "Charger Scene",
+          "name": "Ladescenario",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "ocpp_url": {
-          "name": "OCPP Url",
+          "name": "OCPP-URL",
           "description": "Valgfritt. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "ocpp_charger_id": {
-          "name": "OCPP Charger Id",
+          "name": "OCPP-lader-ID",
           "description": "Valgfritt. Heltallsfelt i payload brukt til Dry-Run-validering."
         }
       }
     },
     "set_evc_qr_code": {
-      "name": "EV Charger Set QR Code",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Angi QR-kode for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1216,21 +1218,21 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "qr_code": {
-          "name": "QR Code",
+          "name": "QR-kode",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_evc_work_mode": {
-      "name": "EV Charger Set Work Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Angi driftsmodus for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1238,7 +1240,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "work_mode": {
           "name": "Work Modus",
@@ -1246,7 +1248,7 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "current_gear": {
           "name": "Strøm Gear",
@@ -1255,8 +1257,8 @@
       }
     },
     "set_evc_start_mode": {
-      "name": "EV Charger Set Start Mode",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Angi startmodus for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1264,7 +1266,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "start_mode": {
           "name": "Start Modus",
@@ -1272,13 +1274,13 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_evc_charge_command": {
-      "name": "EV Charger Set Charge Command",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Angi ladekommando for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1286,21 +1288,21 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "work_cmd": {
-          "name": "Work Cmd",
+          "name": "Driftskommando",
           "description": "Påkrevd. Heltallsfelt i payload brukt til Dry-Run-validering."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_evc_reserve_charge": {
-      "name": "EV Charger Reserve Charge",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Planlagt lading for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1308,15 +1310,15 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "charge_start_time": {
           "name": "Charge Start Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "charge_end_time": {
           "name": "Charge End Tid",
-          "description": "Required. HH:MM time value."
+          "description": "Påkrevd. Klokkeslett i formatet HH:MM."
         },
         "charge_current": {
           "name": "Charge Strøm",
@@ -1324,13 +1326,13 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_evc_current_limit": {
-      "name": "EV Charger Current Limit",
-      "description": "Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.",
+      "name": "Strømgrense for EV-lader",
+      "description": "Utfører en reell EV-laderkommando når styring av EV-lader er aktivert. Ellers valideres nyttelasten og blokkeres som dry-run.",
       "fields": {
         "entry_id": {
           "name": "Oppførings-ID",
@@ -1338,7 +1340,7 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list. Runtime validation allows 1 to 10 serials."
+          "description": "Påkrevd. Liste over enhets-SN. Validering under kjøring tillater 1 til 10 serienumre."
         },
         "current_limit": {
           "name": "Strøm Grense",
@@ -1346,12 +1348,12 @@
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
     "set_battery_heating": {
-      "name": "Battery Heating Settings (Dry-Run)",
+      "name": "Innstillinger for batterioppvarming (dry-run)",
       "description": "Kun Dry-Run. Validerer battery heating settings og blokkerer skriving.",
       "fields": {
         "entry_id": {
@@ -1360,35 +1362,35 @@
         },
         "sn_list": {
           "name": "Liste over enhetsserienumre",
-          "description": "Required. Device SN list, minimum 1 and maximum 10."
+          "description": "Påkrevd. Liste over enhets-SN, minst 1 og maksimalt 10."
         },
         "heating_enable": {
           "name": "Heating Aktiver",
-          "description": "Required. 0 disables battery heating; 1 enables it."
+          "description": "Påkrevd. 0 deaktiverer batterioppvarming; 1 aktiverer den."
         },
         "heating_level": {
-          "name": "Heating Level",
-          "description": "Required when enabled. Supported values are 0, 1, and 2."
+          "name": "Oppvarmingsnivå",
+          "description": "Påkrevd når funksjonen er aktivert. Støttede verdier er 0, 1 og 2."
         },
         "heating_period1_start_time": {
-          "name": "Heating Period 1 Start",
-          "description": "Required when enabled. HH:MM time value."
+          "name": "Start for oppvarmingsperiode 1",
+          "description": "Påkrevd når funksjonen er aktivert. Klokkeslett i formatet HH:MM."
         },
         "heating_period1_end_time": {
-          "name": "Heating Period 1 End",
-          "description": "Required when enabled and must be later than period 1 start."
+          "name": "Slutt for oppvarmingsperiode 1",
+          "description": "Påkrevd når funksjonen er aktivert, og må være senere enn starten på periode 1."
         },
         "heating_period2_start_time": {
-          "name": "Heating Period 2 Start",
-          "description": "Optional second heating period start. HH:MM time value."
+          "name": "Start for oppvarmingsperiode 2",
+          "description": "Valgfri start for en andre oppvarmingsperiode. Klokkeslett i formatet HH:MM."
         },
         "heating_period2_end_time": {
-          "name": "Heating Period 2 End",
-          "description": "Required when period 2 start is supplied."
+          "name": "Slutt for oppvarmingsperiode 2",
+          "description": "Påkrevd når start for periode 2 er angitt."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. 1 residential or 4 commercial & industrial."
+          "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         }
       }
     },
@@ -1402,146 +1404,146 @@
         },
         "device_type": {
           "name": "Enhetstype",
-          "description": "Required. Fixed value 100 for EMS System."
+          "description": "Påkrevd. Fast verdi 100 for EMS-system."
         },
         "business_type": {
           "name": "Forretningstype",
-          "description": "Required. Fixed value 4 for commercial & industrial EMS systems."
+          "description": "Påkrevd. Fast verdi 4 for EMS-systemer for næring og industri."
         },
         "param_list": {
-          "name": "EMS Parameters",
-          "description": "Required. List of 1 to 10 EMS objects with registerNo, manualMode, and conditional power/targetSoc."
+          "name": "EMS-parametere",
+          "description": "Påkrevd. Liste med 1 til 10 EMS-objekter med registerNo, manualMode og betinget power/targetSoc."
         }
       }
     },
     "list_alarm_targets": {
-      "name": "List Alarm Targets",
-      "description": "List currently discovered plants and devices that can be queried by the Developer API alarm endpoint. Does not call the SolaX API.",
+      "name": "Vis alarmmål",
+      "description": "Vis oppdagede anlegg og enheter som kan spørres via alarmendepunktet i Developer API. Kaller ikke SolaX API.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id. If omitted, all loaded entries are included."
+          "name": "Oppførings-ID",
+          "description": "Valgfri ID for konfigurasjonsoppføringen. Hvis den utelates, tas alle innlastede oppføringer med."
         }
       }
     },
     "fetch_alarm_information": {
-      "name": "Fetch Alarm Information",
-      "description": "Read paged alarm information from the Developer API. Display-only; does not write to Home Assistant Recorder.",
+      "name": "Hent alarminformasjon",
+      "description": "Les sideinndelt alarminformasjon fra Developer API. Bare for visning; skriver ikke til Home Assistant Recorder.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Oppførings-ID",
+          "description": "Valgfri konfigurasjonsoppføring-ID."
         },
         "plant_id": {
-          "name": "Plant ID",
-          "description": "Optional plant ID returned by list_alarm_targets. If omitted, all loaded plants are queried."
+          "name": "Anleggs-ID",
+          "description": "Valgfri anleggs-ID returnert av list_alarm_targets. Hvis den utelates, spørres alle innlastede anlegg."
         },
         "business_type": {
-          "name": "Business Type",
-          "description": "Optional business type for explicit plant queries. 1 residential, 4 commercial & industrial."
+          "name": "Forretningstype",
+          "description": "Valgfri virksomhetstype for eksplisitte anleggsforespørsler. 1 bolig, 4 næring og industri."
         },
         "alarm_state": {
-          "name": "Alarm State",
-          "description": "Alarm state filter. Use all, ongoing, closed, 1, or 0."
+          "name": "Alarmtilstand",
+          "description": "Filter for alarmstatus. Bruk all, ongoing, closed, 1 eller 0."
         },
         "device_sn": {
-          "name": "Device SN",
-          "description": "Optional device serial filter."
+          "name": "Enhets-SN",
+          "description": "Valgfritt filter for enhetsserienummer."
         },
         "max_pages": {
-          "name": "Maximum Pages",
-          "description": "Maximum pages to fetch per plant and alarm state, 1-100."
+          "name": "Maksimalt antall sider",
+          "description": "Maksimalt antall sider som skal hentes per anlegg og alarmstatus, 1–100."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Optional request ID used by bundled cards for cooperative cancellation."
+          "name": "Forespørsels-ID",
+          "description": "Valgfri forespørsels-ID som de medfølgende kortene bruker for samordnet avbrytelse."
         }
       }
     },
     "cancel_fetch": {
-      "name": "Cancel Fetch",
-      "description": "Request cooperative cancellation for a card-driven history, statistics, or alarm fetch.",
+      "name": "Avbryt henting",
+      "description": "Be om samordnet avbrytelse av en kortstyrt henting av historikk, statistikk eller alarmer.",
       "fields": {
         "entry_id": {
-          "name": "Entry ID",
-          "description": "Optional config entry id."
+          "name": "Oppførings-ID",
+          "description": "Valgfri konfigurasjonsoppføring-ID."
         },
         "request_id": {
-          "name": "Request ID",
-          "description": "Request ID generated by the card fetch action to cancel."
+          "name": "Forespørsels-ID",
+          "description": "Forespørsels-ID-en som ble opprettet av hentehandlingen i kortet som skal avbrytes."
         }
       }
     }
   },
   "exceptions": {
     "no_active_entry": {
-      "message": "No active {domain} entry for {entry_id}"
+      "message": "Ingen aktiv {domain}-oppføring for {entry_id}"
     },
     "no_configured_entries": {
-      "message": "No configured SolaX Developer API entries"
+      "message": "Ingen konfigurerte SolaX Developer API-oppføringer"
     },
     "history_end_before_start": {
-      "message": "end_time must be greater than start_time"
+      "message": "end_time må være senere enn start_time"
     },
     "master_control_requires_ci": {
-      "message": "query_master_control_device supports business_type=4 only"
+      "message": "query_master_control_device støtter bare business_type=4"
     },
     "system_name_required": {
-      "message": "System name is required"
+      "message": "Systemnavn er påkrevd"
     },
     "control_unknown_service": {
-      "message": "{service}: unknown control service"
+      "message": "{service}: ukjent styringstjeneste"
     },
     "control_field_name_invalid": {
-      "message": "{service}: service fields must use snake_case names"
+      "message": "{service}: tjenestefeltene må bruke navn i snake_case"
     },
     "control_missing_required_field": {
-      "message": "{service}: missing required field {field}"
+      "message": "{service}: det påkrevde feltet {field} mangler"
     },
     "control_field_must_be_int": {
-      "message": "{service}: field {field} must be int"
+      "message": "{service}: feltet {field} må være et heltall"
     },
     "control_field_type_mismatch": {
-      "message": "{service}: field {field} must be {expected_type}"
+      "message": "{service}: feltet {field} må være av typen {expected_type}"
     },
     "control_sn_list_empty": {
-      "message": "{service}: snList must contain at least one serial"
+      "message": "{service}: snList må inneholde minst ett serienummer"
     },
     "control_sn_list_too_long": {
-      "message": "{service}: snList supports max {max} serials"
+      "message": "{service}: snList støtter maksimalt {max} serienumre"
     },
     "control_business_type_invalid": {
-      "message": "{service}: businessType must be 1 or 4"
+      "message": "{service}: businessType må være 1 eller 4"
     },
     "control_time_format_invalid": {
-      "message": "{service}: field {field} must use HH:MM format"
+      "message": "{service}: feltet {field} må bruke formatet HH:MM"
     },
     "control_not_available": {
-      "message": "{service}: no compatible device capability is available in this integration"
+      "message": "{service}: ingen kompatibel enhetsfunksjon er tilgjengelig i denne integrasjonen"
     },
     "control_field_number_invalid": {
-      "message": "{service}: field {field} must be a finite number"
+      "message": "{service}: feltet {field} må være et endelig tall"
     },
     "control_field_value_invalid": {
-      "message": "{service}: field {field} has an unsupported value"
+      "message": "{service}: feltet {field} har en verdi som ikke støttes"
     },
     "control_time_order_invalid": {
-      "message": "{service}: {end_field} must be later than {start_field}"
+      "message": "{service}: {end_field} må være senere enn {start_field}"
     },
     "control_ems_context_invalid": {
-      "message": "{service}: EMS controls require deviceType 100 and businessType 4"
+      "message": "{service}: EMS-styring krever deviceType 100 og businessType 4"
     },
     "control_param_list_length_invalid": {
-      "message": "{service}: paramList must contain 1 to {max} EMS systems"
+      "message": "{service}: paramList må inneholde 1 til {max} EMS-systemer"
     },
     "control_param_list_item_invalid": {
-      "message": "{service}: paramList item {index} must be an object"
+      "message": "{service}: element {index} i paramList må være et objekt"
     },
     "plant_year_invalid": {
-      "message": "year must be between {min_year} and {max_year}"
+      "message": "year må være mellom {min_year} og {max_year}"
     },
     "plant_month_invalid": {
-      "message": "month must be between {min_month} and {max_month}"
+      "message": "month må være mellom {min_month} og {max_month}"
     }
   }
 }

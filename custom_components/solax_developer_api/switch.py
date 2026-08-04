@@ -2,15 +2,26 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from homeassistant.components.switch import SwitchEntity
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import CONF_RATE_LIMIT_NOTIFICATIONS
+from .coordinator import SolaxDeveloperCoordinator
 from .entity import SolaxSystemCoordinatorEntity, system_identity
+from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
 
 
-async def async_setup_entry(hass, entry, async_add_entities):
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     coordinator = entry.runtime_data.coordinator
     system_name, system_slug = system_identity(hass, entry)
 
@@ -39,7 +50,15 @@ class SolaxRateLimitNotificationSwitch(SolaxSystemCoordinatorEntity, SwitchEntit
 
     _attr_translation_key = "rate_limit_notifications"
 
-    def __init__(self, *, hass, entry_id: str, coordinator, system_name: str, system_slug: str):
+    def __init__(
+        self,
+        *,
+        hass: HomeAssistant,
+        entry_id: str,
+        coordinator: SolaxDeveloperCoordinator,
+        system_name: str,
+        system_slug: str,
+    ) -> None:
         super().__init__(
             coordinator,
             system_name=system_name,
@@ -51,25 +70,25 @@ class SolaxRateLimitNotificationSwitch(SolaxSystemCoordinatorEntity, SwitchEntit
         self.entity_id = f"switch.{system_slug}_rate_limit_notifications"
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
         if entry is None:
             return True
         return bool(entry.options.get(CONF_RATE_LIMIT_NOTIFICATIONS, True))
 
     @property
-    def available(self):
+    def available(self) -> bool:
         return True
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs: Any) -> None:
         _ = kwargs
         await self._async_set_notification_state(True)
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs: Any) -> None:
         _ = kwargs
         await self._async_set_notification_state(False)
 
-    async def _async_set_notification_state(self, enabled: bool):
+    async def _async_set_notification_state(self, enabled: bool) -> None:
         entry = self.hass.config_entries.async_get_entry(self._entry_id)
         if entry is None:
             return
@@ -85,7 +104,15 @@ class SolaxLiveViewSwitch(SolaxSystemCoordinatorEntity, SwitchEntity):
 
     _attr_translation_key = "live_view_mode"
 
-    def __init__(self, *, hass, entry_id: str, coordinator, system_name: str, system_slug: str):
+    def __init__(
+        self,
+        *,
+        hass: HomeAssistant,
+        entry_id: str,
+        coordinator: SolaxDeveloperCoordinator,
+        system_name: str,
+        system_slug: str,
+    ) -> None:
         super().__init__(
             coordinator,
             system_name=system_name,
@@ -97,15 +124,15 @@ class SolaxLiveViewSwitch(SolaxSystemCoordinatorEntity, SwitchEntity):
         self.entity_id = f"switch.{system_slug}_live_view_mode"
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         return bool(self.coordinator.live_view_active)
 
     @property
-    def available(self):
+    def available(self) -> bool:
         return True
 
     @property
-    def extra_state_attributes(self):
+    def extra_state_attributes(self) -> Mapping[str, Any]:
         meta = (self.coordinator.data or {}).get("meta") or {}
         return {
             "poll_profile": meta.get("poll_profile"),
@@ -120,10 +147,10 @@ class SolaxLiveViewSwitch(SolaxSystemCoordinatorEntity, SwitchEntity):
             ),
         }
 
-    async def async_turn_on(self, **kwargs):
+    async def async_turn_on(self, **kwargs: Any) -> None:
         _ = kwargs
         await self.coordinator.async_start_live_view()
 
-    async def async_turn_off(self, **kwargs):
+    async def async_turn_off(self, **kwargs: Any) -> None:
         _ = kwargs
         await self.coordinator.async_stop_live_view()
