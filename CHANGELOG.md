@@ -4,6 +4,68 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.0] - 2026-08-02
+
+### Added
+- Added a Home Assistant stable strict-mypy CI gate covering all integration
+  modules against Home Assistant's current typed interfaces.
+- Added focused Home Assistant lifecycle tests for config-entry setup,
+  discovery, registries, options reloads, manual devices, stale-data retention,
+  alarm notifications, diagnostics, and unload cleanup.
+- The validation suite passes `207` credential-free tests plus `5` Home
+  Assistant lifecycle fixture tests with `97.08%` measured stable coverage.
+- Added a per-production-module coverage gate requiring more than `95%`
+  coverage in every integration module, alongside the `96%` total CI floor.
+- Added a separate System Totals `Device Connectivity` diagnostic sensor with
+  per-device online, offline, stale, and unknown attribution.
+- Added an independent active-alarm coordinator with a configurable
+  `60`-`3600` second interval (`120` seconds by default). Alarm monitoring now
+  continues during night and Live View polling and reserves its estimated calls
+  in the Live View API budget.
+- Added alarm scheduling, partial-failure retention, inventory-change, options
+  reload, diagnostics metadata, and Live View budget tests.
+
+### Changed
+- Completed explicit typing for config flows, services, coordinators, API
+  responses, diagnostics, and all entity platforms. The integration now meets
+  every declared Platinum Quality Scale rule and is documented as
+  Platinum-standard aligned.
+- Extracted History, Alarm, and Live View behavior into focused internal
+  managers while preserving the existing coordinator, entity, cache, and
+  service contracts.
+- Moved History, Alarm Viewer, cancellation, and Live View service adapters out
+  of the integration setup module.
+- Audited the Home Assistant and runtime catalogs for all 26 supported locales,
+  including natural translations for all bundled Lovelace cards while
+  preserving technical API terms and English fallback behavior.
+- EV charger execution results now distinguish initial API acceptance from
+  SolaX device acknowledgement. Request-result polling reports documented
+  failure, acknowledgement, or pending/unconfirmed state without claiming
+  physical charging completion.
+
+### Fixed
+- Business Type and Device Type sensors now show the translated SolaX appendix
+  meaning together with the original API code, including realtime and inventory
+  entities for manually added meters and EMS devices. Unknown codes remain
+  explicit and the original raw value is retained in entity attributes.
+- Fully redacted EV charger OCPP URLs, charger IDs, and QR access values from
+  nested diagnostics payloads.
+- Plant realtime, alarm, and statistics refreshes now retain each endpoint's
+  last-good data independently when temporary API calls fail, while successful
+  empty responses remain authoritative.
+- Diagnostics now read migrated system-name and scan-interval settings from
+  the canonical options-first configuration path.
+- System Health now represents operational health from documented inverter,
+  battery, and EV charger fault states plus active alarms. Normal Waiting,
+  Idle, and Standby modes no longer make the system appear degraded; cloud
+  connectivity is reported independently by Device Connectivity.
+- Preserved defensive reconstruction of coordinator locks, EV charger staged
+  state, and malformed capability/error cache handling while making those
+  paths strictly typed.
+- Alarm state now merges under a dedicated lock, retains last-good per-plant
+  data after temporary failures, and accepts a successful zero-alarm response
+  as authoritative without replacing unrelated coordinator state.
+
 ## [v0.3.3] - 2026-06-28
 
 ### Added

@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Gold Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Gold-d4af37.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-95.80%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.08%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -17,12 +17,13 @@ Requires no YAML configuration or template sensors.
 
 If a local Modbus setup is not an option for your system (or not working), this is the cloud-connected alternative for SolaX hardware that gives you the same amount of sensors and control of your EV charger.
 
-Great if you want a feature-rich, read-safe SolaX Developer API integration for SolaX residential and C&I systems in Home Assistant.
+Great if you want a feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
 Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
 
 ## ✨ Features in short
 
 - ⚡ **Inverter, battery, meter, EV charger, and EMS support** 
+- 🚗 **Native EV charger controls** on discovered charger devices, protected by explicit opt-in, payload and target validation, and SolaX command-status confirmation
 - 📊 **Automatic plant, device, and system-wide total sensors, including SolaX alarm support**
 - 🧠 **Dynamic sensors** based on real Developer API data received
 - 🧩 **Manual meter and EMS onboarding** when inventory endpoints omit readable devices
@@ -30,7 +31,7 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 - 🛠️ **No YAML or template sensors required**
 - 🌍 **26-language translation layer**
 - 🇬🇧 🇩🇪 🇳🇱 🇨🇿 🇵🇱 🇵🇹 🇧🇷 🇪🇸 🌎 🇮🇹 🇫🇷 🇸🇪 🇩🇰 🇳🇴 🇫🇮 🇱🇹 🇨🇳 🇯🇵 🇹🇭 🇻🇳 🇧🇬 🇬🇷 🇭🇺 🇷🇴 🇹🇷 🇺🇦
-- 🥇 **Home Assistant Gold-standard aligned**
+- 💎 **Home Assistant Platinum-standard aligned**
     
 **Cards included**
 - 📈 **Built-in SolaX History Viewer Card** to fetch and view from history SolaX, not Home Assistant Recorder history
@@ -53,13 +54,14 @@ Contributions, issues, and pull requests are welcome.
 
 
 
-## 🥇 Quality and Validation
+## 💎 Quality and Validation
 
-This custom integration is built and validated as a **🥇 Gold-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
+This custom integration is built and validated as a **💎 Platinum-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
-- **Gold-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
-- **Test coverage:** `95.80%`, enforced by CI with a minimum threshold of `95%`.
-- **Automated tests:** `161` credential-free tests.
+- **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
+- **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
+- **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `207` credential-free tests plus `5` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -109,7 +111,7 @@ This custom integration is built and validated as a **🥇 Gold-standard aligned
 - **Official Diagnostics Export** - Includes raw API envelopes, filtered entity-driving data, and raw-versus-filtered field summaries.
 - **Privacy Redaction** - Credentials, tokens, serials, plant identity, account identity, address, and coordinates are sanitized.
 - **Full Translation Layer** - English (`en`) default/fallback plus German (`de`), Dutch (`nl`), Czech (`cs`), Polish (`pl`), Portuguese (`pt`), Brazilian Portuguese (`pt-BR`), Spanish (`es`), Latin American Spanish (`es-419`), Italian (`it`), French (`fr`), Swedish (`sv`), Danish (`da`), Norwegian Bokmål (`nb`), Finnish (`fi`), Lithuanian (`lt`), Simplified Chinese (`zh-Hans`), Japanese (`ja`), Thai (`th`), Vietnamese (`vi`), Bulgarian (`bg`), Greek (`el`), Hungarian (`hu`), Romanian (`ro`), Turkish (`tr`), and Ukrainian (`uk`).
-- **Hard Dry-Run Controls** - Control payloads use schema validation, auditing, and event output without any outbound write request.
+- **Safe Control Architecture** - Non-EV control payloads use schema validation, auditing, and hard-blocked dry-run output. EV charger commands additionally require explicit opt-in, a discovered charger target, and SolaX request-status confirmation.
 
 </details>
 
@@ -258,6 +260,7 @@ Changed credentials are validated before they are saved.
 
 - Enable or disable rate-limit notifications
 - Enable or disable SolaX alarm persistent notifications
+- Set the independent active-alarm polling interval
 - Enable or disable real EV charger controls
 
 The integration reloads automatically after saved option changes.
@@ -308,6 +311,7 @@ EMS entities and controls remain hidden until an EMS is confirmed. Manual EMS op
 | Setting | Default | Supported range |
 |---|---:|---:|
 | Standard scan interval | 120 seconds | 60-3600 seconds |
+| Active-alarm scan interval | 120 seconds | 60-3600 seconds |
 | Live View duration | 300 seconds | 30-3600 seconds |
 | Live View target interval | 5 seconds | 2-60 seconds |
 | Live View call budget | 20 calls/minute | 5-100 calls/minute |
@@ -318,7 +322,10 @@ Important behavior:
 
 - **Developer API limit** - The documented account limit is 100 calls per minute.
 - **Budget-first Live View** - The effective interval can be slower than requested when the current plant/device topology would exceed the selected call budget.
-- **Realtime-focused Live View** - Heavy inventory, statistics, and alarm paths are skipped during temporary Live View polling.
+- **Independent alarm monitoring** - Active alarms are checked on their own schedule during standard, night, and Live View operation. Successful zero-alarm responses clear prior alarm state; temporary failures retain the last-good state.
+- **Realtime-focused Live View** - Heavy inventory and automatic statistics paths are skipped during temporary Live View polling, while the independent alarm monitor continues.
+- **Reserved alarm budget** - Live View interval calculations reserve the estimated calls required by scheduled alarm monitoring.
+- **Manual historical reads** - Device History, card year/month plant statistics, and Alarm Viewer pagination call SolaX only after an explicit user action.
 - **Night throttling** - The slower night profile is selected during the configured local hours.
 - **Automatic token renewal** - Tokens are renewed before expiry, using a 24-hour safety target for long-lived tokens.
 - **Auth retry** - An API authentication rejection triggers one forced token refresh before failing.
@@ -484,6 +491,7 @@ The System Totals device always provides:
 - `System Yield Lifetime`
 - `System Total Efficiency`
 - `System Health`
+- `Device Connectivity`
 - `API Rate Limit Status`
 - `Poll Profile`
 - `Effective Scan Interval`
@@ -501,6 +509,12 @@ Calculation attributes explain what is included:
 - Yield totals aggregate plant realtime `dailyYield` and `totalYield`.
 - Efficiency is `System AC Power / System DC Power × 100`.
 - If AC and DC power are both zero, efficiency is reported as `0%`.
+- System Health evaluates documented inverter, battery, and EV charger fault
+  states together with active SolaX alarms. Normal modes such as Waiting, Idle,
+  and Standby remain healthy.
+- Device Connectivity independently evaluates SolaX `onlineStatus` and, for
+  manual devices without that field, realtime-data freshness. Its attributes
+  list every online, offline, stale, or unknown device and the reason used.
 
 ### Dynamic Device Sensors
 
@@ -1075,9 +1089,9 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 
 ## 🚧 Project Status
 
-- **Home Assistant Quality Scale:** Gold-standard aligned custom integration
-- **Automated test coverage:** 95.80%
-- **Credential-free automated tests:** 161
+- **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
+- **Automated test coverage:** 97.05%
+- **Credential-free automated tests:** 202 plus 5 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active
