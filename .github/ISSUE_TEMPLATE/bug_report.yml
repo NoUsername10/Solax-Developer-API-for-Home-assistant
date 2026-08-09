@@ -70,15 +70,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: integration_version
-    attributes:
-      label: Integration version
-      description: Find this in HACS or the integration manifest.
-      placeholder: "Example: 1.2.3"
-    validations:
-      required: true
-
   - type: dropdown
     id: installation_method
     attributes:
@@ -124,7 +115,7 @@ body:
         - Tablet
         - Other
     validations:
-      required: true
+      required: false
 
   - type: input
     id: browser
@@ -132,7 +123,7 @@ body:
       label: Browser or Home Assistant app
       placeholder: "Example: Chrome 140, Safari 18, Home Assistant Android app"
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: logs
