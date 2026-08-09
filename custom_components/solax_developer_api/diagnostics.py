@@ -577,6 +577,7 @@ def _build_coordinator_snapshot(coordinator: Any, state: dict[str, Any]) -> dict
         "live_view_active": meta.get("live_view_active"),
         "live_view_remaining_seconds": meta.get("live_view_remaining_seconds"),
         "alarm_scan_interval": meta.get("alarm_scan_interval"),
+        "alarm_last_merge_at": _to_iso(meta.get("alarm_last_merge_at")),
         "alarm_last_update_attempt": _to_iso(meta.get("alarm_last_update_attempt")),
         "alarm_last_successful_update": _to_iso(
             meta.get("alarm_last_successful_update")

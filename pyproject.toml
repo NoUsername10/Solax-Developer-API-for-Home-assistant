@@ -17,4 +17,4 @@ source = ["custom_components.solax_developer_api"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
-fail_under = 95
+fail_under = 96

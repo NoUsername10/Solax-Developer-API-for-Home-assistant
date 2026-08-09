@@ -134,7 +134,7 @@ def _make_minimal_coordinator():
     coordinator.client = type("_Client", (), {"token_expires_at": None})()
     coordinator._base_scan_interval = 120
     coordinator._effective_scan_interval = 120
-    coordinator._live_view_requested_interval = 5
+    coordinator._live_view_requested_interval = 10
     coordinator._live_view_call_budget_per_minute = 20
     coordinator._live_view_default_duration = 300
     coordinator._live_view_until = None

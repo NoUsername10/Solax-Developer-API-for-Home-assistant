@@ -606,9 +606,10 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     assert master["master"]["business_type"] == 4
 
     started = await hass.services.handler("start_live_view")(
-        _call(duration_seconds=120, interval_seconds=5)
+        _call(duration_seconds=120, interval_seconds=10)
     )
     assert started["started"]["duration_seconds"] == 120
+    assert started["started"]["interval_seconds"] == 10
     assert (await hass.services.handler("stop_live_view")(_call()))["stopped"]
 
     control = await hass.services.handler("set_export_control")(

@@ -94,6 +94,18 @@ def test_config_flow_helpers_and_selectors():
     )
     assert isinstance(config_flow._number_selector(1, 10), selector.NumberSelector)
     assert isinstance(config_flow._region_selector(hass), selector.SelectSelector)
+    assert (
+        config_flow._bounded_int(5, default=10, min_value=10, max_value=60)
+        == 10
+    )
+    assert (
+        config_flow._bounded_int(100, default=10, min_value=10, max_value=60)
+        == 60
+    )
+    assert (
+        config_flow._bounded_int("invalid", default=10, min_value=10, max_value=60)
+        == 10
+    )
     assert isinstance(
         config_flow._mapped_select_selector({"one": "One"}),
         selector.SelectSelector,
@@ -465,7 +477,7 @@ async def test_options_finish_and_simple_pages(monkeypatch):
         {
             "scan_interval": 180,
             "live_view_default_duration": 300,
-            "live_view_interval": 5,
+            "live_view_interval": 10,
             "live_view_call_budget_per_minute": 20,
             "night_scan_interval": 600,
             "night_start_hour": 23,

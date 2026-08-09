@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.08%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.14%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -60,8 +60,8 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
-- **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `207` credential-free tests plus `5` Home Assistant lifecycle fixture tests.
+- **Test coverage:** `97.14%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `209` credential-free tests plus `5` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -313,7 +313,7 @@ EMS entities and controls remain hidden until an EMS is confirmed. Manual EMS op
 | Standard scan interval | 120 seconds | 60-3600 seconds |
 | Active-alarm scan interval | 120 seconds | 60-3600 seconds |
 | Live View duration | 300 seconds | 30-3600 seconds |
-| Live View target interval | 5 seconds | 2-60 seconds |
+| Live View target interval | 10 seconds | 10-60 seconds |
 | Live View call budget | 20 calls/minute | 5-100 calls/minute |
 | Night scan interval | 600 seconds | 120-7200 seconds |
 | Night period | 23:00-06:00 | Configurable |
@@ -322,6 +322,7 @@ Important behavior:
 
 - **Developer API limit** - The documented account limit is 100 calls per minute.
 - **Budget-first Live View** - The effective interval can be slower than requested when the current plant/device topology would exceed the selected call budget.
+- **Useful-data floor** - Live View never polls faster than every 10 seconds because faster requests do not provide fresher SolaX realtime samples.
 - **Independent alarm monitoring** - Active alarms are checked on their own schedule during standard, night, and Live View operation. Successful zero-alarm responses clear prior alarm state; temporary failures retain the last-good state.
 - **Realtime-focused Live View** - Heavy inventory and automatic statistics paths are skipped during temporary Live View polling, while the independent alarm monitor continues.
 - **Reserved alarm budget** - Live View interval calculations reserve the estimated calls required by scheduled alarm monitoring.
@@ -653,7 +654,7 @@ actions:
   - action: solax_developer_api.start_live_view
     data:
       duration_seconds: 300
-      interval_seconds: 5
+      interval_seconds: 10
 mode: restart
 ```
 
@@ -765,7 +766,7 @@ entity: switch.YOUR_SYSTEM_live_view_mode # optional
 minimal: false                   # optional, set true for compact single-row view
 duration_seconds: 120            # optional
 heartbeat_seconds: 45            # optional
-interval_seconds: 5              # optional target
+interval_seconds: 10             # optional target; minimum 10 seconds
 ```
 
 The `entity` line is optional. If omitted, the card tries to auto-detect the first SolaX Live View switch.
@@ -1086,8 +1087,8 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
-- **Automated test coverage:** 97.05%
-- **Credential-free automated tests:** 202 plus 5 Home Assistant lifecycle fixture tests
+- **Automated test coverage:** 97.14%
+- **Credential-free automated tests:** 209 plus 5 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

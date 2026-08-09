@@ -9,7 +9,6 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import persistent_notification
-from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import (
     HomeAssistant,
@@ -65,6 +64,7 @@ from .const import (
 )
 from .coordinator import SolaxDeveloperCoordinator
 from .feature_services import FeatureServiceHandlers
+from .http_compat import StaticPathConfig
 from .i18n import async_ensure_catalog_loaded, translate
 from .runtime import SolaxConfigEntry, SolaxRuntimeData
 from .validation import ControlValidationError, validate_control_payload

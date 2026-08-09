@@ -40,7 +40,7 @@ class SolaxLiveViewControllerCard extends HTMLElement {
       );
     this._durationSeconds = this._toInt(cfg.duration_seconds, 120, 30, 3600);
     this._intervalSeconds =
-      cfg.interval_seconds === undefined ? undefined : this._toInt(cfg.interval_seconds, 5, 2, 60);
+      cfg.interval_seconds === undefined ? undefined : this._toInt(cfg.interval_seconds, 10, 10, 60);
     const defaultHeartbeat = Math.max(20, Math.floor(this._durationSeconds / 2));
     this._heartbeatSeconds = this._toInt(
       cfg.heartbeat_seconds,

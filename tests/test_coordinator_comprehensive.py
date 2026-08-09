@@ -13,6 +13,7 @@ from custom_components.solax_developer_api.coordinator import (
     _flatten_dict,
 )
 from custom_components.solax_developer_api.features.history import HistoryManager
+from custom_components.solax_developer_api.features import live_view as live_view_module
 
 
 class _Config:
@@ -198,7 +199,7 @@ def _make(client=None):
     instance.client = client or _FullClient()
     instance._base_scan_interval = 120
     instance._effective_scan_interval = 120
-    instance._live_view_requested_interval = 5
+    instance._live_view_requested_interval = 10
     instance._live_view_call_budget_per_minute = 20
     instance._live_view_default_duration = 300
     instance._live_view_until = None
@@ -244,6 +245,7 @@ def _make(client=None):
     instance._alarm_manager = None
     instance._alarm_manager_unsub = None
     instance._alarm_merge_task = None
+    instance._alarm_last_merge_at = None
     instance._history_manager = None
     instance._live_view_manager = None
     instance._state_merge_lock = asyncio.Lock()
@@ -255,6 +257,9 @@ def _make(client=None):
     instance.last_rate_limit_at = None
     instance.last_update_attempt = None
     instance.last_successful_update = None
+    instance.last_update_success = True
+    instance.last_exception = None
+    instance._listeners = {}
     instance.update_interval = timedelta(seconds=120)
     instance.data = instance._empty_state()
     return instance
@@ -315,7 +320,7 @@ def test_constructor_clamps_options_and_initializes_store(monkeypatch):
         options={
             "alarm_scan_interval": 999999,
             "live_view_default_duration": 999999,
-            "live_view_interval": "bad",
+            "live_view_interval": 5,
             "live_view_call_budget_per_minute": 999,
             "night_scan_interval": 1,
             "night_start_hour": -1,
@@ -326,6 +331,7 @@ def test_constructor_clamps_options_and_initializes_store(monkeypatch):
     )
 
     assert instance._base_scan_interval == 60
+    assert instance._live_view_requested_interval == 10
     assert instance._live_view_call_budget_per_minute <= 100
     assert instance._alarm_scan_interval == 3600
     assert instance._night_start_hour == 0
@@ -387,7 +393,6 @@ async def test_alarm_manager_lifecycle_serializes_state_and_retains_cached_alarm
     manager.last_error = "alarms:P2: slow down"
     manager.last_api_calls = 2
     instance._alarm_manager = manager
-    instance.async_set_updated_data = lambda state: setattr(instance, "data", state)
 
     await instance._async_merge_alarm_manager_state()
 
@@ -397,6 +402,7 @@ async def test_alarm_manager_lifecycle_serializes_state_and_retains_cached_alarm
     assert instance.data["last_errors"][0]["context"] == "device_realtime"
     assert instance.data["last_errors"][1]["context"] == "alarms:P2"
     assert instance.data["meta"]["alarm_last_api_calls"] == 2
+    assert instance.data["meta"]["alarm_last_merge_at"] is not None
     assert instance.data["meta"]["alarm_reserved_calls_per_minute"] == 0.5
     assert instance.rate_limited is True
     assert "alarms:P2" in instance.rate_limited_context
@@ -446,7 +452,6 @@ async def test_alarm_manager_initial_refresh_task_deduplication_and_lazy_setup(
             return asyncio.create_task(coro)
 
     instance.hass = _TaskHass()
-    instance.async_set_updated_data = lambda state: setattr(instance, "data", state)
 
     blocker = asyncio.Event()
 
@@ -471,6 +476,69 @@ async def test_alarm_manager_initial_refresh_task_deduplication_and_lazy_setup(
     await instance.async_start_alarm_polling()
     assert manager.refreshes == 1
     assert instance.data["alarms"]["P1"]["total"] == 0
+
+
+@pytest.mark.asyncio
+async def test_alarm_merges_do_not_reset_realtime_schedule_or_success_state():
+    instance = _make()
+    instance.data["plants"] = {"P1": {"plantId": "P1"}}
+    manager = _AlarmManagerStub(
+        data={"P1": {"total": 0, "records": []}},
+    )
+    instance._alarm_manager = manager
+
+    scheduled_refresh = object()
+    instance._unsub_refresh = scheduled_refresh
+    instance.last_update_success = False
+    listener_calls = 0
+
+    def _listener() -> None:
+        nonlocal listener_calls
+        listener_calls += 1
+
+    instance._listeners = {1: (_listener, None)}
+
+    def _fail_if_timer_reset(_state):
+        pytest.fail("alarm merge reset the realtime coordinator timer")
+
+    instance.async_set_updated_data = _fail_if_timer_reset
+
+    for alarm_count in (0, 1, 0):
+        manager.data = {
+            "P1": {
+                "total": alarm_count,
+                "records": ([{"alarmName": "Test"}] if alarm_count else []),
+            }
+        }
+        await instance._async_merge_alarm_manager_state()
+
+        assert instance._unsub_refresh is scheduled_refresh
+        assert instance.last_update_success is False
+
+    assert listener_calls == 3
+    assert instance.data["alarms"]["P1"]["total"] == 0
+    assert instance.data["meta"]["alarm_last_merge_at"] is not None
+
+
+def test_poll_profile_transitions_log_old_and_new_intervals(monkeypatch, caplog):
+    instance = _make()
+    manager = instance._get_live_view_manager()
+    current_hour = 23
+    monkeypatch.setattr(
+        live_view_module.dt_util,
+        "now",
+        lambda: datetime(2026, 8, 9, current_hour, tzinfo=timezone.utc),
+    )
+
+    with caplog.at_level("INFO", logger=live_view_module.__name__):
+        manager.apply_poll_profile({}, {})
+        current_hour = 6
+        manager.apply_poll_profile({}, {})
+
+    assert instance._poll_profile == "standard"
+    assert instance.update_interval == timedelta(seconds=120)
+    assert "standard (120s) to night (600s)" in caplog.text
+    assert "night (600s) to standard (120s)" in caplog.text
 
 
 def test_list_history_devices_filters_sorts_and_includes_manual_meter():
@@ -1407,6 +1475,12 @@ async def test_start_and_stop_live_view_success(monkeypatch):
 
     instance.async_set_updated_data = _set
     instance.async_request_refresh = _refresh
+    clamped = await instance.async_start_live_view(
+        duration_seconds=120,
+        interval_seconds=5,
+    )
+    assert clamped["live_view_target_interval"] == 10
+    assert clamped["effective_scan_interval"] >= 10
     result = await instance.async_start_live_view(
         duration_seconds=999999,
         interval_seconds=999,

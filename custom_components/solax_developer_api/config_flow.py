@@ -126,6 +126,21 @@ def _number_selector(minimum: int, maximum: int) -> selector.NumberSelector:
     )
 
 
+def _bounded_int(
+    value: Any,
+    *,
+    default: int,
+    min_value: int,
+    max_value: int,
+) -> int:
+    """Return an integer constrained to a UI selector's supported range."""
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError):
+        normalized = default
+    return max(min_value, min(max_value, normalized))
+
+
 def _region_selector(hass: HomeAssistant) -> selector.SelectSelector:
     return selector.SelectSelector(
         selector.SelectSelectorConfig(
@@ -1174,9 +1189,14 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                     ): _number_selector(MIN_LIVE_VIEW_DURATION, MAX_LIVE_VIEW_DURATION),
                     vol.Required(
                         CONF_LIVE_VIEW_INTERVAL,
-                        default=current_options.get(
-                            CONF_LIVE_VIEW_INTERVAL,
-                            DEFAULT_LIVE_VIEW_INTERVAL,
+                        default=_bounded_int(
+                            current_options.get(
+                                CONF_LIVE_VIEW_INTERVAL,
+                                DEFAULT_LIVE_VIEW_INTERVAL,
+                            ),
+                            default=DEFAULT_LIVE_VIEW_INTERVAL,
+                            min_value=MIN_LIVE_VIEW_INTERVAL,
+                            max_value=MAX_LIVE_VIEW_INTERVAL,
                         ),
                     ): _number_selector(MIN_LIVE_VIEW_INTERVAL, MAX_LIVE_VIEW_INTERVAL),
                     vol.Required(

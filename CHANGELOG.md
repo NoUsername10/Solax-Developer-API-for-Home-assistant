@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.1] - 2026-08-09
+
+### Fixed
+- Prevented independent alarm-state updates from cancelling and restarting the
+  main realtime coordinator timer. This fixes intermittent polling starvation
+  after the night profile changes the realtime interval to 600 seconds.
+- Alarm-only state merges no longer mark a failed main coordinator as recovered;
+  they retain their own success and error state independently.
+- Updated static frontend path registration to use Home Assistant's current
+  typed HTTP module while preserving runtime compatibility with Home Assistant
+  2025.1.0.
+
+### Changed
+- Added polling-profile transition logs with the previous/new profile and
+  interval, plus the latest alarm-state merge timestamp in diagnostics.
+- Raised the Live View default and minimum polling interval to 10 seconds so
+  calls are not spent faster than SolaX supplies useful realtime updates.
+
 ## [v0.4.0] - 2026-08-02
 
 ### Added
