@@ -22,7 +22,7 @@ start_live_view:
     interval_seconds:
       name: Target Interval (seconds)
       description: Optional live mode target interval override.
-      example: 5
+      example: 10
 
 stop_live_view:
   name: Stop Live View

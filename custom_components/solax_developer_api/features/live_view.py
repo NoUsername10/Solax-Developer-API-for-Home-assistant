@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta
+import logging
 import math
 from typing import TYPE_CHECKING, Any
 
@@ -20,6 +21,8 @@ from ..const import (
 
 if TYPE_CHECKING:
     from ..coordinator import SolaxDeveloperCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class LiveViewManager:
@@ -138,6 +141,8 @@ class LiveViewManager:
     ) -> None:
         """Apply standard, night, or Live View polling to the facade coordinator."""
         owner = self._owner
+        previous_profile = owner._poll_profile
+        previous_interval = owner._effective_scan_interval
         if self.active:
             owner._poll_profile = "live_view"
             owner._effective_scan_interval = self.compute_safe_interval(
@@ -155,6 +160,17 @@ class LiveViewManager:
 
         owner._apply_refresh_backoff_to_interval()
         owner.update_interval = timedelta(seconds=owner._effective_scan_interval)
+        if (
+            owner._poll_profile != previous_profile
+            or owner._effective_scan_interval != previous_interval
+        ):
+            _LOGGER.info(
+                "Polling profile changed from %s (%ss) to %s (%ss)",
+                previous_profile,
+                previous_interval,
+                owner._poll_profile,
+                owner._effective_scan_interval,
+            )
 
     async def async_start(
         self,

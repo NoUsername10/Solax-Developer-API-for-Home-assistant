@@ -245,6 +245,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._alarm_manager: AlarmManager | None = None
         self._alarm_manager_unsub: Callable[[], None] | None = None
         self._alarm_merge_task: asyncio.Task[None] | None = None
+        self._alarm_last_merge_at: datetime | None = None
         self._history_manager = HistoryManager(self)
         self._live_view_manager = LiveViewManager(self)
 
@@ -366,10 +367,12 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if item.get("code") in ERROR_RATE_LIMIT_CODES | ERROR_QUOTA_CODES:
                     self._mark_rate_limit(str(item.get("context") or "alarms"))
 
+            self._alarm_last_merge_at = dt_util.utcnow()
             meta = dict(state.get("meta") or {})
             meta.update(
                 {
                     "alarm_scan_interval": manager.scan_interval,
+                    "alarm_last_merge_at": self._alarm_last_merge_at,
                     "alarm_last_update_attempt": manager.last_update_attempt,
                     "alarm_last_successful_update": manager.last_successful_update,
                     "alarm_last_update_success": manager.last_update_success,
@@ -383,7 +386,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             state["meta"] = meta
             state["raw_api_responses"] = self.raw_api_responses
-            self.async_set_updated_data(state)
+            # AlarmManager has its own refresh schedule. Publishing its partial
+            # state through async_set_updated_data() would cancel and restart the
+            # facade coordinator's realtime timer on every alarm poll.
+            self.data = state
+            self.async_update_listeners()
 
     async def async_start_alarm_polling(self) -> None:
         """Start independent alarm polling after inventory is available."""
@@ -1721,6 +1728,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             0.0,
         )
         alarm_manager = getattr(self, "_alarm_manager", None)
+        meta["alarm_last_merge_at"] = getattr(
+            self,
+            "_alarm_last_merge_at",
+            None,
+        )
         meta["alarm_scan_interval"] = getattr(
             alarm_manager,
             "scan_interval",
@@ -2585,6 +2597,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             "_alarm_scan_interval",
                             DEFAULT_ALARM_SCAN_INTERVAL,
                         ),
+                    ),
+                    "alarm_last_merge_at": getattr(
+                        self,
+                        "_alarm_last_merge_at",
+                        None,
                     ),
                     "alarm_last_update_attempt": getattr(
                         getattr(self, "_alarm_manager", None),
