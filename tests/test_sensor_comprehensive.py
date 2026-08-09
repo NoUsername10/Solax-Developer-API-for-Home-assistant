@@ -167,7 +167,7 @@ def _state():
             "live_view_active": True,
             "live_view_remaining_seconds": 55,
             "live_view_until": "2026-06-23T12:01:00+00:00",
-            "live_view_target_interval": 5,
+            "live_view_target_interval": 10,
             "live_view_call_budget_per_minute": 20,
             "live_view_estimated_calls_per_cycle": 2,
             "night_scan_interval": 600,
@@ -360,7 +360,7 @@ def test_system_sensors_values_and_attributes():
     assert attributes["api_rate_limit_status"]["last_rate_limit_at"]
     assert attributes["dry_run_command_count"]["last_dry_run"]
     assert attributes["next_scheduled_poll"]["seconds_until_next_poll"] >= 0
-    assert attributes["poll_profile"]["live_view_target_interval"] == 5
+    assert attributes["poll_profile"]["live_view_target_interval"] == 10
 
 
 def test_system_sensor_edge_states():

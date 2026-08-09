@@ -38,6 +38,7 @@ def solax_api(monkeypatch):
         "plant_power": 500.0,
         "alarms": {"PLANT-1": []},
         "alarm_calls": [],
+        "plant_calls": [],
         "alarm_failures": set(),
         "temporary_failure": False,
     }
@@ -83,6 +84,7 @@ def solax_api(monkeypatch):
         }
 
     async def plant_realtime_data(self, *, plant_id, business_type, **kwargs):
+        state["plant_calls"].append(plant_id)
         if state["temporary_failure"]:
             raise SolaxApiError(
                 code=10406,
@@ -304,13 +306,24 @@ async def test_independent_alarm_schedule_inventory_and_stale_merge(hass, solax_
 
     coordinator._live_view_until = None
     coordinator._poll_profile = "night"
-    calls_before_night = len(solax_api["alarm_calls"])
-    async_fire_time_changed(
-        hass,
-        manager.last_update_attempt + timedelta(seconds=121),
-    )
+    coordinator._effective_scan_interval = 600
+    coordinator.update_interval = timedelta(seconds=600)
+    coordinator._schedule_refresh()
+    realtime_refresh_timer = coordinator._unsub_refresh
+    assert realtime_refresh_timer is not None
+    realtime_refresh_deadline = realtime_refresh_timer.__self__.when()
+    realtime_calls_before_night = len(solax_api["plant_calls"])
+    for _ in range(4):
+        await manager.async_refresh()
+        await hass.async_block_till_done()
+        assert len(solax_api["plant_calls"]) == realtime_calls_before_night
+        assert coordinator._unsub_refresh is not None
+        assert coordinator._unsub_refresh.__self__.when() == realtime_refresh_deadline
+
+    await coordinator.async_refresh()
     await hass.async_block_till_done()
-    assert len(solax_api["alarm_calls"]) > calls_before_night
+    assert len(solax_api["plant_calls"]) > realtime_calls_before_night
+    assert coordinator.data["meta"]["alarm_last_merge_at"] is not None
 
     state = dict(coordinator.data)
     state["plants"] = {
@@ -369,6 +382,7 @@ async def test_options_reload_and_loaded_unloaded_diagnostics(hass, solax_api):
     assert loaded["config_entry"]["system_name"] == "Reloaded Fixture"
     assert loaded["config_entry"]["scan_interval"] == 300
     assert loaded["coordinator"]["alarm_scan_interval"] == 300
+    assert loaded["coordinator"]["alarm_last_merge_at"] is not None
     assert entry.runtime_data.coordinator._get_alarm_manager().update_interval == timedelta(
         seconds=300
     )
