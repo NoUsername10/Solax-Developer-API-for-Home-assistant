@@ -483,7 +483,32 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     async def _loaded(hass):
         return None
 
+    admin_services = []
+
+    def _register_admin_service(
+        hass,
+        domain,
+        name,
+        handler,
+        *,
+        schema,
+        supports_response,
+    ):
+        admin_services.append(name)
+        hass.services.async_register(
+            domain,
+            name,
+            handler,
+            schema=schema,
+            supports_response=supports_response,
+        )
+
     monkeypatch.setattr(integration, "async_ensure_catalog_loaded", _loaded)
+    monkeypatch.setattr(
+        integration,
+        "async_register_admin_service",
+        _register_admin_service,
+    )
     coordinator = _Coordinator()
     entry = _entry(coordinator)
     hass = _Hass([entry])
@@ -631,6 +656,8 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     coordinator.available_control_services = {"set_evc_work_mode"}
     hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
     assert hass.services.has_service(DOMAIN, "set_evc_work_mode")
+    assert admin_services == ["set_evc_work_mode"]
+    assert "set_export_control" not in admin_services
     dry_ev = await hass.services.handler("set_evc_work_mode")(
         _call(
             sn_list=["EVC1"],
