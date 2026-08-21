@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 from collections.abc import Callable, Iterable
 from typing import Any, TypeVar, cast
 
-import async_timeout
 from aiohttp import ClientSession
 
 from .const import (
@@ -206,7 +205,7 @@ class SolaxDeveloperApiClient:
         url = f"{self.base_url}/openapi/auth/oauth/token"
 
         try:
-            async with async_timeout.timeout(self._timeout_seconds):
+            async with asyncio.timeout(self._timeout_seconds):
                 async with self._session.post(
                     url,
                     data=payload,
@@ -232,7 +231,7 @@ class SolaxDeveloperApiClient:
                             classification="json",
                             payload={"body": text},
                         ) from json_err
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             raise SolaxApiError(
                 code=None,
                 message="Timeout refreshing access token",
@@ -300,7 +299,7 @@ class SolaxDeveloperApiClient:
         url = f"{self.base_url}{path}"
 
         try:
-            async with async_timeout.timeout(self._timeout_seconds):
+            async with asyncio.timeout(self._timeout_seconds):
                 async with self._session.request(
                     method,
                     url,
@@ -325,7 +324,7 @@ class SolaxDeveloperApiClient:
                             classification="json",
                             payload={"body": text},
                         ) from json_err
-        except asyncio.TimeoutError as err:
+        except TimeoutError as err:
             raise SolaxApiError(
                 code=None,
                 message=f"Timeout during API request {path}",

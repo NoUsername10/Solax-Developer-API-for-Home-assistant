@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.2] - 2026-08-21
+
+### Security
+- Restricted the seven direct EV charger hardware-control services to Home
+  Assistant administrators. Native EV charger buttons, selects, and numbers
+  remain available to non-admin users according to Home Assistant's entity
+  control permissions.
+- Applied the administrator check before payload validation, dry-run handling,
+  or any SolaX request so unknown and non-admin callers cannot use the direct
+  EV service family.
+
+### Changed
+- Replaced the external `async-timeout` helper with Python's built-in
+  `asyncio.timeout` while preserving timeout error classification.
+- Removed `aiohttp` and `async-timeout` from integration requirements because
+  Home Assistant provides the shared HTTP client and runtime packages.
+- Retained the intentional 10-second Live View minimum. Live View remains an
+  explicit, time-limited, API-budget-protected mode that automatically returns
+  to normal polling.
+- Expanded authorization and timeout coverage to `211` credential-free tests
+  plus `7` Home Assistant lifecycle fixture tests, with `97.17%` measured
+  stable coverage.
+
 ## [v0.4.1] - 2026-08-09
 
 ### Fixed

@@ -5,8 +5,15 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
+from homeassistant.auth.const import (
+    GROUP_ID_ADMIN,
+    GROUP_ID_READ_ONLY,
+    GROUP_ID_USER,
+)
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.core import Context
+from homeassistant.exceptions import Unauthorized, UnknownUser
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.setup import async_setup_component
 from homeassistant.util import dt as dt_util
@@ -20,10 +27,12 @@ from custom_components.solax_developer_api.const import (
     CONF_ALARM_NOTIFICATIONS,
     CONF_ALARM_SCAN_INTERVAL,
     CONF_ENTITY_PREFIX,
+    CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_MANUAL_METER_SERIALS,
     CONF_SCAN_INTERVAL,
     CONF_SYSTEM_NAME,
     DOMAIN,
+    RUNTIME_RELOAD_STATE,
     SERVICE_MANUAL_REFRESH,
 )
 from custom_components.solax_developer_api.diagnostics import (
@@ -40,6 +49,7 @@ def solax_api(monkeypatch):
         "alarm_calls": [],
         "plant_calls": [],
         "alarm_failures": set(),
+        "control_calls": [],
         "temporary_failure": False,
     }
 
@@ -76,6 +86,16 @@ def solax_api(monkeypatch):
                     "businessType": 1,
                     "onlineStatus": 1,
                     "deviceModel": 19,
+                }
+            ]
+        elif business_type == 1 and device_type == 4 and page_no == 1:
+            records = [
+                {
+                    "deviceSn": "EVC-1",
+                    "plantId": "PLANT-1",
+                    "deviceType": 4,
+                    "businessType": 1,
+                    "onlineStatus": 1,
                 }
             ]
         return {
@@ -156,6 +176,15 @@ def solax_api(monkeypatch):
     async def get_master_control_device(self, **kwargs):
         return {"code": 10000, "result": []}
 
+    async def execute_control(self, *, path, payload):
+        state["control_calls"].append({"path": path, "payload": dict(payload)})
+        serial = str(payload["snList"][0])
+        return {
+            "code": 10000,
+            "requestId": f"REQ-{len(state['control_calls'])}",
+            "result": {serial: {"status": 4}},
+        }
+
     monkeypatch.setattr(SolaxDeveloperApiClient, "page_plant_info", page_plant_info)
     monkeypatch.setattr(SolaxDeveloperApiClient, "page_device_info", page_device_info)
     monkeypatch.setattr(SolaxDeveloperApiClient, "plant_realtime_data", plant_realtime_data)
@@ -167,16 +196,23 @@ def solax_api(monkeypatch):
         "get_master_control_device",
         get_master_control_device,
     )
+    monkeypatch.setattr(SolaxDeveloperApiClient, "execute_control", execute_control)
     return state
 
 
-def _entry(*, manual_meter: bool = True, alarm_notifications: bool = True):
+def _entry(
+    *,
+    manual_meter: bool = True,
+    alarm_notifications: bool = True,
+    ev_controls: bool = False,
+):
     options = {
         CONF_SYSTEM_NAME: "HA Fixture",
         CONF_ENTITY_PREFIX: "ha_fixture",
         CONF_SCAN_INTERVAL: 120,
         CONF_ALARM_NOTIFICATIONS: alarm_notifications,
         CONF_ALARM_SCAN_INTERVAL: 120,
+        CONF_EV_CHARGER_CONTROLS_ENABLED: ev_controls,
     }
     if manual_meter:
         options[CONF_MANUAL_METER_SERIALS] = [
@@ -202,6 +238,47 @@ async def _setup(hass, entry):
     await hass.async_block_till_done()
     assert entry.state is ConfigEntryState.LOADED
     return entry.runtime_data.coordinator
+
+
+EV_DIRECT_SERVICE_PAYLOADS = {
+    "set_charge_scene": {
+        "sn_list": ["EVC-1"],
+        "charger_scene": 0,
+        "business_type": 1,
+    },
+    "set_evc_qr_code": {
+        "sn_list": ["EVC-1"],
+        "qr_code": "fixture-qr-code",
+        "business_type": 1,
+    },
+    "set_evc_work_mode": {
+        "sn_list": ["EVC-1"],
+        "work_mode": 1,
+        "business_type": 1,
+    },
+    "set_evc_start_mode": {
+        "sn_list": ["EVC-1"],
+        "start_mode": 0,
+        "business_type": 1,
+    },
+    "set_evc_charge_command": {
+        "sn_list": ["EVC-1"],
+        "work_cmd": 2,
+        "business_type": 1,
+    },
+    "set_evc_reserve_charge": {
+        "sn_list": ["EVC-1"],
+        "charge_start_time": "08:00",
+        "charge_end_time": "10:00",
+        "charge_current": 16,
+        "business_type": 1,
+    },
+    "set_evc_current_limit": {
+        "sn_list": ["EVC-1"],
+        "current_limit": 16,
+        "business_type": 1,
+    },
+}
 
 
 @pytest.mark.usefixtures("solax_api")
@@ -230,6 +307,111 @@ async def test_setup_discovery_registry_and_manual_meter_reload(hass):
     assert entry.runtime_data.coordinator.manual_meter_entries == [
         {"serial": "MANUAL-METER-1", "business_type": 4, "source": "manual"}
     ]
+
+
+async def test_direct_ev_services_require_admin_even_when_writes_disabled(
+    hass,
+    solax_api,
+):
+    entry = _entry(ev_controls=False)
+    await _setup(hass, entry)
+    hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
+    admin = await hass.auth.async_create_user(
+        "Fixture Admin",
+        group_ids=[GROUP_ID_ADMIN],
+    )
+    user = await hass.auth.async_create_user(
+        "Fixture User",
+        group_ids=[GROUP_ID_USER],
+    )
+    payload = EV_DIRECT_SERVICE_PAYLOADS["set_evc_work_mode"]
+
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(
+            DOMAIN,
+            "set_evc_work_mode",
+            payload,
+            blocking=True,
+            return_response=True,
+            context=Context(user_id=user.id),
+        )
+    with pytest.raises(UnknownUser):
+        await hass.services.async_call(
+            DOMAIN,
+            "set_evc_work_mode",
+            payload,
+            blocking=True,
+            return_response=True,
+            context=Context(user_id="unknown-user-id"),
+        )
+
+    response = await hass.services.async_call(
+        DOMAIN,
+        "set_evc_work_mode",
+        payload,
+        blocking=True,
+        return_response=True,
+        context=Context(user_id=admin.id),
+    )
+    assert response["blocked"] is True
+    assert solax_api["control_calls"] == []
+
+
+async def test_admin_direct_services_and_non_admin_entity_permissions(
+    hass,
+    solax_api,
+):
+    entry = _entry(ev_controls=True)
+    await _setup(hass, entry)
+    hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
+    admin = await hass.auth.async_create_user(
+        "Fixture Admin",
+        group_ids=[GROUP_ID_ADMIN],
+    )
+    user = await hass.auth.async_create_user(
+        "Fixture User",
+        group_ids=[GROUP_ID_USER],
+    )
+    read_only = await hass.auth.async_create_user(
+        "Fixture Read Only",
+        group_ids=[GROUP_ID_READ_ONLY],
+    )
+
+    for service_name, payload in EV_DIRECT_SERVICE_PAYLOADS.items():
+        response = await hass.services.async_call(
+            DOMAIN,
+            service_name,
+            payload,
+            blocking=True,
+            return_response=True,
+            context=Context(user_id=admin.id),
+        )
+        assert response["sent"] is True
+        assert response["accepted"] is True
+        assert response["device_acknowledged"] is True
+
+    assert len(solax_api["control_calls"]) == len(EV_DIRECT_SERVICE_PAYLOADS)
+
+    start_button = "button.ha_fixture_ev_charger_start_charging_device_evc_1"
+    assert hass.states.get(start_button) is not None
+    await hass.services.async_call(
+        "button",
+        "press",
+        {"entity_id": start_button},
+        blocking=True,
+        context=Context(user_id=user.id),
+    )
+    assert len(solax_api["control_calls"]) == len(EV_DIRECT_SERVICE_PAYLOADS) + 1
+
+    with pytest.raises(Unauthorized):
+        await hass.services.async_call(
+            "button",
+            "press",
+            {"entity_id": start_button},
+            blocking=True,
+            context=Context(user_id=read_only.id),
+        )
+    assert len(solax_api["control_calls"]) == len(EV_DIRECT_SERVICE_PAYLOADS) + 1
 
 
 async def test_temporary_failure_retains_values_and_alarm_notification_lifecycle(

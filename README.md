@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.14%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.17%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -50,6 +50,7 @@ Contributions, issues, and pull requests are welcome.
 > [!IMPORTANT]
 > EV charger controls can send real SolaX write requests only after you explicitly enable **EV Charger Controls** in integration options.
 > Keep EV charger controls disabled if you want a read-only installation.
+> Direct `solax_developer_api.set_evc_*` services and `set_charge_scene` require a Home Assistant administrator. Non-admin users can use the native EV charger entities when their Home Assistant entity permissions allow control.
 > Inverter, battery, grid, VPP, and EMS control services remain **hard-blocked dry-runs**. 
 
 
@@ -60,8 +61,8 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
-- **Test coverage:** `97.14%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `209` credential-free tests plus `5` Home Assistant lifecycle fixture tests.
+- **Test coverage:** `97.17%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `211` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested:** `2025.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -711,6 +712,10 @@ Control services are registered only when compatible equipment is present.
 
 **EV charger**
 
+These direct hardware-control services require a Home Assistant administrator.
+For non-admin dashboards, use the EV charger's native button, select, and number
+entities; Home Assistant applies the user's entity control permissions.
+
 - `solax_developer_api.set_charge_scene`
 - `solax_developer_api.set_evc_qr_code`
 - `solax_developer_api.set_evc_work_mode`
@@ -734,7 +739,8 @@ Every control service and EV charger device control:
 4. Records a sanitized audit event.
 5. Keeps non-EV charger control families hard-blocked as dry-runs.
 6. Executes EV charger controls only when `EV Charger Controls` is enabled in options.
-7. Returns per-device command status and `requestId` when SolaX provides them.
+7. Requires a Home Assistant administrator for direct EV service calls; native EV entities remain governed by Home Assistant entity permissions.
+8. Returns per-device command status and `requestId` when SolaX provides them.
 
 ## ⚡ Built-in Card-Aware Live View
 
@@ -1016,7 +1022,7 @@ Never post unredacted credentials or Developer Portal secrets.
 - Some meters and EMS systems are readable by serial but absent from inventory endpoints; these require manual validated onboarding.
 - Device history remains an on-demand read service. It does not write historical API samples into Home Assistant's recorder.
 - Callback URL push processing is not implemented.
-- Non-EV control services are schema-validated hard-blocked dry-runs. EV charger controls can send outbound write requests only when explicitly enabled.
+- Non-EV control services are schema-validated hard-blocked dry-runs. EV charger controls can send outbound write requests only when explicitly enabled. Direct EV services require an administrator; native EV entities use Home Assistant entity permissions.
 - A device that is offline can retain its known entities, but current values can remain unavailable until SolaX returns fresh telemetry.
 
 ## 🌍 Translation Support
@@ -1087,8 +1093,8 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
-- **Automated test coverage:** 97.14%
-- **Credential-free automated tests:** 209 plus 5 Home Assistant lifecycle fixture tests
+- **Automated test coverage:** 97.17%
+- **Credential-free automated tests:** 211 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

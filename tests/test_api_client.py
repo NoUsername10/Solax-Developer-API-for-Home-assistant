@@ -53,6 +53,61 @@ class FakeSession:
         return FakeRequestContext(self._responses.pop(0))
 
 
+class ImmediateTimeout:
+    async def __aenter__(self):
+        raise TimeoutError
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return False
+
+
+@pytest.mark.asyncio
+async def test_builtin_timeout_classifies_token_timeout(monkeypatch):
+    session = FakeSession([])
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+    monkeypatch.setattr(
+        api_module.asyncio,
+        "timeout",
+        lambda _seconds: ImmediateTimeout(),
+    )
+
+    with pytest.raises(api_module.SolaxApiError) as err:
+        await client.ensure_token()
+
+    assert err.value.classification == "timeout"
+    assert err.value.message == "Timeout refreshing access token"
+    assert session.calls == []
+
+
+@pytest.mark.asyncio
+async def test_builtin_timeout_classifies_api_request_timeout(monkeypatch):
+    session = FakeSession([])
+    client = SolaxDeveloperApiClient(
+        client_id="id",
+        client_secret="secret",
+        region="eu",
+        session=session,
+    )
+    monkeypatch.setattr(client, "ensure_token", AsyncMock())
+    monkeypatch.setattr(
+        api_module.asyncio,
+        "timeout",
+        lambda _seconds: ImmediateTimeout(),
+    )
+
+    with pytest.raises(api_module.SolaxApiError) as err:
+        await client.page_plant_info(business_type=1)
+
+    assert err.value.classification == "timeout"
+    assert "plant/page_plant_info" in str(err.value)
+    assert session.calls == []
+
+
 @pytest.mark.asyncio
 async def test_token_and_read_request_flow():
     session = FakeSession(
