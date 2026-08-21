@@ -21,6 +21,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.service import async_register_admin_service
 
 from .api import SolaxDeveloperApiClient
 from .const import (
@@ -639,8 +640,20 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         name: str,
         handler: ServiceHandler,
         schema: vol.Schema | None = None,
+        *,
+        admin_only: bool = False,
     ) -> None:
         if hass.services.has_service(DOMAIN, name):
+            return
+        if admin_only:
+            async_register_admin_service(
+                hass,
+                DOMAIN,
+                name,
+                handler,
+                schema=schema or vol.Schema({}),
+                supports_response=SupportsResponse.OPTIONAL,
+            )
             return
         hass.services.async_register(
             DOMAIN,
@@ -1017,7 +1030,12 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
         )
         for service_name, (handler, schema) in registrations.items():
             if service_name in desired:
-                _register_service(service_name, handler, schema=schema)
+                _register_service(
+                    service_name,
+                    handler,
+                    schema=schema,
+                    admin_only=service_name in EV_CHARGER_CONTROL_SERVICES,
+                )
             elif hass.services.has_service(DOMAIN, service_name):
                 hass.services.async_remove(DOMAIN, service_name)
 

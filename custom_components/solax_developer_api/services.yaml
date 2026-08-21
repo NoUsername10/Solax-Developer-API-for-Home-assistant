@@ -1038,7 +1038,7 @@ pv_and_bat_individual_setting_target_soc_mode:
       example: 1
 set_charge_scene:
   name: EV Charger Set Charge Scene
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1069,7 +1069,7 @@ set_charge_scene:
       example: "charger-1"
 set_evc_qr_code:
   name: EV Charger Set QR Code
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1092,7 +1092,7 @@ set_evc_qr_code:
       example: 1
 set_evc_work_mode:
   name: EV Charger Set Work Mode
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1119,7 +1119,7 @@ set_evc_work_mode:
       example: 16
 set_evc_start_mode:
   name: EV Charger Set Start Mode
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1142,7 +1142,7 @@ set_evc_start_mode:
       example: 1
 set_evc_charge_command:
   name: EV Charger Set Charge Command
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1165,7 +1165,7 @@ set_evc_charge_command:
       example: 1
 set_evc_reserve_charge:
   name: EV Charger Reserve Charge
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
@@ -1198,7 +1198,7 @@ set_evc_reserve_charge:
       example: 1
 set_evc_current_limit:
   name: EV Charger Current Limit
-  description: Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run.
+  description: Administrator-only direct service. Executes a real EV charger command when EV charger controls are enabled. Otherwise validates the payload and blocks it as a dry-run. Non-admin users should use the native EV charger entities.
   fields:
     entry_id:
       name: Entry ID
