@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 - Moved frontend asset path resolution and existence checks into Home
   Assistant's executor so integration setup performs no blocking filesystem
   calls on the event loop.
+- Updated lifecycle registry assertions to use Home Assistant's
+  config-entry-aware device listing API instead of the deprecated global
+  identifier lookup.
 
 ### Changed
 - Removed the obsolete local `StaticPathConfig` compatibility shim and now use
@@ -23,6 +26,9 @@ All notable changes to this project will be documented in this file.
   README presentation icon remains under `assets/`.
 - Updated CI to validate both Home Assistant `2026.1.0` and current stable,
   including lifecycle fixture coverage at both supported boundaries.
+- Constrained lifecycle fixture installation to the Home Assistant version
+  already present in each CI container, preventing the fixture resolver from
+  silently upgrading minimum/stable jobs to a newer beta release.
 
 ## [v0.4.2] - 2026-08-21
 
