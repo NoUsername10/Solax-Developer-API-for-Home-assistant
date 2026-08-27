@@ -9,6 +9,8 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import persistent_notification
+# This is explicit in HA 2026.1 and an implicit public re-export in newer typing.
+from homeassistant.components.http import StaticPathConfig  # type: ignore[attr-defined,unused-ignore]
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import (
     HomeAssistant,
@@ -65,7 +67,6 @@ from .const import (
 )
 from .coordinator import SolaxDeveloperCoordinator
 from .feature_services import FeatureServiceHandlers
-from .http_compat import StaticPathConfig
 from .i18n import async_ensure_catalog_loaded, translate
 from .runtime import SolaxConfigEntry, SolaxRuntimeData
 from .validation import ControlValidationError, validate_control_payload
@@ -148,31 +149,39 @@ def _sanitize_dry_run_payload_for_log(value: Any, *, key_hint: str | None = None
     return value
 
 
+def _frontend_static_paths() -> list[StaticPathConfig]:
+    """Resolve and validate frontend paths outside the event loop."""
+    component_dir = Path(__file__).resolve().parent
+    frontend_dir = component_dir / "frontend"
+    translations_dir = component_dir / "runtime_translations"
+    if not frontend_dir.exists() or not translations_dir.exists():
+        return []
+
+    return [
+        StaticPathConfig(
+            FRONTEND_STATIC_URL_PATH,
+            str(frontend_dir),
+            cache_headers=False,
+        ),
+        StaticPathConfig(
+            FRONTEND_TRANSLATIONS_URL_PATH,
+            str(translations_dir),
+            cache_headers=False,
+        ),
+    ]
+
+
 async def _async_register_frontend_assets(hass: HomeAssistant) -> None:
     runtime_state = hass.data.setdefault(RUNTIME_RELOAD_STATE, {})
     if runtime_state.get("frontend_registered"):
         return
 
-    frontend_dir = Path(__file__).resolve().parent / "frontend"
-    translations_dir = Path(__file__).resolve().parent / "runtime_translations"
-    if not frontend_dir.exists() or not translations_dir.exists():
+    static_paths = await hass.async_add_executor_job(_frontend_static_paths)
+    if not static_paths:
         return
 
     try:
-        await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig(
-                    FRONTEND_STATIC_URL_PATH,
-                    str(frontend_dir),
-                    cache_headers=False,
-                ),
-                StaticPathConfig(
-                    FRONTEND_TRANSLATIONS_URL_PATH,
-                    str(translations_dir),
-                    cache_headers=False,
-                ),
-            ]
-        )
+        await hass.http.async_register_static_paths(static_paths)
         runtime_state["frontend_registered"] = True
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("Failed to register frontend assets for %s: %s", DOMAIN, err)
