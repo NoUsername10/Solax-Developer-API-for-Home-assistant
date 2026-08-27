@@ -54,7 +54,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: Install Home Assistant fixture tools
-        run: pip install --quiet -r requirements_test_ha.txt
+        run: |
+          HA_VERSION="$(python -c 'from homeassistant.const import __version__; print(__version__)')"
+          pip install --quiet --no-cache-dir \
+            "homeassistant==$HA_VERSION" \
+            -r requirements_test_ha.txt
       - name: Lifecycle tests
         run: pytest -q tests_ha
 
