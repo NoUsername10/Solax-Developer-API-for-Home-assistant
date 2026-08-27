@@ -117,6 +117,11 @@ class _Hass:
         self.config_entries = _ConfigEntries(entries)
         self.http = _Http()
         self.bus = _Bus()
+        self.executor_calls = []
+
+    async def async_add_executor_job(self, target, *args):
+        self.executor_calls.append((target, args))
+        return target(*args)
 
 
 class _Coordinator:
@@ -291,17 +296,27 @@ def test_log_redaction_helpers_cover_all_shapes():
 
 
 @pytest.mark.asyncio
-async def test_frontend_registration_success_repeat_and_failure():
+async def test_frontend_registration_success_repeat_and_failure(monkeypatch):
     hass = _Hass()
     await _async_register_frontend_assets(hass)
     assert hass.http.paths
+    assert len(hass.executor_calls) == 1
     await _async_register_frontend_assets(hass)
     assert len(hass.http.paths) == 2
+    assert len(hass.executor_calls) == 1
 
     failed = _Hass()
     failed.http.fail = True
     await _async_register_frontend_assets(failed)
+    assert len(failed.executor_calls) == 1
     assert "frontend_registered" not in failed.data[RUNTIME_RELOAD_STATE]
+
+    monkeypatch.setattr(integration, "_frontend_static_paths", lambda: [])
+    missing = _Hass()
+    await _async_register_frontend_assets(missing)
+    assert len(missing.executor_calls) == 1
+    assert not missing.http.paths
+    assert "frontend_registered" not in missing.data[RUNTIME_RELOAD_STATE]
 
 
 def test_runtime_resolution_and_translated_errors():
