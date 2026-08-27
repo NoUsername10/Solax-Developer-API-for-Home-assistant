@@ -290,8 +290,23 @@ async def test_setup_discovery_registry_and_manual_meter_reload(hass):
     assert {"INVERTER-1", "MANUAL-METER-1"}.issubset(coordinator.data["devices"])
 
     device_registry = dr.async_get(hass)
-    inverter = device_registry.async_get_device({(DOMAIN, "INVERTER-1")})
-    meter = device_registry.async_get_device({(DOMAIN, "MANUAL-METER-1")})
+    entry_devices = dr.async_entries_for_config_entry(device_registry, entry.entry_id)
+    inverter = next(
+        (
+            device
+            for device in entry_devices
+            if (DOMAIN, "INVERTER-1") in device.identifiers
+        ),
+        None,
+    )
+    meter = next(
+        (
+            device
+            for device in entry_devices
+            if (DOMAIN, "MANUAL-METER-1") in device.identifiers
+        ),
+        None,
+    )
     assert inverter is not None
     assert meter is not None
 
