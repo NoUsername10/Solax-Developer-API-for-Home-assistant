@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and add this repository to HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.17%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.18%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -61,9 +61,9 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
-- **Test coverage:** `97.17%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Test coverage:** `97.18%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
 - **Automated tests:** `211` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
-- **Home Assistant versions tested:** `2025.1.0` and current stable.
+- **Home Assistant versions tested:** `2026.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
 > [!NOTE]
@@ -122,7 +122,7 @@ Before installing the Home Assistant integration, create and authorize a SolaX D
 
 You need:
 
-1. **Home Assistant 2025.1.0 or newer**
+1. **Home Assistant 2026.1.0 or newer**
 2. **SolaX Developer Portal access**
    - [SolaX Developer Portal](https://developer.solaxcloud.com/home)
 3. **A Developer API application**
@@ -1093,7 +1093,7 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
-- **Automated test coverage:** 97.17%
+- **Automated test coverage:** 97.18%
 - **Credential-free automated tests:** 211 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active

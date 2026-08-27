@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.3] - 2026-08-27
+
+### Fixed
+- Raised the minimum supported Home Assistant version to `2026.1.0`, matching
+  the native `async_register_admin_service` response-support API used by the
+  administrator-only EV charger services. This removes the setup failure that
+  affected EV charger accounts on the previously declared older version range.
+- Moved frontend asset path resolution and existence checks into Home
+  Assistant's executor so integration setup performs no blocking filesystem
+  calls on the event loop.
+
+### Changed
+- Removed the obsolete local `StaticPathConfig` compatibility shim and now use
+  Home Assistant's public HTTP API directly.
+- Removed the redundant repository-root brand assets. The installed icon and
+  logo remain under `custom_components/solax_developer_api/brand/`, and the
+  README presentation icon remains under `assets/`.
+- Updated CI to validate both Home Assistant `2026.1.0` and current stable,
+  including lifecycle fixture coverage at both supported boundaries.
+
 ## [v0.4.2] - 2026-08-21
 
 ### Security

@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         homeassistant:
-          - "2025.1.0"
+          - "2026.1.0"
           - stable
     container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
     steps:
@@ -42,9 +42,15 @@ jobs:
         run: python scripts/check_module_coverage.py coverage.json --minimum 95
 
   home-assistant-lifecycle:
-    name: Home Assistant lifecycle fixtures
+    name: Home Assistant ${{ matrix.homeassistant }} lifecycle fixtures
     runs-on: ubuntu-latest
-    container: ghcr.io/home-assistant/home-assistant:stable
+    strategy:
+      fail-fast: false
+      matrix:
+        homeassistant:
+          - "2026.1.0"
+          - stable
+    container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
     steps:
       - uses: actions/checkout@v5
       - name: Install Home Assistant fixture tools
