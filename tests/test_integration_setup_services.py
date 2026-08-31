@@ -297,18 +297,37 @@ def test_log_redaction_helpers_cover_all_shapes():
 
 @pytest.mark.asyncio
 async def test_frontend_registration_success_repeat_and_failure(monkeypatch):
+    added_urls = []
+
+    async def _async_get_integration(hass, domain):
+        assert domain == DOMAIN
+        return SimpleNamespace(version="v0.4.3")
+
+    monkeypatch.setattr(integration, "async_get_integration", _async_get_integration)
+    monkeypatch.setattr(
+        integration.frontend,
+        "add_extra_js_url",
+        lambda hass, url: added_urls.append((hass, url)),
+    )
+
     hass = _Hass()
     await _async_register_frontend_assets(hass)
     assert hass.http.paths
+    assert [url for registered_hass, url in added_urls if registered_hass is hass] == [
+        f"{integration.FRONTEND_STATIC_URL_PATH}/{filename}?v=v0.4.3"
+        for filename in integration.FRONTEND_CARD_FILENAMES
+    ]
     assert len(hass.executor_calls) == 1
     await _async_register_frontend_assets(hass)
     assert len(hass.http.paths) == 2
     assert len(hass.executor_calls) == 1
+    assert len(added_urls) == 3
 
     failed = _Hass()
     failed.http.fail = True
     await _async_register_frontend_assets(failed)
     assert len(failed.executor_calls) == 1
+    assert not [url for registered_hass, url in added_urls if registered_hass is failed]
     assert "frontend_registered" not in failed.data[RUNTIME_RELOAD_STATE]
 
     monkeypatch.setattr(integration, "_frontend_static_paths", lambda: [])
@@ -316,6 +335,7 @@ async def test_frontend_registration_success_repeat_and_failure(monkeypatch):
     await _async_register_frontend_assets(missing)
     assert len(missing.executor_calls) == 1
     assert not missing.http.paths
+    assert not [url for registered_hass, url in added_urls if registered_hass is missing]
     assert "frontend_registered" not in missing.data[RUNTIME_RELOAD_STATE]
 
 

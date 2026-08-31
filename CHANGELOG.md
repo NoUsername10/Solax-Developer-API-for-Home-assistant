@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.4] - 2026-08-31
+
+### Added
+- Automatically register the bundled Live View, History Viewer, and Alarm
+  Viewer modules with the Home Assistant frontend so all three cards appear in
+  the dashboard card picker without manual resource configuration.
+
+### Changed
+- Promoted the dashboard cards directly below the installation guide with
+  visible previews and collapsible, non-duplicated configuration details.
+- Added native SolaX alarm monitoring and Home Assistant persistent
+  notifications to the README feature summary.
+- Clarified that the integration currently supports one configured Developer
+  API account and removed unnecessary multi-entry guidance from card examples.
+
 ## [v0.4.3] - 2026-08-27
 
 ### Fixed
