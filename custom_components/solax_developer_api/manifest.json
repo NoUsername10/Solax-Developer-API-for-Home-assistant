@@ -3,10 +3,10 @@
   "name": "Solax Developer API for Home Assistant",
   "codeowners": ["@NoUsername10"],
   "config_flow": true,
-  "dependencies": ["http"],
+  "dependencies": ["frontend", "http"],
   "documentation": "https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant/issues",
   "single_config_entry": true,
-  "version": "v0.4.3"
+  "version": "v0.4.4"
 }

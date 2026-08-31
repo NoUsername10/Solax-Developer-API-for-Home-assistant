@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import voluptuous as vol
-from homeassistant.components import persistent_notification
+from homeassistant.components import frontend, persistent_notification
 # This is explicit in HA 2026.1 and an implicit public re-export in newer typing.
 from homeassistant.components.http import StaticPathConfig  # type: ignore[attr-defined,unused-ignore]
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
@@ -24,6 +24,7 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.service import async_register_admin_service
+from homeassistant.loader import async_get_integration
 
 from .api import SolaxDeveloperApiClient
 from .const import (
@@ -77,6 +78,11 @@ _LOGGER = logging.getLogger(__name__)
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 FRONTEND_STATIC_URL_PATH = f"/api/{DOMAIN}/frontend"
 FRONTEND_TRANSLATIONS_URL_PATH = f"/api/{DOMAIN}/frontend-translations"
+FRONTEND_CARD_FILENAMES = (
+    "solax-live-view-controller.js",
+    "solax-history-viewer.js",
+    "solax-alarm-viewer.js",
+)
 REPAIR_API_RATE_LIMIT = "api_rate_limit"
 REPAIR_API_PERMISSION = "api_permission"
 ALARM_NOTIFICATION_NONE = "none"
@@ -182,6 +188,13 @@ async def _async_register_frontend_assets(hass: HomeAssistant) -> None:
 
     try:
         await hass.http.async_register_static_paths(static_paths)
+        integration = await async_get_integration(hass, DOMAIN)
+        version = str(integration.version or "0")
+        for filename in FRONTEND_CARD_FILENAMES:
+            frontend.add_extra_js_url(
+                hass,
+                f"{FRONTEND_STATIC_URL_PATH}/{filename}?v={version}",
+            )
         runtime_state["frontend_registered"] = True
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("Failed to register frontend assets for %s: %s", DOMAIN, err)
