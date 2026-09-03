@@ -442,6 +442,9 @@ def _build_filtered_api_projection(state: dict[str, Any]) -> dict[str, Any]:
         "plants": filtered_plants,
         "devices": filtered_devices,
         "inventory_by_type": deepcopy(state.get("inventory_by_type") or {}),
+        "attached_battery_inventory": _drop_nulls(
+            deepcopy(state.get("attached_battery_inventory") or {})
+        ),
         "plant_realtime": filtered_plant_realtime,
         "plant_stats": filtered_plant_stats,
         "alarms": filtered_alarms,
@@ -476,11 +479,49 @@ def _extract_raw_device_realtime(raw_api_responses: dict[str, Any]) -> dict[str,
         for item in raw_api_responses.get(endpoint) or []:
             if not isinstance(item, Mapping):
                 continue
+            request = item.get("request") or {}
             response = item.get("response") or {}
             if not isinstance(response, Mapping):
                 continue
             rows = response.get("result") or []
             if not isinstance(rows, list):
+                continue
+            serialless_battery_query = (
+                isinstance(request, Mapping)
+                and request.get("deviceType") == 2
+                and request.get("requestSnType") == 1
+            )
+            if serialless_battery_query:
+                requested = request.get("snList") or []
+                if not isinstance(requested, list):
+                    requested = []
+                grouped: dict[str, list[dict[str, Any]]] = {}
+                for row in rows:
+                    if not isinstance(row, Mapping):
+                        continue
+                    row_serial = str(row.get("deviceSn") or "").strip()
+                    parent_serial = next(
+                        (
+                            str(serial)
+                            for serial in requested
+                            if str(serial).casefold() == row_serial.casefold()
+                        ),
+                        None,
+                    )
+                    if parent_serial is None and len(requested) == 1:
+                        parent_serial = str(requested[0])
+                    if parent_serial:
+                        grouped.setdefault(parent_serial, []).append(dict(row))
+                for parent_serial, battery_rows in grouped.items():
+                    parent_payload = dict(result.get(parent_serial) or {})
+                    for index, battery_row in enumerate(battery_rows, start=1):
+                        nested_key = (
+                            "battery"
+                            if len(battery_rows) == 1
+                            else f"battery{index}"
+                        )
+                        parent_payload[nested_key] = battery_row
+                    result[parent_serial] = parent_payload
                 continue
             for row in rows:
                 if not isinstance(row, Mapping):
@@ -490,7 +531,9 @@ def _extract_raw_device_realtime(raw_api_responses: dict[str, Any]) -> dict[str,
                 ).strip()
                 if not serial:
                     continue
-                result[serial] = dict(row)
+                existing = dict(result.get(serial) or {})
+                existing.update(row)
+                result[serial] = existing
     return result
 
 

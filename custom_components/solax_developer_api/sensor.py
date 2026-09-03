@@ -76,6 +76,13 @@ def _snake(value: str) -> str:
 
 
 def _humanize_key(key: str) -> str:
+    attached_battery = re.fullmatch(r"battery(?P<index>\d*)_(?P<field>.+)", key)
+    if attached_battery is not None:
+        index = attached_battery.group("index")
+        nested = _humanize_key(attached_battery.group("field"))
+        if nested.startswith("Battery "):
+            nested = nested[len("Battery ") :]
+        return f"{index} {nested}" if index else nested
     if key.startswith("mpptMap_"):
         nested = _humanize_key(key[len("mpptMap_") :])
         if nested.startswith("MPPT "):
@@ -115,6 +122,27 @@ def _humanize_key(key: str) -> str:
             words.append(word.capitalize())
 
     return " ".join(words)
+
+
+def _device_api_field_key(key: str) -> tuple[str, int | None]:
+    """Return the SolaX field and semantic type for attached battery values."""
+    attached_battery = re.fullmatch(r"battery\d*_(?P<field>.+)", key)
+    if attached_battery is None:
+        return key, None
+    return attached_battery.group("field"), 2
+
+
+def _device_field_slug(key: str) -> str:
+    """Build a stable field slug without duplicate attached-battery wording."""
+    attached_battery = re.fullmatch(r"battery(?P<index>\d*)_(?P<field>.+)", key)
+    if attached_battery is None:
+        return _snake(key)
+    index = attached_battery.group("index")
+    api_slug = _snake(attached_battery.group("field"))
+    if api_slug.startswith("battery_"):
+        api_slug = api_slug[len("battery_") :]
+    prefix = f"battery_{index}" if index else "battery"
+    return f"{prefix}_{api_slug}"
 
 
 def _field_kind(key: str) -> str | None:
@@ -2008,8 +2036,9 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
             self._device_type = int(device_type or 0)
         except (TypeError, ValueError):
             self._device_type = 0
+        api_field_key, semantic_device_type = _device_api_field_key(field_key)
         field_name = _humanize_key(field_key)
-        field_slug = _snake(field_key)
+        field_slug = _device_field_slug(field_key)
         super().__init__(
             coordinator,
             system_slug,
@@ -2020,7 +2049,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
             ),
             _device_field_display_name(
                 coordinator.hass,
-                device_type=self._device_type,
+                device_type=semantic_device_type or self._device_type,
                 field_name=field_name,
             ),
         )
@@ -2030,7 +2059,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         inventory = (coordinator.data.get("devices") or {}).get(device_sn) or {}
         self._business_type = int(inventory.get("businessType") or 1)
 
-        unit, device_class, state_class = _infer_unit_and_classes(field_key)
+        unit, device_class, state_class = _infer_unit_and_classes(api_field_key)
         if unit is not None:
             self._attr_native_unit_of_measurement = unit
         if device_class is not None:
@@ -2038,7 +2067,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         if state_class is not None:
             self._attr_state_class = state_class
 
-        if _field_kind(field_key) == "time":
+        if _field_kind(api_field_key) == "time":
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
     @property
@@ -2062,26 +2091,27 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         raw_value = flat.get(self._field_key)
         if raw_value is None:
             return None
-        if self._field_key in {"businessType", "deviceType"}:
+        api_field_key, semantic_device_type = _device_api_field_key(self._field_key)
+        if api_field_key in {"businessType", "deviceType"}:
             return _coded_type_text(
                 self.coordinator.hass,
-                key=self._field_key,
+                key=api_field_key,
                 value=raw_value,
             )
 
-        device_type = int(payload.get("deviceType") or 0)
+        device_type = semantic_device_type or int(payload.get("deviceType") or 0)
         business_type = int(payload.get("businessType") or self._business_type or 1)
         mapped = _status_text(
             self.coordinator.hass,
             device_type,
             business_type,
-            self._field_key,
+            api_field_key,
             raw_value,
         )
         if mapped != raw_value:
             return mapped
 
-        return _normalize_numeric_value(self._field_key, raw_value, business_type)
+        return _normalize_numeric_value(api_field_key, raw_value, business_type)
 
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:
@@ -2090,12 +2120,13 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         raw_value = flat.get(self._field_key)
         if raw_value is None:
             return {}
-        if self._field_key in {"businessType", "deviceType"}:
+        api_field_key, semantic_device_type = _device_api_field_key(self._field_key)
+        if api_field_key in {"businessType", "deviceType"}:
             return {
                 "raw_value": raw_value,
                 "mapped_value": _coded_type_text(
                     self.coordinator.hass,
-                    key=self._field_key,
+                    key=api_field_key,
                     value=raw_value,
                 ),
             }
@@ -2103,12 +2134,12 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         business_type = int(payload.get("businessType") or self._business_type or 1)
         mapped = _status_text(
             self.coordinator.hass,
-            int(payload.get("deviceType") or 0),
+            semantic_device_type or int(payload.get("deviceType") or 0),
             business_type,
-            self._field_key,
+            api_field_key,
             raw_value,
         )
-        normalized = _normalize_numeric_value(self._field_key, raw_value, business_type)
+        normalized = _normalize_numeric_value(api_field_key, raw_value, business_type)
         attrs: dict[str, Any] = {"business_type": business_type}
 
         if mapped != raw_value:
