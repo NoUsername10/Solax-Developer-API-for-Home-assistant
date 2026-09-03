@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.5] - 2026-09-03
+
+### Fixed
+- Added automatic support for batteries that SolaX lists without a battery
+  serial. The integration now associates an unambiguous battery with its
+  inverter and queries battery realtime data using `deviceType=2` and
+  `requestSnType=1` as documented by SolaX.
+- Serial-less battery sensors are attached to their inverter device, while
+  batteries that have their own serial continue to appear as separate Home
+  Assistant devices. Failed proxy reads retain the last successful battery
+  values.
+
+### Validation
+- Validated on Home Assistant `2026.1.0` and current stable with `217`
+  credential-free tests, `7` Home Assistant lifecycle fixture tests, strict
+  typing, and `97.00%` measured coverage. Every production module remains
+  above the `95%` coverage gate.
+
 ## [v0.4.4] - 2026-08-31
 
 ### Added
