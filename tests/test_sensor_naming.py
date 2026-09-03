@@ -30,6 +30,14 @@ def test_humanize_key_mppt_and_pv_without_duplicate_prefix():
     assert _humanize_key("pvMap_pv1Voltage") == "PV 1 Voltage"
 
 
+def test_humanize_attached_battery_fields_without_duplicate_prefix():
+    assert _humanize_key("battery_batterySOC") == "SOC"
+    assert (
+        _humanize_key("battery_chargeDischargePower")
+        == "Charge Discharge Power"
+    )
+
+
 def test_device_sensor_unique_suffix_always_ends_with_serial():
     assert (
         _device_sensor_unique_suffix(
@@ -119,6 +127,49 @@ def test_device_field_sensor_can_be_disabled_by_default():
         enabled_by_default=False,
     )
     assert sensor._attr_entity_registry_enabled_default is False
+
+
+def test_attached_battery_sensor_uses_battery_semantics_on_inverter_device():
+    coordinator = _DummyCoordinator()
+    coordinator.data = {
+        "devices": {
+            "SERIAL-NUMBER": {
+                "deviceSn": "SERIAL-NUMBER",
+                "deviceType": 1,
+                "businessType": 1,
+                "deviceModel": 14,
+            }
+        },
+        "device_realtime": {
+            "SERIAL-NUMBER": {
+                "deviceType": 1,
+                "businessType": 1,
+                "battery": {"batterySOC": 72, "deviceStatus": 1},
+            }
+        },
+    }
+    battery_soc = SolaxDeviceFieldSensor(
+        coordinator,
+        "system",
+        "SERIAL-NUMBER",
+        1,
+        "battery_batterySOC",
+    )
+    battery_status = SolaxDeviceFieldSensor(
+        coordinator,
+        "system",
+        "SERIAL-NUMBER",
+        1,
+        "battery_deviceStatus",
+    )
+
+    assert battery_soc.translation_placeholders == {"field_name": "Battery SOC"}
+    assert battery_soc.native_value == 72
+    assert battery_soc.unique_id == "system_battery_soc_device_serial_number"
+    assert battery_soc.device_info["identifiers"] == {
+        ("solax_developer_api", "SERIAL-NUMBER")
+    }
+    assert battery_status.native_value == "Work"
 
 
 def test_daily_energy_fields_use_total_state_class():

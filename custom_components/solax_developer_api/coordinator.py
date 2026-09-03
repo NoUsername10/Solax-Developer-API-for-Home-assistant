@@ -103,6 +103,7 @@ TEMPORARY_FAILURE_CLASSIFICATIONS = {
     "exception",
 }
 MAX_REFRESH_FAILURE_BACKOFF_SECONDS = 1800
+BATTERY_REQUEST_SN_TYPE_INVERTER = 1
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -229,6 +230,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._manual_ems_entries = self._normalize_manual_ems_entries(
             options.get(CONF_MANUAL_EMS_SYSTEMS)
         )
+        self._serialless_battery_inventory: dict[str, list[dict[str, Any]]] = {}
         self._entry_id = entry_id
         self._device_capabilities: dict[str, dict[str, Any]] = {}
         self._raw_api_responses: dict[str, list[dict[str, Any]]] = (
@@ -659,6 +661,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "plants": {},
             "devices": {},
             "inventory_by_type": {},
+            "attached_battery_inventory": {},
             "plant_realtime": {},
             "plant_stats": {},
             "alarms": {},
@@ -1961,6 +1964,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         plants: dict[str, dict[str, Any]] = {}
         devices: dict[str, dict[str, Any]] = {}
         inventory_by_type: dict[str, list[str]] = defaultdict(list)
+        serialless_battery_inventory: dict[str, list[dict[str, Any]]] = defaultdict(list)
 
         # Plants by business type with pagination.
         for business_type in BUSINESS_TYPES:
@@ -2049,6 +2053,25 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     for device in records:
                         sn = str(device.get("deviceSn") or "").strip()
                         if not sn:
+                            if device_type == 2:
+                                parent_sn = self._serialless_battery_parent(
+                                    device,
+                                    business_type=business_type,
+                                    devices=devices,
+                                )
+                                if parent_sn is not None:
+                                    normalized_battery = dict(device)
+                                    normalized_battery["deviceType"] = 2
+                                    normalized_battery["businessType"] = business_type
+                                    serialless_battery_inventory[parent_sn].append(
+                                        normalized_battery
+                                    )
+                                    key = (
+                                        f"{business_type}:2:"
+                                        f"{BATTERY_REQUEST_SN_TYPE_INVERTER}"
+                                    )
+                                    if parent_sn not in inventory_by_type[key]:
+                                        inventory_by_type[key].append(parent_sn)
                             continue
                         normalized = dict(device)
                         normalized["deviceType"] = device_type
@@ -2123,7 +2146,59 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if serial not in inventory_by_type[inventory_key]:
                 inventory_by_type[inventory_key].append(serial)
 
+        self._serialless_battery_inventory = {
+            parent_sn: [dict(record) for record in records]
+            for parent_sn, records in serialless_battery_inventory.items()
+        }
         return plants, devices, dict(inventory_by_type)
+
+    @classmethod
+    def _serialless_battery_parent(
+        cls,
+        battery: Mapping[str, Any],
+        *,
+        business_type: int,
+        devices: Mapping[str, Mapping[str, Any]],
+    ) -> str | None:
+        """Resolve a serial-less battery to one unambiguous inverter parent."""
+        inverter_candidates = [
+            (str(serial), payload)
+            for serial, payload in devices.items()
+            if cls._coerce_int(payload.get("deviceType")) == 1
+            and cls._coerce_int(payload.get("businessType")) == business_type
+        ]
+        if not inverter_candidates:
+            return None
+
+        battery_register = str(battery.get("registerNo") or "").strip().casefold()
+        battery_plant = str(battery.get("plantId") or "").strip().casefold()
+
+        if battery_register:
+            register_matches = [
+                serial
+                for serial, payload in inverter_candidates
+                if str(payload.get("registerNo") or "").strip().casefold()
+                == battery_register
+                and (
+                    not battery_plant
+                    or str(payload.get("plantId") or "").strip().casefold()
+                    == battery_plant
+                )
+            ]
+            if len(register_matches) == 1:
+                return register_matches[0]
+
+        if battery_plant:
+            plant_matches = [
+                serial
+                for serial, payload in inverter_candidates
+                if str(payload.get("plantId") or "").strip().casefold()
+                == battery_plant
+            ]
+            if len(plant_matches) == 1:
+                return plant_matches[0]
+
+        return None
 
     async def _refresh_plant_realtime(
         self,
@@ -2265,62 +2340,151 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         refresh_errors: list[tuple[str, SolaxApiError]] = []
 
         for key, sn_list in inventory_by_type.items():
-            business_type_str, device_type_str = key.split(":", 1)
-            business_type = int(business_type_str)
-            device_type = int(device_type_str)
+            key_parts = key.split(":")
+            business_type = int(key_parts[0])
+            device_type = int(key_parts[1])
+            request_sn_type = int(key_parts[2]) if len(key_parts) >= 3 else None
             if device_type == EMS_DEVICE_TYPE:
                 continue
             normalized_sn_list = normalize_sn_list(sn_list)
             if not normalized_sn_list:
                 continue
-            for chunk_start in range(0, len(normalized_sn_list), MAX_SN_PER_REQUEST):
-                sn_chunk = normalized_sn_list[chunk_start : chunk_start + MAX_SN_PER_REQUEST]
-                chunk_index = (chunk_start // MAX_SN_PER_REQUEST) + 1
+            chunk_size = (
+                1
+                if device_type == 2
+                and request_sn_type == BATTERY_REQUEST_SN_TYPE_INVERTER
+                else MAX_SN_PER_REQUEST
+            )
+            for chunk_start in range(0, len(normalized_sn_list), chunk_size):
+                sn_chunk = normalized_sn_list[chunk_start : chunk_start + chunk_size]
+                chunk_index = (chunk_start // chunk_size) + 1
                 try:
                     payload = await self.client.device_realtime_data(
                         sn_list=sn_chunk,
                         device_type=device_type,
                         business_type=business_type,
+                        request_sn_type=request_sn_type,
                     )
+                    request_context: dict[str, Any] = {
+                        "businessType": business_type,
+                        "deviceType": device_type,
+                        "snList": list(sn_chunk),
+                        "chunkIndex": chunk_index,
+                    }
+                    if request_sn_type is not None:
+                        request_context["requestSnType"] = request_sn_type
                     self._append_raw_snapshot(
                         raw_cycle,
                         endpoint=RAW_ENDPOINT_DEVICE_REALTIME_DATA,
-                        request={
-                            "businessType": business_type,
-                            "deviceType": device_type,
-                            "snList": list(sn_chunk),
-                            "chunkIndex": chunk_index,
-                        },
+                        request=request_context,
                         response=payload,
                     )
                     records = payload.get("result") or []
                     if not isinstance(records, list):
                         records = []
                 except SolaxApiError as err:
+                    request_context = {
+                        "businessType": business_type,
+                        "deviceType": device_type,
+                        "snList": list(sn_chunk),
+                        "chunkIndex": chunk_index,
+                    }
+                    if request_sn_type is not None:
+                        request_context["requestSnType"] = request_sn_type
                     self._append_raw_snapshot(
                         raw_cycle,
                         endpoint=RAW_ENDPOINT_DEVICE_REALTIME_DATA,
-                        request={
-                            "businessType": business_type,
-                            "deviceType": device_type,
-                            "snList": list(sn_chunk),
-                            "chunkIndex": chunk_index,
-                        },
+                        request=request_context,
                         error=err,
                     )
                     refresh_errors.append((f"device_realtime:{key}:chunk:{chunk_index}", err))
                     continue
 
+                attached_battery_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
                 for item in records:
+                    if not isinstance(item, Mapping):
+                        continue
+                    if (
+                        device_type == 2
+                        and request_sn_type == BATTERY_REQUEST_SN_TYPE_INVERTER
+                    ):
+                        parent_sn = self._attached_battery_parent_from_response(
+                            item,
+                            requested_inverters=sn_chunk,
+                        )
+                        if parent_sn is not None:
+                            attached_battery_rows[parent_sn].append(dict(item))
+                        continue
                     sn = str(item.get("deviceSn") or "").strip()
                     if not sn:
                         continue
-                    payload = dict(item)
-                    payload["deviceType"] = device_type
-                    payload["businessType"] = business_type
-                    device_realtime[sn] = payload
+                    item_payload = dict(item)
+                    item_payload["deviceType"] = device_type
+                    item_payload["businessType"] = business_type
+                    device_realtime[sn] = item_payload
+
+                if (
+                    device_type == 2
+                    and request_sn_type == BATTERY_REQUEST_SN_TYPE_INVERTER
+                ):
+                    for parent_sn in sn_chunk:
+                        inventory_rows = (
+                            getattr(self, "_serialless_battery_inventory", {}).get(
+                                parent_sn
+                            )
+                            or []
+                        )
+                        response_rows = attached_battery_rows.get(parent_sn) or []
+                        if response_rows:
+                            merged_rows: list[dict[str, Any]] = []
+                            for index, response_row in enumerate(response_rows):
+                                inventory_row = (
+                                    inventory_rows[index]
+                                    if index < len(inventory_rows)
+                                    else {}
+                                )
+                                merged_row = dict(inventory_row)
+                                merged_row.update(response_row)
+                                merged_rows.append(merged_row)
+                            attached_battery_rows[parent_sn] = merged_rows
+                        elif inventory_rows:
+                            attached_battery_rows[parent_sn] = [
+                                dict(row) for row in inventory_rows
+                            ]
+
+                for parent_sn, battery_rows in attached_battery_rows.items():
+                    parent_payload = dict(device_realtime.get(parent_sn) or {})
+                    for index, battery_row in enumerate(battery_rows, start=1):
+                        nested_key = "battery" if len(battery_rows) == 1 else f"battery{index}"
+                        normalized_battery = dict(battery_row)
+                        normalized_battery["deviceType"] = 2
+                        normalized_battery["businessType"] = business_type
+                        for identifier_key in ("deviceSn", "registerNo", "plantId"):
+                            normalized_battery.pop(identifier_key, None)
+                        parent_payload[nested_key] = normalized_battery
+                    device_realtime[parent_sn] = parent_payload
 
         return device_realtime, refresh_errors
+
+    @staticmethod
+    def _attached_battery_parent_from_response(
+        row: Mapping[str, Any],
+        *,
+        requested_inverters: Sequence[str],
+    ) -> str | None:
+        """Match proxied battery telemetry to its requested inverter."""
+        response_sn = str(row.get("deviceSn") or "").strip().casefold()
+        if response_sn:
+            matches = [
+                serial
+                for serial in requested_inverters
+                if str(serial).strip().casefold() == response_sn
+            ]
+            if len(matches) == 1:
+                return str(matches[0])
+        if len(requested_inverters) == 1:
+            return str(requested_inverters[0])
+        return None
 
     async def _refresh_ems_realtime(
         self,
@@ -2412,10 +2576,17 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         plants = dict(state.get("plants") or {})
         devices = dict(state.get("devices") or {})
         inventory_by_type = dict(state.get("inventory_by_type") or {})
+        attached_battery_inventory = deepcopy(
+            state.get("attached_battery_inventory") or {}
+        )
+        self._serialless_battery_inventory = deepcopy(attached_battery_inventory)
 
         if refresh_inventory:
             try:
                 plants, devices, inventory_by_type = await self._refresh_inventory(raw_cycle=raw_cycle)
+                attached_battery_inventory = deepcopy(
+                    self._serialless_battery_inventory
+                )
             except Exception as err:  # noqa: BLE001
                 self._append_error(errors, err, "inventory")
 
@@ -2499,8 +2670,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     for context, endpoint_error in realtime_errors:
                         self._append_error(errors, endpoint_error, context)
                     if refreshed_realtime:
-                        stale_merged = dict(device_realtime)
-                        stale_merged.update(refreshed_realtime)
+                        stale_merged = deepcopy(device_realtime)
+                        for serial, payload in refreshed_realtime.items():
+                            prior_payload = dict(stale_merged.get(serial) or {})
+                            prior_payload.update(payload)
+                            stale_merged[serial] = prior_payload
                         device_realtime = stale_merged
                 else:
                     device_realtime = refreshed_realtime
@@ -2547,6 +2721,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "plants": plants,
                 "devices": devices,
                 "inventory_by_type": inventory_by_type,
+                "attached_battery_inventory": attached_battery_inventory,
                 "plant_realtime": plant_realtime,
                 "plant_stats": plant_stats,
                 "alarms": alarms,

@@ -180,6 +180,17 @@ def test_live_view_budget_allows_effective_interval_above_60_seconds():
     assert coordinator._live_view_budget_adjusted is True
 
 
+def test_live_view_counts_serialless_battery_proxy_calls_individually():
+    coordinator = _make_minimal_coordinator()
+    plants = {"P1": {"plantId": "P1"}}
+    inventory_by_type = {
+        "1:1": ["INV1", "INV2"],
+        "1:2:1": ["INV1", "INV2"],
+    }
+
+    assert coordinator._estimate_live_cycle_calls(plants, inventory_by_type) == 4
+
+
 @pytest.mark.asyncio
 async def test_start_live_view_keeps_enabled_when_forced_refresh_fails():
     coordinator = _make_minimal_coordinator()

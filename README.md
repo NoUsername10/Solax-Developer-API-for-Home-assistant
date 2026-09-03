@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.18%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.00%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -62,8 +62,8 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
-- **Test coverage:** `97.18%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `211` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
+- **Test coverage:** `97.00%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `217` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested:** `2026.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -965,6 +965,9 @@ That is expected when the account has no confirmed EMS. EMS discovery, entities,
 - Null-only or unsupported fields are not enabled by default.
 - Three-phase, battery, EPS, meter, and EV fields appear only when the system returns them.
 - If an integration-disabled capability field later receives real data, it is automatically enabled.
+- Batteries returned without their own serial are queried through the associated
+  inverter and their sensors appear on that inverter device. A battery returned
+  with its own serial appears as a separate Battery device.
 
 ### Need an immediate refresh
 
@@ -1063,8 +1066,8 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
-- **Automated test coverage:** 97.18%
-- **Credential-free automated tests:** 211 plus 7 Home Assistant lifecycle fixture tests
+- **Automated test coverage:** 97.00%
+- **Credential-free automated tests:** 217 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

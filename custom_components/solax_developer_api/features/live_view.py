@@ -79,11 +79,21 @@ class LiveViewManager:
     ) -> int:
         """Estimate realtime API requests in one Live View cycle."""
         plant_calls = len(plants)
-        device_calls = sum(
-            math.ceil(len(sn_list) / MAX_SN_PER_REQUEST)
-            for sn_list in inventory_by_type.values()
-            if sn_list
-        )
+        device_calls = 0
+        for key, sn_list in inventory_by_type.items():
+            if not sn_list:
+                continue
+            key_parts = str(key).split(":")
+            serialless_battery_query = (
+                len(key_parts) >= 3
+                and key_parts[1] == "2"
+                and key_parts[2] == "1"
+            )
+            device_calls += (
+                len(sn_list)
+                if serialless_battery_query
+                else math.ceil(len(sn_list) / MAX_SN_PER_REQUEST)
+            )
         return max(1, plant_calls + device_calls)
 
     def alarm_reserved_calls_per_minute(self) -> float:

@@ -167,6 +167,57 @@ def test_filtered_projection_and_raw_vs_filtered_summary():
     assert summary["devices"]["SERIAL_A"]["exportEnergy"]["present_in_filtered_payload"] is False
 
 
+def test_raw_summary_associates_serialless_battery_with_requested_inverter():
+    raw_api = {
+        "device_realtime_data": [
+            {
+                "request": {
+                    "deviceType": 1,
+                    "businessType": 1,
+                    "snList": ["INVERTER_A"],
+                },
+                "response": {
+                    "code": 10000,
+                    "result": [
+                        {"deviceSn": "INVERTER_A", "totalActivePower": 1200}
+                    ],
+                },
+            },
+            {
+                "request": {
+                    "deviceType": 2,
+                    "requestSnType": 1,
+                    "businessType": 1,
+                    "snList": ["INVERTER_A"],
+                },
+                "response": {
+                    "code": 10000,
+                    "result": [{"deviceSn": "", "batterySOC": 72}],
+                },
+            },
+        ]
+    }
+    filtered = {
+        "plant_realtime": {},
+        "device_realtime": {
+            "INVERTER_A": {
+                "deviceSn": "INVERTER_A",
+                "totalActivePower": 1200,
+                "battery": {"batterySOC": 72},
+            }
+        },
+    }
+
+    summary = _build_raw_vs_filtered_summary(raw_api, filtered)
+
+    assert summary["devices"]["INVERTER_A"]["battery_batterySOC"] == {
+        "present_in_raw_result": True,
+        "raw_value_is_null": False,
+        "present_in_filtered_payload": True,
+        "filtered_value": 72,
+    }
+
+
 def test_raw_vs_filtered_summary_redacts_sensitive_filtered_values():
     raw_api = {
         "plant_realtime_data": [
