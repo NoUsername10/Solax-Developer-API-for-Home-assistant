@@ -1725,7 +1725,11 @@ async def test_partial_device_chunk_failure_merges_fresh_and_stale_values():
             "alarms": {"P1": {"total": 0, "records": []}},
             "plant_stats": {"P1": {"year": {"pvGeneration": 10}}},
             "device_realtime": {
-                "INV1": {"deviceSn": "INV1", "totalActivePower": 10},
+                "INV1": {
+                    "deviceSn": "INV1",
+                    "totalActivePower": 10,
+                    "battery": {"batterySOC": 70},
+                },
                 "INV2": {"deviceSn": "INV2", "totalActivePower": 20},
             },
         }
@@ -1765,6 +1769,7 @@ async def test_partial_device_chunk_failure_merges_fresh_and_stale_values():
     refreshed = await instance._async_update_data_unlocked()
 
     assert refreshed["device_realtime"]["INV1"]["totalActivePower"] == 99
+    assert refreshed["device_realtime"]["INV1"]["battery"]["batterySOC"] == 70
     assert refreshed["device_realtime"]["INV2"]["totalActivePower"] == 20
     assert refreshed["plant_realtime"]["P1"]["dailyYield"] == 13
     assert any(

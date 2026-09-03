@@ -50,6 +50,80 @@ class _InventoryClient:
         }
 
 
+class _BatteryInventoryClient(_InventoryClient):
+    async def page_plant_info(self, *, business_type, page_no):
+        records = [{"plantId": "P1"}] if business_type == 1 else []
+        return {
+            "code": 10000,
+            "result": {"records": records, "current": 1, "pages": 1},
+        }
+
+    async def page_device_info(self, *, business_type, device_type, page_no):
+        records = []
+        if business_type == 1 and device_type == 1:
+            records = [
+                {
+                    "deviceSn": "INV1",
+                    "registerNo": "REG1",
+                    "plantId": "P1",
+                    "onlineStatus": 1,
+                }
+            ]
+        elif business_type == 1 and device_type == 2:
+            records = [
+                {
+                    "deviceSn": "",
+                    "registerNo": "REG1",
+                    "plantId": "P1",
+                    "deviceModel": 1,
+                    "batteryType": 1,
+                    "onlineStatus": 1,
+                },
+                {
+                    "deviceSn": "BAT2",
+                    "registerNo": "BATREG2",
+                    "plantId": "P1",
+                    "deviceModel": 1,
+                    "onlineStatus": 1,
+                },
+            ]
+        return {
+            "code": 10000,
+            "result": {"records": records, "current": 1, "pages": 1},
+        }
+
+
+class _BatteryRealtimeClient:
+    def __init__(self):
+        self.calls = []
+
+    async def device_realtime_data(self, **kwargs):
+        self.calls.append(kwargs)
+        if kwargs.get("request_sn_type") == 1:
+            return {
+                "code": 10000,
+                "result": [
+                    {
+                        "deviceSn": "",
+                        "registerNo": "REG1",
+                        "batterySOC": 72,
+                        "chargeDischargePower": -850,
+                        "deviceStatus": 1,
+                    }
+                ],
+            }
+        return {
+            "code": 10000,
+            "result": [
+                {
+                    "deviceSn": serial,
+                    "batterySOC": 64,
+                }
+                for serial in kwargs["sn_list"]
+            ],
+        }
+
+
 class _ProbeClient:
     async def device_realtime_data(self, *, sn_list, device_type, business_type, request_sn_type=None):
         serial = list(sn_list)[0]
@@ -208,6 +282,52 @@ async def test_refresh_inventory_merges_manual_meter_serial_without_duplicates()
     assert "MANUAL_METER_1" in devices
     assert devices["MANUAL_METER_1"]["manualSerial"] is True
     assert sorted(inventory["1:3"]) == ["AUTO_METER_1", "MANUAL_METER_1"]
+
+
+@pytest.mark.asyncio
+async def test_serialless_battery_uses_inverter_proxy_while_serial_battery_stays_separate():
+    coordinator = _make_coordinator(_BatteryInventoryClient())
+
+    _plants, devices, inventory = await coordinator._refresh_inventory()
+
+    assert inventory["1:1"] == ["INV1"]
+    assert inventory["1:2:1"] == ["INV1"]
+    assert inventory["1:2"] == ["BAT2"]
+    assert "" not in devices
+    assert devices["BAT2"]["deviceType"] == 2
+    assert coordinator._serialless_battery_inventory["INV1"][0]["batteryType"] == 1
+
+
+@pytest.mark.asyncio
+async def test_serialless_battery_realtime_is_namespaced_under_inverter():
+    client = _BatteryRealtimeClient()
+    coordinator = _make_coordinator(client)
+
+    realtime, errors = await coordinator._refresh_device_realtime(
+        {
+            "1:1": ["INV1"],
+            "1:2:1": ["INV1"],
+            "1:2": ["BAT2"],
+        }
+    )
+
+    assert errors == []
+    assert realtime["INV1"]["battery"]["batterySOC"] == 72
+    assert realtime["INV1"]["battery"]["deviceType"] == 2
+    assert "registerNo" not in realtime["INV1"]["battery"]
+    assert realtime["BAT2"]["batterySOC"] == 64
+    assert any(
+        call["device_type"] == 2
+        and call["sn_list"] == ["INV1"]
+        and call["request_sn_type"] == 1
+        for call in client.calls
+    )
+    assert any(
+        call["device_type"] == 2
+        and call["sn_list"] == ["BAT2"]
+        and call["request_sn_type"] is None
+        for call in client.calls
+    )
 
 
 @pytest.mark.asyncio
