@@ -16,12 +16,6 @@ All notable changes to this project will be documented in this file.
   Assistant devices. Failed proxy reads retain the last successful battery
   values.
 
-### Validation
-- Validated on Home Assistant `2026.1.0` and current stable with `217`
-  credential-free tests, `7` Home Assistant lifecycle fixture tests, strict
-  typing, and `97.00%` measured coverage. Every production module remains
-  above the `95%` coverage gate.
-
 ## [v0.4.4] - 2026-08-31
 
 ### Added
