@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.6] - 2026-09-05
+
+### Fixed
+- Fixed ECO and GREEN EV charger work modes by sending the production API
+  field `current` instead of the conflicting request-example field
+  `currentGear`. The existing Home Assistant `current_gear` service input
+  remains compatible.
+- Made charging current mandatory for ECO and GREEN modes and rejected it for
+  STOP and FAST before any SolaX write request is sent.
+- Added the documented `kWh` unit, energy device class, and cumulative state
+  class to the verified live battery lifetime fields `totalDeviceCharge` and
+  `totalDeviceDischarge`.
+- Applied the same documented energy semantics to AC output, plant
+  import/export, and EMS battery/load counters whose API names omit the usual
+  `Energy`, `Charged`, or `Discharged` markers.
+- Corrected the API-native `batteryRemainings` friendly label to `Remaining
+  Energy` without changing its entity ID or unique ID.
+
+### Validation
+- Passed `229` credential-free tests and `7` Home Assistant lifecycle fixture
+  tests on Home Assistant `2026.1.0` and stable with `97.00%` coverage.
+
 ## [v0.4.5] - 2026-09-03
 
 ### Fixed
