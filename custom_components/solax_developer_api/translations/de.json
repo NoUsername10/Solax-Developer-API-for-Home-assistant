@@ -1251,8 +1251,8 @@
           "description": "Erforderlich. 1 für privat oder 4 für gewerblich und industriell."
         },
         "current_gear": {
-          "name": "Stromstufe",
-          "description": "Optional. Ganzzahliges Feld im payload, das bei der Prüfung des Testlaufs verwendet wird."
+          "name": "Ladestrom",
+          "description": "Für die Betriebsmodi ECO und GREEN erforderlich. ECO akzeptiert 6, 10, 16, 20 oder 25 A; GREEN akzeptiert 3 oder 6 A. Bei STOP und FAST weglassen. Die Integration sendet den Wert als current an SolaX."
         }
       }
     },

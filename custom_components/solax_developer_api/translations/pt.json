@@ -1251,8 +1251,8 @@
           "description": "Obrigatório. 1 para residencial ou 4 para comercial e industrial."
         },
         "current_gear": {
-          "name": "Nível de corrente",
-          "description": "Opcional. Campo inteiro do payload utilizado pela validação dry-run."
+          "name": "Corrente de carregamento",
+          "description": "Obrigatória nos modos ECO e GREEN. ECO aceita 6, 10, 16, 20 ou 25 A; GREEN aceita 3 ou 6 A. Omita para STOP e FAST. A integração envia este valor para a SolaX como current."
         }
       }
     },

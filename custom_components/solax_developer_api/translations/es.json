@@ -1251,8 +1251,8 @@
           "description": "Obligatorio. 1 residencial o 4 comercial e industrial."
         },
         "current_gear": {
-          "name": "Nivel de corriente",
-          "description": "Opcional. Campo entero usado por la validación de simulación."
+          "name": "Corriente de carga",
+          "description": "Obligatoria para los modos ECO y GREEN. ECO admite 6, 10, 16, 20 o 25 A; GREEN admite 3 o 6 A. Omítala para STOP y FAST. La integración envía este valor a SolaX como current."
         }
       }
     },

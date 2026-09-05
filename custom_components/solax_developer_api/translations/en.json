@@ -1251,8 +1251,8 @@
           "description": "Required. 1 residential or 4 commercial & industrial."
         },
         "current_gear": {
-          "name": "Current Gear",
-          "description": "Optional. Integer payload field used by dry-run validation."
+          "name": "Charging Current",
+          "description": "Required for ECO and GREEN work modes. ECO accepts 6, 10, 16, 20, or 25 A; GREEN accepts 3 or 6 A. Omit for STOP and FAST. The integration sends this value to SolaX as current."
         }
       }
     },

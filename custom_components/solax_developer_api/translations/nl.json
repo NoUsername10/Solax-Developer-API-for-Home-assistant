@@ -1251,8 +1251,8 @@
           "description": "Vereist. 1 residentieel of 4 commercieel & industrieel."
         },
         "current_gear": {
-          "name": "Stroom Gear",
-          "description": "Optioneel. Integer payloadveld gebruikt voor Dry-Run-validatie."
+          "name": "Laadstroom",
+          "description": "Vereist voor de werkmodi ECO en GREEN. ECO accepteert 6, 10, 16, 20 of 25 A; GREEN accepteert 3 of 6 A. Laat dit weg voor STOP en FAST. De integratie stuurt deze waarde als current naar SolaX."
         }
       }
     },

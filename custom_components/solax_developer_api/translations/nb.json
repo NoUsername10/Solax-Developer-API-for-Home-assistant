@@ -1251,8 +1251,8 @@
           "description": "Påkrevd. 1 for bolig eller 4 for næring og industri."
         },
         "current_gear": {
-          "name": "Strøm Gear",
-          "description": "Valgfritt. Heltallsfelt i payload brukt til Dry-Run-validering."
+          "name": "Ladestrøm",
+          "description": "Påkrevd for driftsmodusene ECO og GREEN. ECO godtar 6, 10, 16, 20 eller 25 A; GREEN godtar 3 eller 6 A. Utelates for STOP og FAST. Integrasjonen sender verdien til SolaX som current."
         }
       }
     },

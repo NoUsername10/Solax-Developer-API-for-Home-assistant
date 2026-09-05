@@ -1251,8 +1251,8 @@
           "description": "Zorunlu. 1 konut veya 4 ticari ve endüstriyel."
         },
         "current_gear": {
-          "name": "Akım Gear",
-          "description": "İsteğe bağlı. dry-run doğrulamasında kullanılan tamsayı payload alanı."
+          "name": "Şarj akımı",
+          "description": "ECO ve GREEN çalışma modları için gereklidir. ECO 6, 10, 16, 20 veya 25 A; GREEN 3 veya 6 A kabul eder. STOP ve FAST için boş bırakın. Entegrasyon bu değeri SolaX’a current alanı olarak gönderir."
         }
       }
     },
