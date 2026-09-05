@@ -1857,7 +1857,7 @@ async def test_ev_charger_control_execution_and_target_validation(monkeypatch):
     event = await instance.async_execute_ev_charger_control(
         service="set_evc_work_mode",
         endpoint="/openapi/v2/device/evc_control/set_evc_work_mode",
-        payload={"snList": ["D14"], "workMode": 2, "currentGear": 16, "businessType": 1},
+        payload={"snList": ["D14"], "workMode": 2, "current": 16, "businessType": 1},
     )
     assert event["sent"] is True
     assert event["accepted"] is True

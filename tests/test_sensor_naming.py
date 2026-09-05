@@ -6,9 +6,10 @@ from custom_components.solax_developer_api.sensor import (
     _device_sensor_unique_suffix,
     _energy_state_class,
     _humanize_key,
+    _infer_unit_and_classes,
     _status_text,
 )
-from homeassistant.components.sensor import SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 
 
 class _DummyConfig:
@@ -32,6 +33,8 @@ def test_humanize_key_mppt_and_pv_without_duplicate_prefix():
 
 def test_humanize_attached_battery_fields_without_duplicate_prefix():
     assert _humanize_key("battery_batterySOC") == "SOC"
+    assert _humanize_key("batteryRemainings") == "Remaining Energy"
+    assert _humanize_key("battery_batteryRemainings") == "Remaining Energy"
     assert (
         _humanize_key("battery_chargeDischargePower")
         == "Charge Discharge Power"
@@ -177,6 +180,83 @@ def test_daily_energy_fields_use_total_state_class():
     assert _energy_state_class("todayImportEnergy") == SensorStateClass.TOTAL
     assert _energy_state_class("sysBatteryCapacity") == SensorStateClass.TOTAL
     assert _energy_state_class("sysBatteryRemainings") == SensorStateClass.TOTAL
+
+
+def test_battery_lifetime_energy_fields_use_documented_kwh_semantics():
+    for field_key in (
+        "totalDeviceCharge",
+        "totalDeviceDischarge",
+    ):
+        assert _infer_unit_and_classes(field_key) == (
+            "kWh",
+            SensorDeviceClass.ENERGY,
+            SensorStateClass.TOTAL_INCREASING,
+        )
+
+
+def test_other_documented_dynamic_energy_fields_use_kwh_semantics():
+    for field_key in (
+        "dailyACOutput",
+        "totalACOutput",
+        "dailyExported",
+        "totalExported",
+        "dailyImported",
+        "totalImported",
+        "sysDailyBatteryCharge",
+        "sysTotalBatteryCharge",
+        "sysDailyBatteryDischarge",
+        "sysTotalBatteryDischarge",
+        "sysDailyLoadConsumption",
+        "sysTotalLoadConsumption",
+    ):
+        unit, device_class, state_class = _infer_unit_and_classes(field_key)
+        assert unit == "kWh"
+        assert device_class == SensorDeviceClass.ENERGY
+        assert state_class == (
+            SensorStateClass.TOTAL
+            if "daily" in field_key.casefold()
+            else SensorStateClass.TOTAL_INCREASING
+        )
+
+
+def test_attached_battery_lifetime_energy_uses_battery_field_semantics():
+    coordinator = _DummyCoordinator()
+    coordinator.data = {
+        "devices": {
+            "SERIAL-NUMBER": {
+                "deviceSn": "SERIAL-NUMBER",
+                "deviceType": 1,
+                "businessType": 1,
+                "deviceModel": 14,
+            }
+        },
+        "device_realtime": {
+            "SERIAL-NUMBER": {
+                "deviceType": 1,
+                "businessType": 1,
+                "battery": {
+                    "totalDeviceCharge": 96.9,
+                    "totalDeviceDischarge": 80.1,
+                },
+            }
+        },
+    }
+
+    for field_key, expected_value in (
+        ("battery_totalDeviceCharge", 96.9),
+        ("battery_totalDeviceDischarge", 80.1),
+    ):
+        field_sensor = SolaxDeviceFieldSensor(
+            coordinator,
+            "system",
+            "SERIAL-NUMBER",
+            1,
+            field_key,
+        )
+        assert field_sensor.native_value == expected_value
+        assert field_sensor.native_unit_of_measurement == "kWh"
+        assert field_sensor.device_class == SensorDeviceClass.ENERGY
+        assert field_sensor.state_class == SensorStateClass.TOTAL_INCREASING
 
 
 def test_device_model_uses_business_and_device_context():

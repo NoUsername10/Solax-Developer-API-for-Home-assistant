@@ -717,6 +717,8 @@ async def test_domain_services_all_read_and_control_paths(monkeypatch):
     assert real_ev["accepted"] is True
     assert real_ev["request_id"] == "REQ1"
     assert coordinator.executed_ev_controls[0]["service"] == "set_evc_work_mode"
+    assert coordinator.executed_ev_controls[0]["payload"]["current"] == 16
+    assert "currentGear" not in coordinator.executed_ev_controls[0]["payload"]
 
     coordinator.available_control_services = set()
     hass.data[RUNTIME_RELOAD_STATE]["sync_capability_services"]()
