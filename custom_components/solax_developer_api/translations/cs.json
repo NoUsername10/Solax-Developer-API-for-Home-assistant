@@ -1251,8 +1251,8 @@
           "description": "Povinné. 1 pro domácnost nebo 4 pro komerční a průmyslový provoz."
         },
         "current_gear": {
-          "name": "Stupeň proudu",
-          "description": "Volitelné. Celočíselné pole v payload používané při ověření ve zkušebním režimu."
+          "name": "Nabíjecí proud",
+          "description": "Povinné pro režimy ECO a GREEN. ECO přijímá 6, 10, 16, 20 nebo 25 A; GREEN přijímá 3 nebo 6 A. Pro STOP a FAST ponechte prázdné. Integrace odesílá hodnotu do SolaX jako current."
         }
       }
     },

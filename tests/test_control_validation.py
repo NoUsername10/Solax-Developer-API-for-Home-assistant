@@ -146,7 +146,7 @@ def test_evc_control_payload_validates_documented_enums_and_ranges():
             "current_gear": 16,
             "business_type": 4,
         },
-    )["currentGear"] == 16
+    )["current"] == 16
     assert validate_control_payload(
         "set_evc_work_mode",
         {
@@ -268,14 +268,17 @@ def test_optional_control_fields_validate_types_and_text_lengths():
         )
     assert err.value.key == "runtime.errors.control_field_value_invalid"
 
-    assert validate_control_payload(
-        "set_evc_work_mode",
-        {
-            "sn_list": ["C1"],
-            "work_mode": 2,
-            "business_type": 1,
-        },
-    )["workMode"] == 2
+    for work_mode in (2, 3):
+        with pytest.raises(ControlValidationError) as err:
+            validate_control_payload(
+                "set_evc_work_mode",
+                {
+                    "sn_list": ["C1"],
+                    "work_mode": work_mode,
+                    "business_type": 1,
+                },
+            )
+        assert err.value.key == "runtime.errors.control_missing_required_field"
 
     assert validate_control_payload(
         "set_evc_work_mode",
@@ -285,7 +288,7 @@ def test_optional_control_fields_validate_types_and_text_lengths():
             "current_gear": 6,
             "business_type": 1,
         },
-    )["currentGear"] == 6
+    )["current"] == 6
 
     with pytest.raises(ControlValidationError) as err:
         validate_control_payload(
@@ -311,6 +314,73 @@ def test_optional_control_fields_validate_types_and_text_lengths():
             },
         )
     assert err.value.key == "runtime.errors.control_field_type_mismatch"
+
+
+@pytest.mark.parametrize(
+    ("work_mode", "charging_current"),
+    [
+        (2, 6),
+        (2, 10),
+        (2, 16),
+        (2, 20),
+        (2, 25),
+        (3, 3),
+        (3, 6),
+    ],
+)
+def test_evc_work_mode_uses_verified_current_wire_field(
+    work_mode: int,
+    charging_current: int,
+):
+    payload = validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1"],
+            "work_mode": work_mode,
+            "current_gear": charging_current,
+            "business_type": 1,
+        },
+    )
+
+    assert payload == {
+        "snList": ["C1"],
+        "workMode": work_mode,
+        "businessType": 1,
+        "current": charging_current,
+    }
+    assert "currentGear" not in payload
+
+
+@pytest.mark.parametrize("work_mode", [0, 1])
+def test_evc_stop_and_fast_omit_charging_current(work_mode: int):
+    payload = validate_control_payload(
+        "set_evc_work_mode",
+        {
+            "sn_list": ["C1"],
+            "work_mode": work_mode,
+            "business_type": 1,
+        },
+    )
+
+    assert payload == {
+        "snList": ["C1"],
+        "workMode": work_mode,
+        "businessType": 1,
+    }
+    assert "current" not in payload
+    assert "currentGear" not in payload
+
+    with pytest.raises(ControlValidationError) as err:
+        validate_control_payload(
+            "set_evc_work_mode",
+            {
+                "sn_list": ["C1"],
+                "work_mode": work_mode,
+                "current_gear": 6,
+                "business_type": 1,
+            },
+        )
+    assert err.value.key == "runtime.errors.control_field_value_invalid"
 
 
 def test_battery_heating_enforces_conditional_fields():

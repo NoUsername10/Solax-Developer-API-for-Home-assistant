@@ -1251,8 +1251,8 @@
           "description": "Obligatoriu. 1 pentru rezidențial sau 4 pentru comercial și industrial."
         },
         "current_gear": {
-          "name": "Treapta curentă",
-          "description": "Opțional. Câmp întreg din payload folosit la validarea dry-run."
+          "name": "Curent de încărcare",
+          "description": "Obligatoriu pentru modurile ECO și GREEN. ECO acceptă 6, 10, 16, 20 sau 25 A; GREEN acceptă 3 sau 6 A. Omiteți pentru STOP și FAST. Integrarea trimite această valoare către SolaX drept current."
         }
       }
     },

@@ -1251,8 +1251,8 @@
           "description": "必須。1 は住宅用、4 は商用・産業用。"
         },
         "current_gear": {
-          "name": "電流 Gear",
-          "description": "任意。dry-run の検証で使用する整数のペイロードフィールド。"
+          "name": "充電電流",
+          "description": "ECO および GREEN モードでは必須です。ECO は 6、10、16、20、25 A、GREEN は 3 または 6 A に対応します。STOP と FAST では省略してください。インテグレーションはこの値を current として SolaX に送信します。"
         }
       }
     },

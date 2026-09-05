@@ -46,6 +46,26 @@ INVERTER_CRITICAL_STATUS_CODES = frozenset({104})
 BATTERY_FAULT_STATUS_CODES = frozenset({5, 10})
 EV_CHARGER_FAULT_STATUS_CODES = frozenset({4})
 
+# These documented energy counters do not contain the usual energy/yield markers.
+EXPLICIT_ENERGY_FIELDS = frozenset(
+    {
+        "dailyacoutput",
+        "dailyexported",
+        "dailyimported",
+        "sysdailybatterycharge",
+        "sysdailybatterydischarge",
+        "sysdailyloadconsumption",
+        "systotalbatterycharge",
+        "systotalbatterydischarge",
+        "systotalloadconsumption",
+        "totalacoutput",
+        "totaldevicecharge",
+        "totaldevicedischarge",
+        "totalexported",
+        "totalimported",
+    }
+)
+
 
 def _t(
     hass: HomeAssistant,
@@ -76,6 +96,8 @@ def _snake(value: str) -> str:
 
 
 def _humanize_key(key: str) -> str:
+    if key == "batteryRemainings":
+        return "Remaining Energy"
     attached_battery = re.fullmatch(r"battery(?P<index>\d*)_(?P<field>.+)", key)
     if attached_battery is not None:
         index = attached_battery.group("index")
@@ -156,7 +178,8 @@ def _field_kind(key: str) -> str | None:
     if "power" in lowered:
         return "power"
     if (
-        "yield" in lowered
+        lowered in EXPLICIT_ENERGY_FIELDS
+        or "yield" in lowered
         or "energy" in lowered
         or "charged" in lowered
         or "discharged" in lowered

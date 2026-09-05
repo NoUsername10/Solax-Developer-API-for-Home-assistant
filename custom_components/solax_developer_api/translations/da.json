@@ -1251,8 +1251,8 @@
           "description": "Påkrævet. 1 for privat eller 4 for erhverv og industri."
         },
         "current_gear": {
-          "name": "Strømtrin",
-          "description": "Valgfrit. Heltalsfelt i payload, der bruges ved validering af testkørslen."
+          "name": "Ladestrøm",
+          "description": "Påkrævet i driftstilstandene ECO og GREEN. ECO accepterer 6, 10, 16, 20 eller 25 A; GREEN accepterer 3 eller 6 A. Udelades for STOP og FAST. Integrationen sender værdien til SolaX som current."
         }
       }
     },

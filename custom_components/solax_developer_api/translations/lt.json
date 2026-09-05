@@ -1251,8 +1251,8 @@
           "description": "Privaloma. 1 gyvenamajam arba 4 komerciniam ir pramoniniam tipui."
         },
         "current_gear": {
-          "name": "Srovė Gear",
-          "description": "Neprivaloma. Sveikojo skaičiaus payload laukas Dry-Run validacijai."
+          "name": "Įkrovimo srovė",
+          "description": "Privaloma ECO ir GREEN darbo režimams. ECO priima 6, 10, 16, 20 arba 25 A, o GREEN – 3 arba 6 A. Nenurodykite STOP ir FAST režimams. Integracija siunčia šią reikšmę į SolaX kaip current."
         }
       }
     },

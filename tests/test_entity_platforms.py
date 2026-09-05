@@ -263,9 +263,19 @@ async def test_ev_charger_gui_controls_validate_and_send(monkeypatch):
     await time.async_setup_entry(hass, entry, time_entities.extend)
 
     work_mode = next(entity for entity in select_entities if entity.translation_key == "ev_charger_work_mode")
+    assert work_mode.current_option == "ECO 16 A"
+    coordinator.data["device_realtime"]["EVC-1"] = {
+        "workMode": 2,
+        "current": 16,
+        "startMode": 2,
+        "chargerScene": 1,
+        "currentLimit": "18",
+    }
+    assert work_mode.current_option == "ECO 16 A"
     await work_mode.async_select_option("ECO 16 A")
     assert coordinator.ev_commands[-1]["payload"]["workMode"] == 2
-    assert coordinator.ev_commands[-1]["payload"]["currentGear"] == 16
+    assert coordinator.ev_commands[-1]["payload"]["current"] == 16
+    assert "currentGear" not in coordinator.ev_commands[-1]["payload"]
     assert work_mode.current_option == "ECO 16 A"
 
     start_mode = next(entity for entity in select_entities if entity.translation_key == "ev_charger_start_mode")

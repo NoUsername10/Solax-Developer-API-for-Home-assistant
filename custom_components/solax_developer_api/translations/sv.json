@@ -1251,8 +1251,8 @@
           "description": "Obligatoriskt. 1 för bostad eller 4 för kommersiell och industriell."
         },
         "current_gear": {
-          "name": "Aktuell strömnivå",
-          "description": "Valfritt. Heltalsfält i payloaden som används vid dry-run-validering."
+          "name": "Laddström",
+          "description": "Krävs för driftlägena ECO och GREEN. ECO godtar 6, 10, 16, 20 eller 25 A; GREEN godtar 3 eller 6 A. Utelämna för STOP och FAST. Integrationen skickar värdet till SolaX som current."
         }
       }
     },

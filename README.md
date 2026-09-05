@@ -63,7 +63,7 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
 - **Test coverage:** `97.00%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `217` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
+- **Automated tests:** `229` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested:** `2026.1.0` and current stable.
 - **Config-flow coverage:** `100%`.
 
@@ -1067,7 +1067,7 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
 - **Automated test coverage:** 97.00%
-- **Credential-free automated tests:** 217 plus 7 Home Assistant lifecycle fixture tests
+- **Credential-free automated tests:** 229 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

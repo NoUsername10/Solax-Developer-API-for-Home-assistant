@@ -1251,8 +1251,8 @@
           "description": "Wymagane. 1 dla instalacji domowej lub 4 dla komercyjnej i przemysłowej."
         },
         "current_gear": {
-          "name": "Bieżący poziom prądu",
-          "description": "Opcjonalne. Całkowitoliczbowe pole payloadu używane podczas walidacji dry-run."
+          "name": "Prąd ładowania",
+          "description": "Wymagany w trybach ECO i GREEN. ECO przyjmuje 6, 10, 16, 20 lub 25 A; GREEN przyjmuje 3 lub 6 A. Pomiń dla STOP i FAST. Integracja wysyła tę wartość do SolaX jako current."
         }
       }
     },

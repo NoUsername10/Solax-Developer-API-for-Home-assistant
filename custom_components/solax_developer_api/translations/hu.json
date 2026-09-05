@@ -1251,8 +1251,8 @@
           "description": "Kötelező. 1 lakossági vagy 4 kereskedelmi és ipari."
         },
         "current_gear": {
-          "name": "Áram Gear",
-          "description": "Opcionális. A próbaüzemi ellenőrzéshez használt egész szám mező."
+          "name": "Töltőáram",
+          "description": "Kötelező az ECO és GREEN üzemmódokhoz. Az ECO 6, 10, 16, 20 vagy 25 A értéket, a GREEN 3 vagy 6 A értéket fogad el. STOP és FAST esetén hagyja ki. Az integráció current néven küldi az értéket a SolaX felé."
         }
       }
     },

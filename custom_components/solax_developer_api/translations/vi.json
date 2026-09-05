@@ -1251,8 +1251,8 @@
           "description": "Bắt buộc. 1 dân dụng hoặc 4 thương mại và công nghiệp."
         },
         "current_gear": {
-          "name": "Dòng điện Gear",
-          "description": "Tùy chọn. Trường payload kiểu số nguyên dùng khi xác thực dry-run."
+          "name": "Dòng sạc",
+          "description": "Bắt buộc đối với chế độ ECO và GREEN. ECO chấp nhận 6, 10, 16, 20 hoặc 25 A; GREEN chấp nhận 3 hoặc 6 A. Không nhập đối với STOP và FAST. Tích hợp gửi giá trị này đến SolaX dưới tên current."
         }
       }
     },

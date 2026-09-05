@@ -1251,8 +1251,8 @@
           "description": "必填。1 表示户用，4 表示工商业。"
         },
         "current_gear": {
-          "name": "电流 Gear",
-          "description": "可选。用于 dry-run 验证的整数 payload 字段。"
+          "name": "充电电流",
+          "description": "ECO 和 GREEN 工作模式必填。ECO 支持 6、10、16、20 或 25 A；GREEN 支持 3 或 6 A。STOP 和 FAST 模式请省略。集成以 current 字段将此值发送给 SolaX。"
         }
       }
     },

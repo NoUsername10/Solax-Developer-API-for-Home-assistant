@@ -1251,8 +1251,8 @@
           "description": "Obligatoire. 1 résidentiel ou 4 commercial et industriel."
         },
         "current_gear": {
-          "name": "Courant Gear",
-          "description": "Facultatif. Champ entier utilisé lors de la validation en simulation."
+          "name": "Courant de charge",
+          "description": "Requis pour les modes ECO et GREEN. ECO accepte 6, 10, 16, 20 ou 25 A ; GREEN accepte 3 ou 6 A. Ne pas renseigner pour STOP et FAST. L’intégration envoie cette valeur à SolaX sous le nom current."
         }
       }
     },
