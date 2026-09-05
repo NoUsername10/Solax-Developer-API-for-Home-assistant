@@ -139,10 +139,15 @@ def _validate_evc_payload(service: str, normalized: dict[str, Any]) -> None:
         if work_mode not in (0, 1, 2, 3):
             _raise_invalid_value(service, "workMode")
         current_gear = normalized.get("currentGear")
-        if current_gear is None:
-            return
         if work_mode in (0, 1):
-            _raise_invalid_value(service, "currentGear")
+            if current_gear is not None:
+                _raise_invalid_value(service, "currentGear")
+            return
+        if current_gear is None:
+            raise ControlValidationError(
+                "runtime.errors.control_missing_required_field",
+                placeholders={"service": service, "field": "currentGear"},
+            )
         if work_mode == 2 and current_gear not in (6, 10, 16, 20, 25):
             _raise_invalid_value(service, "currentGear")
         if work_mode == 3 and current_gear not in (3, 6):
@@ -276,6 +281,10 @@ def validate_control_payload(service: str, payload: dict[str, Any]) -> dict[str,
 
     if service.startswith("set_evc") or service == "set_charge_scene":
         _validate_evc_payload(service, normalized)
+        if service == "set_evc_work_mode" and "currentGear" in normalized:
+            # The portal example says currentGear, but the production endpoint
+            # accepts the field-table name current.
+            normalized["current"] = normalized.pop("currentGear")
 
     if service == "set_battery_heating":
         heating_enable = normalized["heatingEnable"]
