@@ -15,7 +15,7 @@ body:
         Please complete all required fields. Detailed reports help us identify and resolve issues faster.
 
         > Do not include passwords, API keys, tokens, serial numbers, or other sensitive information.
-        > Solax Developer API redacts ALL personal and system identifiers in the diagnostics JSON export.
+        > Solax Developer API removes and redacts ALL personal and system identifiers in the diagnostics JSON export.
 
   - type: checkboxes
     id: checks
