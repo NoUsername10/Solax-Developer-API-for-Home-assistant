@@ -73,7 +73,8 @@
       },
       "region": {
         "eu": "EU (openapi-eu.solaxcloud.com)",
-        "cn": "CN (openapi-cn.solaxcloud.com)"
+        "cn": "CN (openapi-cn.solaxcloud.com)",
+        "in": "IN (openapi-in.solaxcloud.com)"
       },
       "ev_charger": {
         "work_mode": {
