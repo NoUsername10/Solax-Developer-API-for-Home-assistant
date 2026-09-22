@@ -63,11 +63,13 @@ def config_value(entry: ConfigEntry[Any], key: str, default: Any = None) -> Any:
 
 API_REGION_EU = "eu"
 API_REGION_CN = "cn"
+API_REGION_IN = "in"
 API_REGION_DEFAULT = API_REGION_EU
 
 API_BASE_URLS = {
     API_REGION_EU: "https://openapi-eu.solaxcloud.com",
     API_REGION_CN: "https://openapi-cn.solaxcloud.com",
+    API_REGION_IN: "https://openapi-in.solaxcloud.com",
 }
 
 BUSINESS_TYPES = (1, 4)

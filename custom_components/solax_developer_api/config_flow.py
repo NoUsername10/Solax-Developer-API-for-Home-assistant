@@ -23,6 +23,7 @@ from .const import (
     API_REGION_CN,
     API_REGION_DEFAULT,
     API_REGION_EU,
+    API_REGION_IN,
     CONF_ALARM_NOTIFICATIONS,
     CONF_ALARM_SCAN_INTERVAL,
     CONF_API_REGION,
@@ -96,6 +97,11 @@ def _region_options(hass: HomeAssistant) -> dict[str, str]:
             hass,
             "runtime.labels.region.cn",
             fallback="CN (openapi-cn.solaxcloud.com)",
+        ),
+        API_REGION_IN: translate(
+            hass,
+            "runtime.labels.region.in",
+            fallback="IN (openapi-in.solaxcloud.com)",
         ),
     }
 
@@ -612,7 +618,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_credentials"
             elif not system_name:
                 errors["base"] = "invalid_system_name"
-            elif region not in (API_REGION_EU, API_REGION_CN):
+            elif region not in (API_REGION_EU, API_REGION_CN, API_REGION_IN):
                 errors["base"] = "invalid_region"
             else:
                 valid, err_key = await _validate_credentials(
@@ -696,7 +702,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_credentials"
             elif not system_name:
                 errors["base"] = "invalid_system_name"
-            elif region not in (API_REGION_EU, API_REGION_CN):
+            elif region not in (API_REGION_EU, API_REGION_CN, API_REGION_IN):
                 errors["base"] = "invalid_region"
             else:
                 valid, err_key = await _validate_credentials(
@@ -770,7 +776,7 @@ class SolaxDeveloperFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             region = str(user_input[CONF_API_REGION]).strip().lower()
             if not client_id or not client_secret:
                 errors["base"] = "invalid_credentials"
-            elif region not in (API_REGION_EU, API_REGION_CN):
+            elif region not in (API_REGION_EU, API_REGION_CN, API_REGION_IN):
                 errors["base"] = "invalid_region"
             else:
                 valid, err_key = await _validate_credentials(
@@ -1065,7 +1071,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 errors["base"] = "invalid_credentials"
             elif not system_name:
                 errors["base"] = "invalid_system_name"
-            elif region not in (API_REGION_EU, API_REGION_CN):
+            elif region not in (API_REGION_EU, API_REGION_CN, API_REGION_IN):
                 errors["base"] = "invalid_region"
             else:
                 credentials_changed = (
