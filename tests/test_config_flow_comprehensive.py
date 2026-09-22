@@ -86,7 +86,7 @@ def _options_handler(entry=None, hass=None):
 def test_config_flow_helpers_and_selectors():
     hass = _Hass()
     assert config_flow._slugify_name("My-Solax Home") == "my_solax_home"
-    assert set(config_flow._region_options(hass)) == {"eu", "cn"}
+    assert set(config_flow._region_options(hass)) == {"eu", "cn", "in"}
     assert isinstance(config_flow._text_selector(), selector.TextSelector)
     assert isinstance(
         config_flow._text_selector(password=True, multiline=True),
