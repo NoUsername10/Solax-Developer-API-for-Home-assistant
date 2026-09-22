@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.7] - 2026-09-22
+
+### Added
+- Added the IN API region (`https://openapi-in.solaxcloud.com`) to the region
+  dropdown for setup, reconfiguration, reauthentication, and connection options.
+- Added the IN region label to all 26 runtime translation catalogs and documented
+  the endpoint in the setup and troubleshooting instructions.
+
 ## [v0.4.6] - 2026-09-05
 
 ### Fixed
