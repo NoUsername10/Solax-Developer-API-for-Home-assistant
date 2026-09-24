@@ -134,11 +134,6 @@ You need:
    - EU: `openapi-eu.solaxcloud.com`
    - CN: `openapi-cn.solaxcloud.com`
    - IN: `openapi-in.solaxcloud.com`
-  
-6. This is how to get the correct region for you:
-<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/api-url/account.png" alt="SolaX Developer Portal API region account" width="50%">
-
-<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/api-url/url.png" alt="SolaX Developer Portal API region URL" width="50%">
 
 ### 1. Open the SolaX Developer Portal
 
@@ -474,7 +469,8 @@ Important behavior:
 - **Automatic token renewal** - Tokens are renewed before expiry, using a 24-hour safety target for long-lived tokens.
 - **Auth retry** - An API authentication rejection triggers one forced token refresh before failing.
 - **Stale-data retention** - Existing values are kept during temporary failures.
-- **Official update failure state** - A cycle with no fresh endpoint data is reported to Home Assistant as a failed coordinator update.
+- **Independent inventory discovery** - A failed residential or C&I inventory request does not block discovery for other business types or device families. Failed requests retain previously discovered records, including attached batteries; successful complete responses remain authoritative.
+- **Official update failure state** - A cycle with no fresh usable endpoint data is reported to Home Assistant as a failed coordinator update. Authentication, rate-limit, and quota failures during discovery stop further requests in that update.
 - **Rate/quota recovery** - Temporary failures use deterministic backoff.
 
 ## 🔌 Supported Systems and Models
@@ -903,7 +899,10 @@ The diagnostics payload includes:
 - Raw-versus-filtered field comparisons
 - Manual-device and capability summaries
 - Cached on-demand read results
-- Collection issues encountered while building diagnostics
+- Collection issues and API errors, including incomplete inventory discovery
+- `inventory_complete` and `inventory_errors` from the last discovery attempt, plus `last_update_partial` and `last_errors` for the latest update
+
+A successful partial update can keep working devices available while reporting the failed requests. `available` requires a successful coordinator update and discovered plants or devices; an empty state containing only metadata is not considered available. Incomplete inventory remains flagged until a later discovery attempt succeeds.
 
 Privacy handling:
 
