@@ -452,6 +452,7 @@ def _build_filtered_api_projection(state: dict[str, Any]) -> dict[str, Any]:
         "manual_meter_entries": deepcopy(state.get("manual_meter_entries") or []),
         "manual_ems_entries": deepcopy(state.get("manual_ems_entries") or []),
         "meta": _drop_nulls(deepcopy(state.get("meta") or {})),
+        "last_errors": deepcopy(state.get("last_errors") or []),
         "plant_non_null_fields": plant_non_null_fields,
         "device_non_null_fields": device_non_null_fields,
     }
@@ -608,7 +609,13 @@ def _has_meaningful_state(
 def _build_coordinator_snapshot(coordinator: Any, state: dict[str, Any]) -> dict[str, Any]:
     meta = state.get("meta") or {}
     return {
-        "available": bool(state),
+        "available": bool(getattr(coordinator, "last_update_success", False))
+        and bool(state.get("plants") or state.get("devices")),
+        "last_update_success": bool(getattr(coordinator, "last_update_success", False)),
+        "inventory_complete": meta.get("inventory_complete"),
+        "inventory_errors": deepcopy(meta.get("inventory_errors") or []),
+        "last_update_partial": meta.get("last_update_partial"),
+        "last_errors": deepcopy(state.get("last_errors") or []),
         "name": getattr(coordinator, "name", None),
         "last_update_attempt": _to_iso(getattr(coordinator, "last_update_attempt", None)),
         "last_successful_update": _to_iso(getattr(coordinator, "last_successful_update", None)),
@@ -678,6 +685,13 @@ def _build_and_sanitize_payload(
         ),
     }
 
+    inventory_issues = []
+    if (state.get("meta") or {}).get("inventory_complete") is False:
+        inventory_issues.append({
+            "type": "inventory_incomplete",
+            "message": "The last inventory refresh was incomplete; see inventory_errors.",
+        })
+
     diagnostics_payload = {
         "config_entry": config_entry_snapshot,
         "coordinator": coordinator_snapshot,
@@ -685,7 +699,14 @@ def _build_and_sanitize_payload(
         "filtered_api_responses": filtered_api_responses,
         "raw_vs_filtered_summary": raw_vs_filtered_summary,
         "fallback_probe": fallback_probe,
-        "issues": issues,
+        "issues": [
+            *issues,
+            *inventory_issues,
+            *[
+                {"type": "api_error", **deepcopy(error)}
+                for error in state.get("last_errors") or []
+            ],
+        ],
     }
 
     known_secret_values: set[str] = set()

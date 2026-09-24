@@ -1994,9 +1994,13 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         },
                         error=err,
                     )
-                    if err.classification == "permission":
-                        break
-                    raise
+                    if err.classification in {"auth", "rate_limit", "quota"}:
+                        raise
+                    # A failed business type must not discard the other one's data.
+                    for plant_id, previous in (self.data or {}).get("plants", {}).items():
+                        if self._coerce_int(previous.get("businessType")) == business_type:
+                            plants.setdefault(plant_id, deepcopy(previous))
+                    break
                 result = payload.get("result") or {}
                 records = result.get("records") or []
                 for plant in records:
@@ -2045,9 +2049,35 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                             },
                             error=err,
                         )
-                        if err.classification == "permission":
-                            break
-                        raise
+                        if err.classification in {"auth", "rate_limit", "quota"}:
+                            raise
+                        # Retain only the failed scope; successful empty scopes
+                        # remain authoritative and remove their previous records.
+                        previous_state = self.data or {}
+                        for serial, previous in previous_state.get("devices", {}).items():
+                            if (
+                                self._coerce_int(previous.get("businessType")) == business_type
+                                and self._coerce_int(previous.get("deviceType")) == device_type
+                                and not previous.get("manualSerial")
+                            ):
+                                devices.setdefault(serial, deepcopy(previous))
+                                key = f"{business_type}:{device_type}"
+                                if serial not in inventory_by_type[key]:
+                                    inventory_by_type[key].append(serial)
+                        if device_type == 2:
+                            for parent, records in previous_state.get(
+                                "attached_battery_inventory", {}
+                            ).items():
+                                previous_parent = previous_state.get("devices", {}).get(parent, {})
+                                if (
+                                    parent in devices
+                                    and self._coerce_int(previous_parent.get("businessType")) == business_type
+                                ):
+                                    serialless_battery_inventory[parent] = deepcopy(records)
+                                    key = f"{business_type}:2:{BATTERY_REQUEST_SN_TYPE_INVERTER}"
+                                    if parent not in inventory_by_type[key]:
+                                        inventory_by_type[key].append(parent)
+                        break
                     result = payload.get("result") or {}
                     records = result.get("records") or []
                     for device in records:
@@ -2581,18 +2611,24 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
         self._serialless_battery_inventory = deepcopy(attached_battery_inventory)
 
+        inventory_returned = not refresh_inventory
+        inventory_blocked = False
         if refresh_inventory:
             try:
                 plants, devices, inventory_by_type = await self._refresh_inventory(raw_cycle=raw_cycle)
+                inventory_returned = True
                 attached_battery_inventory = deepcopy(
                     self._serialless_battery_inventory
                 )
             except Exception as err:  # noqa: BLE001
                 self._append_error(errors, err, "inventory")
+                inventory_blocked = isinstance(err, SolaxApiError) and err.classification in {
+                    "auth", "rate_limit", "quota"
+                }
 
         plant_realtime = dict(state.get("plant_realtime") or {})
         try:
-            if plants:
+            if plants and not inventory_blocked:
                 refreshed_plant_realtime, plant_realtime_errors = await self._refresh_plant_realtime(
                     plants,
                     raw_cycle=raw_cycle,
@@ -2617,7 +2653,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and getattr(self, "_alarm_manager_unsub", None) is None
         ):
             try:
-                if plants:
+                if plants and not inventory_blocked:
                     refreshed_alarms, alarm_errors = await self._refresh_alarms(
                         plants,
                         raw_cycle=raw_cycle,
@@ -2639,7 +2675,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         plant_stats = dict(state.get("plant_stats") or {})
         if not live_view_active:
             try:
-                if plants:
+                if plants and not inventory_blocked:
                     refreshed_stats, stats_errors = await self._refresh_stats(
                         plants,
                         raw_cycle=raw_cycle,
@@ -2661,7 +2697,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         device_realtime = dict(state.get("device_realtime") or {})
         try:
-            if inventory_by_type:
+            if inventory_by_type and not inventory_blocked:
                 refreshed_realtime, realtime_errors = await self._refresh_device_realtime(
                     inventory_by_type,
                     raw_cycle=raw_cycle,
@@ -2682,7 +2718,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._append_error(errors, err, "device_realtime")
 
         try:
-            if inventory_by_type.get(f"4:{EMS_DEVICE_TYPE}"):
+            if inventory_by_type.get(f"4:{EMS_DEVICE_TYPE}") and not inventory_blocked:
                 refreshed_ems, ems_errors = await self._refresh_ems_realtime(
                     inventory_by_type,
                     raw_cycle=raw_cycle,
@@ -2699,7 +2735,25 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._merge_raw_errors_into_errors(errors, raw_cycle)
         self._merge_raw_api_cycle(raw_cycle)
 
-        has_fresh_endpoint_data = self._count_raw_cycle_responses(raw_cycle) > 0
+        inventory_endpoints = {RAW_ENDPOINT_PAGE_PLANT_INFO, RAW_ENDPOINT_PAGE_DEVICE_INFO}
+        inventory_errors = [
+            {"context": endpoint, **error}
+            for endpoint, error in self._raw_cycle_error_items(raw_cycle)
+            if endpoint in inventory_endpoints
+        ]
+        inventory_complete = (
+            inventory_returned and not inventory_errors
+            if refresh_inventory
+            else (state.get("meta") or {}).get("inventory_complete")
+        )
+        # Received inventory pages are not usable if discovery never returned.
+        accepted_cycle = {
+            endpoint: responses for endpoint, responses in raw_cycle.items()
+            if inventory_returned or endpoint not in inventory_endpoints
+        }
+        has_fresh_endpoint_data = self._count_raw_cycle_responses(accepted_cycle) > 0
+        if refresh_inventory and not inventory_complete and not (plants or devices):
+            has_fresh_endpoint_data = False
         if has_fresh_endpoint_data:
             self._register_refresh_success()
             self.last_successful_update = dt_util.utcnow()
@@ -2732,6 +2786,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "raw_api_responses": self.raw_api_responses,
                 "meta": {
                     "poll_count": self._poll_count,
+                    "inventory_complete": inventory_complete,
+                    "inventory_errors": inventory_errors if refresh_inventory
+                    else (state.get("meta") or {}).get("inventory_errors", []),
+                    "last_update_partial": has_fresh_endpoint_data and bool(errors),
                     "last_update_attempt": self.last_update_attempt,
                     "last_successful_update": self.last_successful_update,
                     "rate_limited": self.rate_limited,
