@@ -134,6 +134,11 @@ You need:
    - EU: `openapi-eu.solaxcloud.com`
    - CN: `openapi-cn.solaxcloud.com`
    - IN: `openapi-in.solaxcloud.com`
+  
+6. This is how to get the correct region for you:
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/api-url/account.png" alt="SolaX Developer Portal API region account" width="50%">
+
+<img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/api-url/url.png" alt="SolaX Developer Portal API region URL" width="50%">
 
 ### 1. Open the SolaX Developer Portal
 
