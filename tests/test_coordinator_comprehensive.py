@@ -2067,3 +2067,155 @@ async def test_ev_charger_command_cache_recovers_from_malformed_internal_state(
 
     assert event["confirmation_state"] == "device_acknowledged"
     assert instance.ev_charger_control_commands == [event]
+
+
+class _ScopedInventoryClient(_FullClient):
+    """Synthetic API failures scoped by endpoint, business, type, and page."""
+
+    def __init__(self):
+        self.failures = {}
+        self.empty_scopes = set()
+        self.calls = []
+
+    async def page_plant_info(self, **kwargs):
+        key = ("plant", kwargs["business_type"], None, kwargs["page_no"])
+        self.calls.append(key)
+        if key in self.failures:
+            raise self.failures[key]
+        if key[:3] in self.empty_scopes:
+            return {"code": 10000, "result": {"records": [], "pages": 1}}
+        return await super().page_plant_info(**kwargs)
+
+    async def page_device_info(self, **kwargs):
+        key = ("device", kwargs["business_type"], kwargs["device_type"], kwargs["page_no"])
+        self.calls.append(key)
+        if key in self.failures:
+            raise self.failures[key]
+        if key[:3] in self.empty_scopes:
+            return {"code": 10000, "result": {"records": [], "pages": 1}}
+        return await super().page_device_info(**kwargs)
+
+
+def _inventory_api_error():
+    return SolaxApiError(
+        code=1,
+        message="SolaX Cloud：solax-user-center base version has been lost",
+        classification="api_error",
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failed_business", [1, 4])
+async def test_inventory_business_failure_keeps_other_business_and_telemetry(failed_business):
+    client = _ScopedInventoryClient()
+    client.failures[("plant", failed_business, None, 1)] = _inventory_api_error()
+    for device_type in (1, 2, 3, 4):
+        client.failures[("device", failed_business, device_type, 1)] = _inventory_api_error()
+    instance = _make(client)
+    instance._manual_meter_entries = []
+    instance._manual_ems_entries = []
+
+    state = await instance._async_update_data()
+    healthy_business = 4 if failed_business == 1 else 1
+    assert set(state["plants"]) == {f"P{healthy_business}"}
+    assert state["device_realtime"][f"D{healthy_business}1"]["totalActivePower"] == 10
+    assert state["plant_realtime"][f"P{healthy_business}"]["dailyYield"] == 2
+    assert state["meta"]["inventory_complete"] is False
+    assert state["meta"]["last_update_partial"] is True
+    assert any(e["code"] == 1 for e in state["last_errors"])
+    assert ("device", healthy_business, 1, 1) in client.calls
+
+    client.failures.clear()
+    instance._poll_count = coordinator_module.INVENTORY_REFRESH_EVERY_POLLS - 1
+    recovered = await instance._async_update_data()
+    assert set(recovered["plants"]) == {"P1", "P4"}
+    assert recovered["meta"]["inventory_complete"] is True
+    assert recovered["meta"]["last_update_partial"] is False
+    assert recovered["last_errors"] == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("failed_page", [1, 2])
+async def test_inventory_failed_scope_preserves_old_records_and_empty_success_removes(failed_page):
+    client = _ScopedInventoryClient()
+    instance = _make(client)
+    initial = await instance._async_update_data()
+    initial["plants"]["OLD"] = {"plantId": "OLD", "businessType": 4}
+    initial["devices"]["OLD"] = {"deviceSn": "OLD", "businessType": 4, "deviceType": 1}
+    initial["inventory_by_type"]["4:1"].append("OLD")
+    client.failures[("plant", 4, None, failed_page)] = _inventory_api_error()
+    client.failures[("device", 4, 1, failed_page)] = _inventory_api_error()
+    client.empty_scopes.add(("device", 1, 3))
+
+    plants, devices, inventory = await instance._refresh_inventory()
+    assert plants["OLD"] == initial["plants"]["OLD"]
+    assert devices["OLD"] == initial["devices"]["OLD"]
+    assert "OLD" in inventory["4:1"]
+    assert "D13" not in devices
+    assert "D14" in devices
+    assert "D42" in devices
+
+    client.failures.clear()
+    plants, devices, inventory = await instance._refresh_inventory()
+    assert "OLD" not in plants
+    assert "OLD" not in devices
+    assert "OLD" not in inventory["4:1"]
+
+
+@pytest.mark.asyncio
+async def test_inventory_battery_failure_preserves_proxy_but_not_removed_manual_meter():
+    client = _ScopedInventoryClient()
+    instance = _make(client)
+    await instance._async_update_data()
+    battery = {"deviceSn": "", "businessType": 1, "deviceType": 2, "batterySOC": 60}
+    instance.data["attached_battery_inventory"] = {"D11": [battery]}
+    instance.data["inventory_by_type"]["1:2:1"] = ["D11"]
+    instance._manual_meter_entries = []
+    client.failures[("device", 1, 2, 1)] = _inventory_api_error()
+    client.failures[("device", 1, 3, 1)] = _inventory_api_error()
+    _, devices, inventory = await instance._refresh_inventory()
+    assert instance._serialless_battery_inventory["D11"] == [battery]
+    assert inventory["1:2:1"] == ["D11"]
+    assert "MANUALMETER" not in devices
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("classification,code", [("auth", 10402), ("rate_limit", 10406), ("quota", 10405)])
+@pytest.mark.parametrize("has_previous_data", [False, True])
+async def test_inventory_global_failure_stops_requests_and_is_not_success(classification, code, has_previous_data):
+    client = _ScopedInventoryClient()
+    instance = _make(client)
+    if has_previous_data:
+        await instance._async_update_data()
+        instance._poll_count = coordinator_module.INVENTORY_REFRESH_EVERY_POLLS - 1
+    previous_success = instance.last_successful_update
+    client.calls.clear()
+    client.failures[("plant", 4, None, 1)] = SolaxApiError(
+        code=code, message="global failure", classification=classification
+    )
+    from homeassistant.exceptions import ConfigEntryAuthFailed
+
+    expected = ConfigEntryAuthFailed if classification == "auth" else UpdateFailed
+    with pytest.raises(expected):
+        await instance._async_update_data()
+    assert not any(call[0] == "device" for call in client.calls)
+    assert instance.last_successful_update == previous_success
+    assert instance.data["meta"]["inventory_complete"] is False
+    assert instance.data["meta"]["last_update_partial"] is False
+
+
+@pytest.mark.asyncio
+async def test_empty_success_does_not_hide_failed_discovery_without_usable_inventory():
+    client = _ScopedInventoryClient()
+    for business in (1, 4):
+        client.empty_scopes.add(("plant", business, None))
+        for device_type in (1, 2, 3, 4):
+            client.failures[("device", business, device_type, 1)] = _inventory_api_error()
+    instance = _make(client)
+    instance._manual_meter_entries = []
+    instance._manual_ems_entries = []
+    with pytest.raises(UpdateFailed):
+        await instance._async_update_data()
+    assert instance.last_successful_update is None
+    assert instance.data["meta"]["inventory_complete"] is False
+    assert instance._refresh_failure_streak == 1

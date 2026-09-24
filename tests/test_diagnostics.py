@@ -376,3 +376,36 @@ async def test_unloaded_entry_diagnostics_reports_temporary_probe_failure(monkey
     assert payload["fallback_probe"]["executed"] is True
     assert payload["fallback_probe"]["success"] is False
     assert any(issue["type"] == "unloaded_entry_probe_failed" for issue in payload["issues"])
+
+
+@pytest.mark.asyncio
+async def test_loaded_diagnostics_reports_partial_inventory_errors_and_health():
+    from custom_components.solax_developer_api.diagnostics import _build_coordinator_snapshot
+
+    error = {"context": "page_plant_info", "classification": "api_error", "code": 1,
+             "message": "upstream failure", "payload": {"plantId": "PRIVATE-PLANT"}}
+    state = {"plants": {"PRIVATE-PLANT": {"businessType": 1}}, "devices": {},
+             "last_errors": [error], "meta": {"inventory_complete": False,
+                                              "last_update_partial": True}}
+    coordinator = SimpleNamespace(data=state, raw_api_responses={}, last_update_success=True)
+    entry = SimpleNamespace(state=ConfigEntryState.LOADED, entry_id="test", title="Test",
+                            data={}, options={}, runtime_data=SimpleNamespace(
+                                coordinator=coordinator, client=SimpleNamespace()))
+    payload = await async_get_config_entry_diagnostics(None, entry)
+    assert payload["coordinator"]["available"] is True
+    assert payload["coordinator"]["inventory_complete"] is False
+    assert payload["coordinator"]["last_update_partial"] is True
+    assert payload["issues"][0]["type"] == "inventory_incomplete"
+    assert payload["issues"][1]["type"] == "api_error"
+    assert payload["issues"][1]["code"] == 1
+    assert payload["filtered_api_responses"]["last_errors"]
+    assert "PRIVATE-PLANT" not in json.dumps(payload["issues"])
+    assert "PRIVATE-PLANT" not in json.dumps(payload["coordinator"]["last_errors"])
+    assert "PRIVATE-PLANT" not in json.dumps(payload["filtered_api_responses"]["last_errors"])
+    state["last_errors"] = []
+    later = await async_get_config_entry_diagnostics(None, entry)
+    assert later["issues"][0]["type"] == "inventory_incomplete"
+    coordinator.last_update_success = False
+    assert _build_coordinator_snapshot(coordinator, state)["available"] is False
+    coordinator.last_update_success = True
+    assert _build_coordinator_snapshot(coordinator, {"meta": {"poll_count": 1}})["available"] is False

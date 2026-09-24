@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.8] - 2026-09-24
+
+### Fixed
+- Isolated plant and device inventory failures by business type and device family.
+  A C&I API error, including the error reported on the IN endpoint, no longer
+  discards successful residential discovery or prevents its device polling.
+- Retained previously discovered records for failed inventory requests and failed
+  pagination, including attached batteries. Successful complete responses still
+  remove records that are no longer returned.
+- Stopped the update's remaining requests on authentication, rate-limit, or quota
+  failures during discovery. Inventory pages discarded by an aborted discovery
+  no longer count as a successful update.
+- Corrected diagnostics availability and exposed API errors, partial updates, and
+  incomplete inventory, including failures awaiting the next discovery attempt.
+
+### Validation
+- Passed `242` credential-free tests on Home Assistant `2026.1.0` and `2026.9.3`
+  with `97.18%` coverage and every production module above `95%`.
+- Passed `7` Home Assistant setup/reload lifecycle tests on both versions.
+- Passed strict typing, Ruff, compilation, and translation validation.
+
 ## [v0.4.7] - 2026-09-22
 
 ### Added
