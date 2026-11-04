@@ -6,9 +6,17 @@ import ast
 import logging
 from collections.abc import Mapping
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
+if TYPE_CHECKING:
+    import probatio as vol
+else:
+    try:
+        import probatio as vol
+    except ModuleNotFoundError:  # pragma: no cover - exercised by the HA 2026.1 job
+        # Home Assistant releases before the schema migration use Voluptuous.
+        import voluptuous as vol
+
 from homeassistant import config_entries
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigFlowResult

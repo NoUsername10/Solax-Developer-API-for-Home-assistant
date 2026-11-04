@@ -61,11 +61,11 @@ Contributions, issues, and pull requests are welcome.
 This custom integration is built and validated as a **💎 Platinum-standard aligned custom integration** following the Home Assistant Integration Quality Scale:
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
-- **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
+- **Strict typing:** CI checks all integration modules against the Home Assistant stable mypy interfaces.
 - **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
 - **Automated tests:** `252` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
-- **Home Assistant versions tested for this version:** `2026.1.0` and `2026.9.4`.
-- **Config-flow coverage:** `100%`.
+- **Home Assistant versions tested for this version:** main suite on `2026.1.0` and `2026.11.0`; lifecycle suite on `2026.1.0` and `2026.10.4`.
+- **Config-flow coverage:** `99%` on the current stable test run.
 
 > [!NOTE]
 > This is a HACS custom integration and is not included in Home Assistant Core. 

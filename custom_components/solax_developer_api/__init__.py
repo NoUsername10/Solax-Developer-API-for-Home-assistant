@@ -5,9 +5,17 @@ from __future__ import annotations
 from collections.abc import Callable, Coroutine, Mapping
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import voluptuous as vol
+if TYPE_CHECKING:
+    import probatio as vol
+else:
+    try:
+        import probatio as vol
+    except ModuleNotFoundError:  # pragma: no cover - exercised by the HA 2026.1 job
+        # Home Assistant releases before the schema migration use Voluptuous.
+        import voluptuous as vol
+
 from homeassistant.components import frontend, persistent_notification
 # This is explicit in HA 2026.1 and an implicit public re-export in newer typing.
 from homeassistant.components.http import StaticPathConfig  # type: ignore[attr-defined,unused-ignore]

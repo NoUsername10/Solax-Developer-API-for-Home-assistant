@@ -21,10 +21,17 @@ All notable changes to this project will be documented in this file.
 - Defer a current inverter work-mode control until its readback can be verified;
   the EV charger `deviceWorkingMode` field is unrelated.
 
+### Fixed
+- Use the schema library expected by each Home Assistant version: Probatio on
+  current releases and Voluptuous on older releases. Remove an obsolete Pydantic
+  mypy option.
+- Pin lifecycle test fixtures to matching Home Assistant releases so dependency
+  resolution cannot silently install an incompatible old Pytest version.
+
 ### Validation
-- Passed `252` credential-free tests and `7` Home Assistant lifecycle tests on
-  Home Assistant `2026.1.0` and `2026.9.4`, with `97.08%` total coverage and
-  every production module above `95%` coverage.
+- Passed `252` credential-free tests on Home Assistant `2026.1.0` and `2026.11.0`,
+  and `7` lifecycle tests on `2026.1.0` and `2026.10.4`. Total coverage is
+  `97.08%`, with every production module above `95%` coverage.
 - Passed strict mypy, Ruff, compilation, and translation-key parity checks. Live inverter command
   validation remains pending.
 
