@@ -13,9 +13,15 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
+.mypy_cache/
 .coverage
 coverage.xml
+coverage.json
 htmlcov/
 
 # Operating-system metadata.
 .DS_Store
+
+# Local project material and managed agent instructions.
+/Project-data/
+/AGENTS.md

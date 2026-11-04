@@ -29,6 +29,8 @@ CONF_NIGHT_END_HOUR = "night_end_hour"
 CONF_MANUAL_METER_SERIALS = "manual_meter_serials"
 CONF_MANUAL_EMS_SYSTEMS = "manual_ems_systems"
 CONF_EV_CHARGER_CONTROLS_ENABLED = "ev_charger_controls_enabled"
+CONF_INVERTER_MODE_CONTROLS_ENABLED = "inverter_mode_controls_enabled"
+CONF_INVERTER_MODE_PROFILES = "inverter_mode_profiles"
 
 DEFAULT_SYSTEM_NAME = "Solax Developer System"
 DEFAULT_SCAN_INTERVAL = 120

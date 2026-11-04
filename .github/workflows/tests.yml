@@ -47,18 +47,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        homeassistant:
-          - "2026.1.0"
-          - stable
+        include:
+          - homeassistant: "2026.1.0"
+            pytest_homeassistant: "0.13.305"
+          - homeassistant: "2026.10.4"
+            pytest_homeassistant: "0.13.375"
     container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
     steps:
       - uses: actions/checkout@v5
       - name: Install Home Assistant fixture tools
         run: |
-          HA_VERSION="$(python -c 'from homeassistant.const import __version__; print(__version__)')"
           pip install --quiet --no-cache-dir \
-            "homeassistant==$HA_VERSION" \
-            -r requirements_test_ha.txt
+            "homeassistant==${{ matrix.homeassistant }}" \
+            "pytest-homeassistant-custom-component==${{ matrix.pytest_homeassistant }}"
       - name: Lifecycle tests
         run: pytest -q tests_ha
 

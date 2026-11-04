@@ -198,6 +198,79 @@ async def test_button_platform_setup_and_press():
 
 
 @pytest.mark.asyncio
+async def test_reviewed_inverter_modes_create_device_actions_for_automations():
+    entry = _entry()
+    hass = _Hass(entry)
+    coordinator = _Coordinator(hass)
+    coordinator.data["devices"]["INV-1"] = {
+        "deviceSn": "INV-1",
+        "deviceType": 1,
+        "deviceModel": 33,
+        "businessType": 1,
+    }
+    coordinator.inverter_mode_controls_enabled = True
+    coordinator.inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {
+            "INV-1": {
+                "manual": {"family": "standard", "reviewed": True},
+                "self_use": {
+                    "family": "standard",
+                    "reviewed": False,
+                    "min_soc": 20,
+                    "charge_upper_soc": 80,
+                    "charge_from_grid_enable": False,
+                },
+            }
+        },
+    }
+    commands = []
+
+    async def execute(*, serial, action):
+        commands.append((serial, action))
+        return {"accepted": True, "command_failed": False}
+
+    coordinator.async_execute_inverter_mode = execute
+    entry.runtime_data = SimpleNamespace(coordinator=coordinator)
+    added = []
+    await button.async_setup_entry(hass, entry, added.extend)
+
+    inverter_buttons = [
+        entity for entity in added if isinstance(entity, button.SolaxInverterModeButton)
+    ]
+    assert {entity._action for entity in inverter_buttons} == {
+        "manual_stop", "manual_charge", "manual_discharge"
+    }
+    assert all(
+        entity.device_info["identifiers"] == {("solax_developer_api", "INV-1")}
+        for entity in inverter_buttons
+    )
+    assert all(entity.available for entity in inverter_buttons)
+    await inverter_buttons[1].async_press()
+    assert commands == [("INV-1", inverter_buttons[1]._action)]
+
+    coordinator.data["devices"].pop("INV-1")
+    assert not inverter_buttons[1].available
+    coordinator.data["devices"]["INV-1"] = {
+        "deviceSn": "INV-1", "deviceType": 1, "deviceModel": 33, "businessType": 1
+    }
+
+    async def reject(*, serial, action):
+        return {"accepted": False, "command_failed": True}
+
+    coordinator.async_execute_inverter_mode = reject
+    with pytest.raises(HomeAssistantError, match="did not accept"):
+        await inverter_buttons[1].async_press()
+
+    async def invalid(*, serial, action):
+        raise ValueError("inverter_mode_not_enabled")
+
+    coordinator.async_execute_inverter_mode = invalid
+    with pytest.raises(HomeAssistantError, match="inverter_mode_not_enabled"):
+        await inverter_buttons[1].async_press()
+
+
+@pytest.mark.asyncio
 async def test_ev_charger_button_entities_attach_to_ev_device(monkeypatch):
     entry = _entry()
     hass = _Hass(entry)

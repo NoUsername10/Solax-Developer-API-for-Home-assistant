@@ -7,11 +7,17 @@ from typing import Any
 
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import slugify
 
 from .coordinator import SolaxDeveloperCoordinator
+from .const import DOMAIN
 from .entity import SolaxSystemCoordinatorEntity, system_identity
 from .ev_charger import SolaxEVChargerEntity, ev_charger_devices
+from .inverter_modes import MANUAL_ACTIONS, configured_modes, inverter_family
 from .runtime import SolaxConfigEntry
 
 PARALLEL_UPDATES = 1
@@ -75,15 +81,115 @@ async def async_setup_entry(
         return new_entities
 
     entities.extend(_build_ev_buttons())
+
+    def _build_inverter_buttons() -> list[ButtonEntity]:
+        new_entities: list[ButtonEntity] = []
+        if not getattr(coordinator, "inverter_mode_controls_enabled", False):
+            return new_entities
+        for serial, device in (coordinator.data.get("devices") or {}).items():
+            if not isinstance(device, Mapping):
+                continue
+            family = inverter_family(device)
+            if family is None:
+                continue
+            for mode in configured_modes(
+                coordinator.inverter_mode_options,
+                str(serial),
+                family,
+            ):
+                actions = MANUAL_ACTIONS if mode == "manual" else (mode,)
+                for action in actions:
+                    token = (str(serial), f"inverter_mode_{action}")
+                    if token in seen:
+                        continue
+                    seen.add(token)
+                    new_entities.append(
+                        SolaxInverterModeButton(
+                            coordinator=coordinator,
+                            system_slug=system_slug,
+                            serial=str(serial),
+                            action=action,
+                        )
+                    )
+        return new_entities
+
+    entities.extend(_build_inverter_buttons())
     async_add_entities(entities)
 
     def _coordinator_updated() -> None:
-        additions = _build_ev_buttons()
+        additions = _build_ev_buttons() + _build_inverter_buttons()
         if additions:
             async_add_entities(additions)
 
     if hasattr(entry, "async_on_unload"):
         entry.async_on_unload(coordinator.async_add_listener(_coordinator_updated))
+
+
+INVERTER_ACTION_NAMES = {
+    "self_use": "Activate Self Use",
+    "feed_in_priority": "Activate Feed-in Priority",
+    "back_up": "Activate Back Up",
+    "manual_stop": "Manual: Stop charging and discharging",
+    "manual_charge": "Manual: Force charging",
+    "manual_discharge": "Manual: Force discharging",
+}
+
+
+class SolaxInverterModeButton(
+    CoordinatorEntity[SolaxDeveloperCoordinator], ButtonEntity
+):
+    """Stateless mode command attached to the target inverter device."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        *,
+        coordinator: SolaxDeveloperCoordinator,
+        system_slug: str,
+        serial: str,
+        action: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._serial = serial
+        self._action = action
+        self._attr_name = INVERTER_ACTION_NAMES[action]
+        self._attr_translation_key = f"inverter_mode_{action}"
+        slug = slugify(serial)
+        self._attr_unique_id = f"{system_slug}_inverter_{slug}_{action}"
+        self.entity_id = f"button.{system_slug}_inverter_{slug}_{action}"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return DeviceInfo(identifiers={(DOMAIN, self._serial)})
+
+    @property
+    def available(self) -> bool:
+        device = ((self.coordinator.data or {}).get("devices") or {}).get(self._serial)
+        family = inverter_family(device) if isinstance(device, Mapping) else None
+        return bool(
+            family is not None
+            and self.coordinator.inverter_mode_controls_enabled
+            and (
+                "manual" if self._action in MANUAL_ACTIONS else self._action
+            )
+            in configured_modes(
+                self.coordinator.inverter_mode_options,
+                self._serial,
+                family,
+            )
+        )
+
+    async def async_press(self) -> None:
+        try:
+            event = await self.coordinator.async_execute_inverter_mode(
+                serial=self._serial,
+                action=self._action,
+            )
+        except ValueError as err:
+            raise HomeAssistantError(str(err)) from err
+        if not event["accepted"] or event["command_failed"]:
+            raise HomeAssistantError("SolaX did not accept the inverter mode command")
 
 
 class SolaxLiveViewBoostButton(SolaxSystemCoordinatorEntity, ButtonEntity):
