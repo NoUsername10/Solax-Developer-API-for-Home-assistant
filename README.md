@@ -15,7 +15,7 @@
 Automatically discovers authorized plants and devices, creates per-device sensors, and provides a system-wide overview with total sensors.
 Requires no YAML configuration or template sensors.
 
-If a local Modbus setup is not an option for your system (or not working), this is the cloud-connected alternative for SolaX hardware that gives you the same amount of sensors and control of your EV charger.
+If a local Modbus setup is not an option for your system (or not working), this is the cloud-connected alternative for SolaX hardware that gives you the same amount of sensors and control of your EV charger and inverter work-mode controls.
 
 Great if you want a feature-rich, read-safe Developer API integration for SolaX residential and C&I systems in Home Assistant.
 Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems where available.
@@ -23,7 +23,8 @@ Supports inverters, batteries, meters, EV chargers, and confirmed EMS systems wh
 ## ✨ Features in short
 
 - ⚡ **Inverter, battery, meter, EV charger, and EMS support** 
-- 🚗 **Native EV charger controls** on discovered charger devices, protected by explicit opt-in, payload and target validation, and SolaX command-status confirmation
+- 🔋 **Opt-in inverter work-mode controls** for Self Use, Feed-in Priority, Back Up, and Manual where supported and device buttons for automations
+- 🚗 **Opt-in EV charger controls** on discovered charger devices
 - 📊 **Automatic plant, device, and system-wide total sensors, including SolaX alarm support**
 - 🚨 **Native SolaX alarm monitoring** with Active Alarm Count, Home Assistant persistent notifications, and the detailed Alarm Viewer
 - 🧠 **Dynamic sensors** based on real Developer API data received
