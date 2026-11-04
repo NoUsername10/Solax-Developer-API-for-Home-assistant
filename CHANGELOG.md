@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.9] - 2026-11-03
+
+### Added
+- Added default-off inverter work-mode controls for Self Use, Feed-in Priority,
+  Back Up, and Manual through reviewed per-inverter settings in Configure.
+  Enabled modes expose device buttons for Home Assistant automations.
+- Added A1-Hybrid-G2 Self Use, Feed-in Priority, and Back Up controls. Its Back Up
+  settings include the required grid choice and charge start/end times; Manual
+  is not exposed for this inverter family because the Developer API does not
+  document that command.
+
+### Changed
+- Derive work-mode command `businessType` from discovered inverter data. Existing
+  direct non-EV control services remain dry-run only.
+- Defer a current inverter work-mode control until its readback can be verified;
+  the EV charger `deviceWorkingMode` field is unrelated.
+
+### Validation
+- Passed `252` credential-free tests and `7` Home Assistant lifecycle tests on
+  Home Assistant `2026.1.0` and `2026.9.4`, with `97.08%` total coverage and
+  every production module above `95%` coverage.
+- Passed strict mypy, Ruff, compilation, and translation-key parity checks. Live inverter command
+  validation remains pending.
+
 ## [v0.4.8] - 2026-09-24
 
 ### Fixed

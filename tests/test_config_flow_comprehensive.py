@@ -501,6 +501,75 @@ async def test_options_finish_and_simple_pages(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_inverter_mode_options_require_opt_in_and_per_mode_review(monkeypatch):
+    monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
+    entry = _entry()
+    coordinator = SimpleNamespace(
+        data={"devices": {
+            "INV-1": {
+                "deviceSn": "INV-1",
+                "deviceType": 1,
+                "deviceModel": 33,
+                "businessType": 1,
+            },
+            "A1-1": {
+                "deviceSn": "A1-1",
+                "deviceType": 1,
+                "deviceModel": 19,
+                "businessType": 1,
+            },
+        }}
+    )
+    entry.runtime_data = SimpleNamespace(coordinator=coordinator)
+    handler = _options_handler(entry)
+
+    assert "inverter_modes" not in (await handler.async_step_init())["menu_options"]
+    assert (await handler.async_step_inverter_modes())["reason"] == (
+        "inverter_mode_controls_disabled"
+    )
+
+    entry.options["inverter_mode_controls_enabled"] = True
+    assert "inverter_modes" in (await handler.async_step_init())["menu_options"]
+    assert (await handler.async_step_inverter_modes())["step_id"] == "inverter_modes"
+    assert (await handler.async_step_inverter_modes(
+        {"inverter_serial": "INV-1"}
+    ))["step_id"] == "inverter_mode_choice"
+    assert (await handler.async_step_inverter_mode_choice(
+        {"mode": "self_use"}
+    ))["step_id"] == "inverter_mode_settings"
+    result = await handler.async_step_inverter_mode_settings({
+        "min_soc": 20,
+        "charge_upper_soc": 80,
+        "charge_from_grid_enable": False,
+        "reviewed": True,
+    })
+    assert result["type"] == "create_entry"
+    saved = entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]
+    assert saved == {
+        "family": "standard",
+        "min_soc": 20,
+        "charge_upper_soc": 80,
+        "charge_from_grid_enable": False,
+        "reviewed": True,
+    }
+
+    a1_handler = _options_handler(entry)
+    await a1_handler.async_step_inverter_modes({"inverter_serial": "A1-1"})
+    assert (await a1_handler.async_step_inverter_mode_choice(
+        {"mode": "manual"}
+    ))["errors"]["base"] == "inverter_mode_selection_invalid"
+    await a1_handler.async_step_inverter_mode_choice({"mode": "back_up"})
+    result = await a1_handler.async_step_inverter_mode_settings({
+        "back_up_grid_enable": True,
+        "back_up_charge_start_time": "08:00",
+        "back_up_charge_end_time": "23:00",
+        "reviewed": False,
+    })
+    assert result["type"] == "create_entry"
+    assert entry.options["inverter_mode_profiles"]["A1-1"]["back_up"]["reviewed"] is False
+
+
+@pytest.mark.asyncio
 async def test_options_credentials_changed_and_unchanged(monkeypatch):
     monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
     entry = _entry()

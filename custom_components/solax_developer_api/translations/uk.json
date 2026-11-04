@@ -76,7 +76,8 @@
           "credentials": "Облікові дані та система",
           "polling": "Опитування та Live View",
           "manual_devices": "Пристрої, додані вручну",
-          "advanced": "Розширені налаштування та діагностика"
+          "advanced": "Розширені налаштування та діагностика",
+          "inverter_modes": "Inverter work-mode settings"
         }
       },
       "credentials": {
@@ -144,13 +145,42 @@
           "rate_limit_notifications": "Сповіщення про обмеження частоти",
           "ev_charger_controls_enabled": "Керування EV charger",
           "alarm_notifications": "Сповіщення про тривоги",
-          "alarm_scan_interval": "Інтервал перевірки тривог"
+          "alarm_scan_interval": "Інтервал перевірки тривог",
+          "inverter_mode_controls_enabled": "Inverter work-mode controls"
         },
         "data_description": {
           "rate_limit_notifications": "Показувати сповіщення Home Assistant, коли SolaX повідомляє про обмеження частоти або квоти.",
           "ev_charger_controls_enabled": "Дозволити реальні запити на запис лише для служб керування EV charger. Якщо вимкнено, служби EV charger блокуються в режимі dry-run, як і інші служби керування.",
           "alarm_notifications": "Показувати постійні сповіщення Home Assistant, коли SolaX повідомляє про активні тривоги.",
-          "alarm_scan_interval": "Частота перевірки активних тривог SolaX у секундах."
+          "alarm_scan_interval": "Частота перевірки активних тривог SolaX у секундах.",
+          "inverter_mode_controls_enabled": "Allow reviewed inverter work modes to send real control commands. Off by default."
+        }
+      },
+      "inverter_modes": {
+        "title": "Inverter work-mode settings",
+        "description": "Choose an inverter. Only modes documented for its model are offered.",
+        "data": {
+          "inverter_serial": "Inverter"
+        }
+      },
+      "inverter_mode_choice": {
+        "title": "Choose work mode",
+        "description": "Choose the mode to configure for this inverter.",
+        "data": {
+          "mode": "Work mode"
+        }
+      },
+      "inverter_mode_settings": {
+        "title": "Review work-mode settings",
+        "description": "Configure {mode} for inverter {inverter}. Only required API fields are shown.",
+        "data": {
+          "min_soc": "Minimum battery SOC (%)",
+          "charge_upper_soc": "Charge upper SOC (%)",
+          "charge_from_grid_enable": "Allow charging from grid",
+          "back_up_grid_enable": "Allow grid charging in Back Up",
+          "back_up_charge_start_time": "Back Up charge start time",
+          "back_up_charge_end_time": "Back Up charge end time",
+          "reviewed": "I have reviewed these settings. Enable this mode for device controls and automations."
         }
       }
     },
@@ -169,7 +199,14 @@
       "manual_ems_validation_failed": "Не вдалося перевірити EMS, додану вручну. Endpoint атрибутів EMS не підтвердив цей серійний номер і електростанцію.",
       "manual_ems_validation_unavailable": "Перевірка EMS, доданої вручну, недоступна до повного завантаження інтеграції.",
       "manual_ems_remove_target_required": "Перед видаленням виберіть систему EMS, додану вручну.",
-      "manual_ems_remove_target_missing": "Вибрану систему EMS, додану вручну, не знайдено в поточних налаштуваннях."
+      "manual_ems_remove_target_missing": "Вибрану систему EMS, додану вручну, не знайдено в поточних налаштуваннях.",
+      "inverter_mode_selection_invalid": "Choose a valid inverter and a mode supported by its model.",
+      "inverter_mode_settings_invalid": "Check the required values and their allowed ranges."
+    },
+    "abort": {
+      "inverter_mode_controls_disabled": "Enable inverter work-mode controls under Advanced and diagnostics first.",
+      "inverter_mode_no_verified_inverter": "No inverter with a verified type, business type, and model is available.",
+      "inverter_mode_selection_invalid": "The inverter or mode is no longer available."
     }
   },
   "issues": {
@@ -215,6 +252,24 @@
       },
       "ev_charger_apply_reserve_charge": {
         "name": "Застосувати заплановане заряджання"
+      },
+      "inverter_mode_self_use": {
+        "name": "Activate Self Use"
+      },
+      "inverter_mode_feed_in_priority": {
+        "name": "Activate Feed-in Priority"
+      },
+      "inverter_mode_back_up": {
+        "name": "Activate Back Up"
+      },
+      "inverter_mode_manual_stop": {
+        "name": "Manual: Stop charging and discharging"
+      },
+      "inverter_mode_manual_charge": {
+        "name": "Manual: Force charging"
+      },
+      "inverter_mode_manual_discharge": {
+        "name": "Manual: Force discharging"
       }
     },
     "select": {

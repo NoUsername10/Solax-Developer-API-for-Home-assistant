@@ -265,6 +265,67 @@ def _make(client=None):
     return instance
 
 
+@pytest.mark.asyncio
+async def test_inverter_mode_command_uses_reviewed_inventory_and_checks_target_status():
+    class _ModeClient(_FullClient):
+        def __init__(self):
+            self.sent = []
+
+        async def execute_control(self, **kwargs):
+            self.sent.append(kwargs)
+            return {
+                "code": 10000,
+                "requestId": "REQ-MODE",
+                "result": {"INV-MODE": {"status": 4}},
+            }
+
+    client = _ModeClient()
+    instance = _make(client)
+    instance.data["devices"] = {
+        "INV-MODE": {
+            "deviceSn": "INV-MODE", "deviceType": 1,
+            "deviceModel": 33, "businessType": 4,
+        }
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {
+            "INV-MODE": {
+                "self_use": {
+                    "family": "standard", "reviewed": True,
+                    "min_soc": 20, "charge_upper_soc": 80,
+                    "charge_from_grid_enable": False,
+                }
+            }
+        },
+    }
+
+    assert instance.inverter_mode_controls_enabled
+    assert instance.inverter_mode_options["inverter_mode_profiles"]
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="self_use"
+    )
+    assert event["accepted"] is True
+    assert event["confirmation_state"] == "device_acknowledged"
+    assert event["device_statuses"]["INV-MODE"]["status"] == 4
+    assert instance.data["meta"]["last_inverter_mode_control"] is event
+    assert client.sent == [{
+        "path": "/openapi/v2/device/inverter_work_mode/batch_set_spontaneity_self_use",
+        "payload": {
+            "snList": ["INV-MODE"], "minSoc": 20,
+            "chargeFromGridEnable": 0, "chargeUpperSoc": 80,
+            "businessType": 4,
+        },
+    }]
+
+    with pytest.raises(ValueError, match="inverter_mode_target_unverified"):
+        await instance.async_execute_inverter_mode(serial="UNKNOWN", action="self_use")
+    instance._inverter_mode_options["inverter_mode_controls_enabled"] = False
+    with pytest.raises(ValueError, match="inverter_mode_controls_disabled"):
+        await instance.async_execute_inverter_mode(serial="INV-MODE", action="self_use")
+    assert len(client.sent) == 1
+
+
 class _AlarmManagerStub:
     def __init__(self, *, data=None, successful=True):
         self.data = dict(data or {})

@@ -26,6 +26,7 @@ from .api import (
     serialize_api_error,
 )
 from .i18n import translate
+from .inverter_modes import command_for_mode
 from .features.alarms import AlarmManager
 from .features.history import HistoryManager
 from .features.live_view import LiveViewManager
@@ -35,6 +36,7 @@ from .const import (
     COMMAND_STATUS_MAP,
     CONF_ALARM_SCAN_INTERVAL,
     CONF_EV_CHARGER_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_CONTROLS_ENABLED,
     CONF_MANUAL_EMS_SYSTEMS,
     CONF_MANUAL_METER_SERIALS,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
@@ -57,6 +59,7 @@ from .const import (
     DOMAIN,
     EMS_DEVICE_TYPE,
     CONTROL_SERVICE_CAPABILITIES,
+    CONTROL_SERVICE_DEFINITIONS,
     EV_CHARGER_ACCEPTED_COMMAND_STATUSES,
     EV_CHARGER_CONTROL_SERVICES,
     EV_CHARGER_DEVICE_ACKNOWLEDGED_STATUSES,
@@ -193,6 +196,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._ev_charger_controls_enabled = bool(
             options.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
         )
+        self._inverter_mode_options = dict(options)
         self._alarm_scan_interval = self._clamp_int(
             options.get(CONF_ALARM_SCAN_INTERVAL),
             default=DEFAULT_ALARM_SCAN_INTERVAL,
@@ -3043,6 +3047,66 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Return whether real EV charger write calls are enabled."""
         return bool(getattr(self, "_ev_charger_controls_enabled", False))
 
+    @property
+    def inverter_mode_controls_enabled(self) -> bool:
+        """Return whether reviewed inverter mode profiles may send writes."""
+        return bool(
+            self._inverter_mode_options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False)
+        )
+
+    @property
+    def inverter_mode_options(self) -> Mapping[str, Any]:
+        """Return saved inverter mode profiles for entity availability checks."""
+        return self._inverter_mode_options
+
+    async def async_execute_inverter_mode(
+        self,
+        *,
+        serial: str,
+        action: str,
+    ) -> dict[str, Any]:
+        """Apply one reviewed profile to its discovered inverter."""
+        if not self.inverter_mode_controls_enabled:
+            raise ValueError("inverter_mode_controls_disabled")
+        devices = (self.data or {}).get("devices") or {}
+        device = devices.get(serial)
+        if not isinstance(device, Mapping):
+            raise ValueError("inverter_mode_target_unverified")
+        service, payload = command_for_mode(
+            options=self._inverter_mode_options,
+            device=device,
+            serial=serial,
+            action=action,
+        )
+        definition = CONTROL_SERVICE_DEFINITIONS[service]
+        response = await self.client.execute_control(
+            path=definition["endpoint"],
+            payload=payload,
+        )
+        initial_summary = self._control_response_status_summary(response)
+        request_id = str(response.get("requestId") or "").strip()
+        confirmation = await self._confirm_device_control(
+            request_id=request_id,
+            initial_summary=initial_summary,
+        )
+        event = {
+            "timestamp": dt_util.utcnow().isoformat(),
+            "service": service,
+            "serial": serial,
+            "action": action,
+            "request_id": request_id or None,
+            "accepted": bool(confirmation["accepted"])
+            and any(
+                target.casefold() == serial.casefold()
+                for target in confirmation["device_statuses"]
+            ),
+            "command_failed": bool(confirmation["command_failed"]),
+            "confirmation_state": confirmation["confirmation_state"],
+            "device_statuses": confirmation["device_statuses"],
+        }
+        self.data.setdefault("meta", {})["last_inverter_mode_control"] = event
+        return event
+
     def _validate_ev_charger_control_targets(
         self,
         *,
@@ -3133,7 +3197,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "pending": pending,
         }
 
-    async def _confirm_ev_charger_control(
+    async def _confirm_device_control(
         self,
         *,
         request_id: str,
@@ -3212,6 +3276,18 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "confirmation_error": latest_error,
             **latest_summary,
         }
+
+    async def _confirm_ev_charger_control(
+        self,
+        *,
+        request_id: str,
+        initial_summary: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Keep the EV helper name for existing callers and tests."""
+        return await self._confirm_device_control(
+            request_id=request_id,
+            initial_summary=initial_summary,
+        )
 
     async def async_execute_ev_charger_control(
         self,

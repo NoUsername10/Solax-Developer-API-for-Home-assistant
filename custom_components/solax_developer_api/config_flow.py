@@ -31,6 +31,8 @@ from .const import (
     CONF_CLIENT_SECRET,
     CONF_ENTITY_PREFIX,
     CONF_EV_CHARGER_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_PROFILES,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
     CONF_LIVE_VIEW_DEFAULT_DURATION,
     CONF_LIVE_VIEW_INTERVAL,
@@ -67,6 +69,7 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 from .runtime import SolaxConfigEntry
+from .inverter_modes import MODE_FIELDS, MODE_SERVICES, inverter_family, profile_settings
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -830,6 +833,9 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: SolaxConfigEntry) -> None:
         self._config_entry = config_entry
+        self._mode_serial: str | None = None
+        self._mode_family: str | None = None
+        self._mode_name: str | None = None
 
     async def _async_finish(
         self,
@@ -1042,14 +1048,168 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
     ) -> ConfigFlowResult:
         """Show the focused options menu."""
         await async_ensure_catalog_loaded(self.hass)
+        menu_options = [
+            "credentials",
+            "polling",
+            "manual_devices",
+            "advanced",
+        ]
+        if self._config_entry.options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False):
+            menu_options.append("inverter_modes")
         return self.async_show_menu(
             step_id="init",
-            menu_options=[
-                "credentials",
-                "polling",
-                "manual_devices",
-                "advanced",
-            ],
+            menu_options=menu_options,
+        )
+
+    async def async_step_inverter_modes(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Select a discovered inverter and documented work mode to configure."""
+        await async_ensure_catalog_loaded(self.hass)
+        if not self._config_entry.options.get(
+            CONF_INVERTER_MODE_CONTROLS_ENABLED, False
+        ):
+            return self.async_abort(reason="inverter_mode_controls_disabled")
+        coordinator = self._runtime_coordinator()
+        devices = (coordinator.data.get("devices") or {}) if coordinator else {}
+        eligible: dict[str, str] = {}
+        families: dict[str, str] = {}
+        for serial, raw_device in devices.items():
+            if not isinstance(raw_device, Mapping):
+                continue
+            family = inverter_family(raw_device)
+            if family is None:
+                continue
+            serial_text = str(raw_device.get("deviceSn") or "").strip()
+            if not serial_text or serial_text != str(serial):
+                continue
+            eligible[serial_text] = serial_text
+            families[serial_text] = family
+        if not eligible:
+            return self.async_abort(reason="inverter_mode_no_verified_inverter")
+
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            serial = str(user_input.get("inverter_serial") or "")
+            family = families.get(serial)
+            if family is None:
+                errors["base"] = "inverter_mode_selection_invalid"
+            else:
+                self._mode_serial = serial
+                self._mode_family = family
+                return await self.async_step_inverter_mode_choice()
+
+        return self.async_show_form(
+            step_id="inverter_modes",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("inverter_serial"): _mapped_select_selector(eligible),
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_inverter_mode_choice(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Offer only the work modes documented for the selected inverter."""
+        await async_ensure_catalog_loaded(self.hass)
+        family = self._mode_family
+        if family is None or family not in MODE_SERVICES:
+            return self.async_abort(reason="inverter_mode_selection_invalid")
+        labels = {
+            "self_use": "Self Use",
+            "feed_in_priority": "Feed-in Priority",
+            "back_up": "Back Up",
+            "manual": "Manual",
+        }
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            mode = str(user_input.get("mode") or "")
+            if mode not in MODE_SERVICES[family]:
+                errors["base"] = "inverter_mode_selection_invalid"
+            else:
+                self._mode_name = mode
+                return await self.async_step_inverter_mode_settings()
+        return self.async_show_form(
+            step_id="inverter_mode_choice",
+            data_schema=vol.Schema(
+                {vol.Required("mode"): _mapped_select_selector(
+                    {key: labels[key] for key in MODE_SERVICES[family]}
+                )}
+            ),
+            errors=errors,
+        )
+
+    async def async_step_inverter_mode_settings(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Save required settings and the user's explicit review for one mode."""
+        await async_ensure_catalog_loaded(self.hass)
+        serial, family, mode = self._mode_serial, self._mode_family, self._mode_name
+        if not serial or not family or not mode:
+            return self.async_abort(reason="inverter_mode_selection_invalid")
+        coordinator = self._runtime_coordinator()
+        device = (
+            (coordinator.data.get("devices") or {}).get(serial)
+            if coordinator
+            else None
+        )
+        if not isinstance(device, Mapping) or inverter_family(device) != family:
+            return self.async_abort(reason="inverter_mode_no_verified_inverter")
+
+        current_options = dict(self._config_entry.options)
+        all_profiles = current_options.get(CONF_INVERTER_MODE_PROFILES) or {}
+        per_device = (
+            all_profiles.get(serial) if isinstance(all_profiles, Mapping) else None
+        )
+        existing = per_device.get(mode) if isinstance(per_device, Mapping) else None
+        if not isinstance(existing, Mapping):
+            existing = {}
+        fields = MODE_FIELDS[family][mode]
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                settings = profile_settings(family, mode, user_input)
+            except (KeyError, TypeError, ValueError):
+                errors["base"] = "inverter_mode_settings_invalid"
+            else:
+                updated_profiles = dict(all_profiles)
+                updated_device = dict(per_device or {})
+                updated_device[mode] = {
+                    "family": family,
+                    **settings,
+                    "reviewed": user_input.get("reviewed") is True,
+                }
+                updated_profiles[serial] = updated_device
+                current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
+                return await self._async_finish(options=current_options)
+
+        schema: dict[Any, Any] = {}
+        for field in fields:
+            marker = (
+                vol.Required(field, default=existing[field])
+                if field in existing
+                else vol.Required(field)
+            )
+            if field.endswith("_enable"):
+                schema[marker] = selector.BooleanSelector()
+            elif field.endswith("_time"):
+                schema[marker] = selector.TimeSelector()
+            else:
+                schema[marker] = _number_selector(0, 100)
+        schema[vol.Required("reviewed", default=False)] = selector.BooleanSelector()
+        return self.async_show_form(
+            step_id="inverter_mode_settings",
+            data_schema=vol.Schema(schema),
+            errors=errors,
+            description_placeholders={
+                "inverter": serial,
+                "mode": mode.replace("_", " "),
+            },
         )
 
     async def async_step_credentials(
@@ -1513,6 +1673,9 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             current_options[CONF_EV_CHARGER_CONTROLS_ENABLED] = bool(
                 user_input.get(CONF_EV_CHARGER_CONTROLS_ENABLED, False)
             )
+            current_options[CONF_INVERTER_MODE_CONTROLS_ENABLED] = bool(
+                user_input.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False)
+            )
             return await self._async_finish(options=current_options)
 
         return self.async_show_form(
@@ -1547,6 +1710,13 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_EV_CHARGER_CONTROLS_ENABLED,
                         default=current_options.get(
                             CONF_EV_CHARGER_CONTROLS_ENABLED,
+                            False,
+                        ),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_INVERTER_MODE_CONTROLS_ENABLED,
+                        default=current_options.get(
+                            CONF_INVERTER_MODE_CONTROLS_ENABLED,
                             False,
                         ),
                     ): selector.BooleanSelector(),

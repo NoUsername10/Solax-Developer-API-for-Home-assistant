@@ -8,7 +8,7 @@
 [<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
-[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.00%25-brightgreen.svg)](#quality-and-validation)
+[![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.08%25-brightgreen.svg)](#quality-and-validation)
 
 **SolaX Developer API** integration to monitor and control your SolaX system in Home Assistant using the official **SolaX Developer OpenAPI**.
 
@@ -49,10 +49,10 @@ Contributions, issues, and pull requests are welcome.
 
 
 > [!IMPORTANT]
-> EV charger controls can send real SolaX write requests only after you explicitly enable **EV Charger Controls** in integration options.
-> Keep EV charger controls disabled if you want a read-only installation.
-> Direct `solax_developer_api.set_evc_*` services and `set_charge_scene` require a Home Assistant administrator. Non-admin users can use the native EV charger entities when their Home Assistant entity permissions allow control.
-> Inverter, battery, grid, VPP, and EMS control services remain **hard-blocked dry-runs**. 
+> EV charger controls can send real SolaX write requests only after you explicitly enable **EV Charger Controls** in integration options. Inverter work-mode device actions require their own opt-in and an individually reviewed mode profile.
+> Keep both control options disabled if you want a read-only installation.
+> Direct `solax_developer_api.set_evc_*` services and `set_charge_scene` require a Home Assistant administrator. Native EV charger and inverter mode entities follow Home Assistant entity control permissions.
+> The existing inverter, battery, grid, VPP, and EMS control services remain **hard-blocked dry-runs**. Reviewed inverter modes use only the new device actions.
 
 
 
@@ -62,9 +62,9 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** all integration modules pass the Home Assistant stable mypy interfaces in CI.
-- **Test coverage:** `97.00%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `229` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
-- **Home Assistant versions tested:** `2026.1.0` and current stable.
+- **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `252` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
+- **Home Assistant versions tested for this version:** `2026.1.0` and `2026.9.4`.
 - **Config-flow coverage:** `100%`.
 
 > [!NOTE]
@@ -169,7 +169,7 @@ Open **Service API**, select **Authorize**, and authorize the read/monitoring se
 
 ### 5. Keep control services separate from monitoring
 
-Control service packs are not required for normal monitoring. The integration keeps inverter, battery, grid, VPP, and EMS writes schema-validated and hard-blocked. EV charger writes are available only as an explicit opt-in under Advanced options.
+Control service packs are not required for normal monitoring. The existing inverter, battery, grid, VPP, and EMS services remain schema-validated dry-runs. EV charger and reviewed inverter work-mode device controls each require their own explicit opt-in under Advanced and diagnostics.
 
 When a compatible EV charger is discovered and **EV Charger Controls** are enabled, Home Assistant also creates native controls directly on the EV charger device:
 
@@ -180,6 +180,14 @@ When a compatible EV charger is discovered and **EV Charger Controls** are enabl
 - Time fields for reserve-charge start and end time.
 
 These device controls use the same validated execution path as the service actions; they are just easier to use from the device page.
+
+### Inverter work-mode controls
+
+Under **Settings → Devices & services → SolaX Developer API → Configure → Advanced and diagnostics**, enable **Inverter work-mode controls**. This is off by default. Reopen **Configure → Inverter work-mode settings**, choose a discovered inverter and a mode, enter only its required settings, and check **I have reviewed these settings. Enable this mode for device controls and automations.** Saving the page reloads the integration. Each mode must be reviewed separately; unreviewed modes are not exposed as actions.
+
+Reviewed modes appear as buttons on the inverter device page and can be used in automations with the native **Press button** action. Standard inverters offer Self Use, Feed-in Priority, Back Up, and Manual (stop, force charge, or force discharge). A1-Hybrid-G2 offers Self Use and Feed-in Priority without user settings, and Back Up with its required grid-charging choice and charge start/end times. The Developer API does not document A1 Manual mode. Optional charge/discharge time periods and TOU configuration are not included. The integration takes `businessType` from the discovered inverter; users do not enter it.
+
+These buttons issue commands and have no selected state. The Developer API documents inverter `deviceStatus` values including Self Use (150), Back Up (152), Feed-in Priority (153), and Debug Mode (171); the existing device-status sensor displays that field when SolaX returns it. When SolaX returns `null` or another operating status, the current work mode cannot be inferred from that value, so a dedicated current-mode control is deferred until readback behavior is verified. EV charger `deviceWorkingMode` is a separate field and is not used for the inverter. Existing direct inverter control services remain dry-runs even when device actions are enabled.
 
 <img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
 
@@ -405,6 +413,9 @@ Changed credentials are validated before they are saved.
 - Enable or disable SolaX alarm persistent notifications
 - Set the independent active-alarm polling interval
 - Enable or disable real EV charger controls
+- Enable or disable reviewed inverter work-mode device actions
+
+When inverter work-mode controls are enabled, **Inverter work-mode settings** appears in the Configure menu for per-inverter setup.
 
 The integration reloads automatically after saved option changes.
 
@@ -874,16 +885,16 @@ entities; Home Assistant applies the user's entity control permissions.
 
 </details>
 
-Every control service and EV charger device control:
+Every control service, EV charger device control, and inverter work-mode device action:
 
 1. Accepts documented `snake_case` Home Assistant fields.
 2. Validates required fields, types, values, time formats, ranges, and serial limits.
 3. Converts validated fields to SolaX API-native names internally.
 4. Records a sanitized audit event.
-5. Keeps non-EV charger control families hard-blocked as dry-runs.
+5. Keeps the existing non-EV charger control services hard-blocked as dry-runs; inverter mode buttons use a separate, reviewed execution path.
 6. Executes EV charger controls only when `EV Charger Controls` is enabled in options.
 7. Requires a Home Assistant administrator for direct EV service calls; native EV entities remain governed by Home Assistant entity permissions.
-8. Returns per-device command status and `requestId` when SolaX provides them.
+8. Checks the target device command status and `requestId` when SolaX provides them.
 
 ## 🩺 Diagnostics and Privacy
 
@@ -1003,7 +1014,7 @@ Never post unredacted credentials or Developer Portal secrets.
 - Some meters and EMS systems are readable by serial but absent from inventory endpoints; these require manual validated onboarding.
 - Device history remains an on-demand read service. It does not write historical API samples into Home Assistant's recorder.
 - Callback URL push processing is not implemented.
-- Non-EV control services are schema-validated hard-blocked dry-runs. EV charger controls can send outbound write requests only when explicitly enabled. Direct EV services require an administrator; native EV entities use Home Assistant entity permissions.
+- Non-EV direct control services are schema-validated hard-blocked dry-runs. Reviewed inverter work-mode device actions and EV charger controls can send outbound write requests only when their separate options are enabled. Direct EV services require an administrator; native entities use Home Assistant entity permissions.
 - A device that is offline can retain its known entities, but current values can remain unavailable until SolaX returns fresh telemetry.
 
 ## 🌍 Translation Support
@@ -1076,16 +1087,16 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 ## 🚧 Project Status
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
-- **Automated test coverage:** 97.00%
-- **Credential-free automated tests:** 229 plus 7 Home Assistant lifecycle fixture tests
+- **Automated test coverage:** 97.08%
+- **Credential-free automated tests:** 252 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active
 - **Manual meter/EMS validation:** Active
 - **Diagnostics and Repairs:** Active
 - **Live View:** Active
-- **Control functionality:** Non-EV dry-run only; EV charger controls are explicit opt-in
-- **Outbound write requests:** EV charger endpoints only when enabled; otherwise disabled
+- **Control functionality:** Existing non-EV services remain dry-runs; inverter work-mode device actions and EV charger controls have separate explicit opt-ins
+- **Outbound write requests:** Reviewed inverter mode actions and enabled EV charger controls only
 - **Callback URL async push processing:** Deferred
 
 ---
