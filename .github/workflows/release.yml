@@ -9,30 +9,50 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  coverage:
+    runs-on: ubuntu-latest
+    container: ghcr.io/home-assistant/home-assistant:2026.1.0
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install test tools
+        run: pip install --quiet pytest pytest-asyncio pytest-cov
+      - name: Run tests and measure coverage
+        run: >-
+          pytest -q tests
+          --cov=custom_components/solax_developer_api
+          --cov-report=json:coverage.json
+          --cov-fail-under=96
+      - name: Check module coverage
+        run: python scripts/check_module_coverage.py coverage.json --minimum 95
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-coverage
+          path: coverage.json
+          if-no-files-found: error
+
+  draft-release:
+    needs: coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Verify release version
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-coverage
+      - name: Build integration ZIP and draft notes
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          python - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          manifest = json.loads(
-              Path("custom_components/solax_developer_api/manifest.json").read_text()
-          )
-          if manifest["version"] != os.environ["RELEASE_TAG"]:
-              raise SystemExit(
-                  f"Manifest version {manifest['version']} does not match "
-                  f"tag {os.environ['RELEASE_TAG']}"
-              )
-          PY
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+          python scripts/prepare_release.py \
+            --tag "$RELEASE_TAG" \
+            --coverage coverage.json \
+            --output-dir dist
+      - name: Create draft GitHub release
+        uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          draft: true
           prerelease: ${{ contains(github.ref_name, '-') }}
+          body_path: dist/release-notes.md
+          files: dist/solax_developer_api.zip
+          fail_on_unmatched_files: true

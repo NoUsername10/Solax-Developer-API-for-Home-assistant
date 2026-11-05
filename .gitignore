@@ -18,6 +18,7 @@ __pycache__/
 coverage.xml
 coverage.json
 htmlcov/
+/dist/
 
 # Operating-system metadata.
 .DS_Store

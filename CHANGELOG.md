@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Prepare future releases as drafts with an integration-only ZIP asset for
+  HACS/Marketplace downloads. Draft notes include the current test coverage
+  and a blank help-received section for manual editing before publication.
+
 ## [v0.4.10] - 2026-11-05
 
 ### Fixed
