@@ -1077,6 +1077,16 @@ Contributions for additional tested device fields, model mappings, translations,
 
 When reporting API differences, include privacy-redacted diagnostics and describe the device family, business type, and API region.
 
+### Preparing a release
+
+Update the manifest version and add its changelog entry, then push the
+matching version tag. In GitHub, open **Actions → Create Draft Release**,
+select **main**, enter the existing tag, and run the workflow. It checks the
+tagged source with the Home Assistant test suites, typing, HACS validation,
+and Hassfest before creating a draft release with the integration ZIP.
+Review the generated notes, fill in **Help received this release** if needed,
+and publish the draft manually.
+
 ## 📄 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).
