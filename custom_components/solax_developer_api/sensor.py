@@ -259,11 +259,13 @@ def _device_info_display_name(
 
 def _energy_state_class(key: str) -> SensorStateClass:
     lowered = key.casefold()
+    # Daily counters restart at zero, sometimes after midnight. Recorder must
+    # treat that drop as a meter reset rather than subtracting yesterday's energy.
+    if "daily" in lowered or "today" in lowered:
+        return SensorStateClass.TOTAL_INCREASING
     if any(
         marker in lowered
         for marker in (
-            "daily",
-            "today",
             "thissession",
             "this_session",
             "capacity",
