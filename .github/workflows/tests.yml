@@ -22,6 +22,8 @@ jobs:
     container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
     steps:
       - uses: actions/checkout@v5
+      - name: Trust this container-mounted checkout for Git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install test tools
         run: pip install --quiet pytest pytest-asyncio pytest-cov ruff
       - name: Compile

@@ -72,6 +72,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: refs/tags/${{ inputs.tag }}
+      - name: Trust this container-mounted checkout for Git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - name: Install test tools
         run: pip install --quiet pytest pytest-asyncio pytest-cov ruff
       - name: Compile
