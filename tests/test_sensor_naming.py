@@ -175,9 +175,9 @@ def test_attached_battery_sensor_uses_battery_semantics_on_inverter_device():
     assert battery_status.native_value == "Work"
 
 
-def test_daily_energy_fields_use_total_state_class():
-    assert _energy_state_class("dailyYield") == SensorStateClass.TOTAL
-    assert _energy_state_class("todayImportEnergy") == SensorStateClass.TOTAL
+def test_daily_energy_fields_signal_midnight_reset_to_recorder():
+    assert _energy_state_class("dailyYield") == SensorStateClass.TOTAL_INCREASING
+    assert _energy_state_class("todayImportEnergy") == SensorStateClass.TOTAL_INCREASING
     assert _energy_state_class("sysBatteryCapacity") == SensorStateClass.TOTAL
     assert _energy_state_class("sysBatteryRemainings") == SensorStateClass.TOTAL
 
@@ -212,11 +212,7 @@ def test_other_documented_dynamic_energy_fields_use_kwh_semantics():
         unit, device_class, state_class = _infer_unit_and_classes(field_key)
         assert unit == "kWh"
         assert device_class == SensorDeviceClass.ENERGY
-        assert state_class == (
-            SensorStateClass.TOTAL
-            if "daily" in field_key.casefold()
-            else SensorStateClass.TOTAL_INCREASING
-        )
+        assert state_class == SensorStateClass.TOTAL_INCREASING
 
 
 def test_attached_battery_lifetime_energy_uses_battery_field_semantics():

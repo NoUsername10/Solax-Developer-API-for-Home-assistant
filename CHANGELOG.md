@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.10] - 2026-11-05
+
+### Fixed
+- Mark plant and device daily energy counters, including `dailyYield` and
+  `todayImportEnergy`/`todayExportEnergy`, as `total_increasing` so Home
+  Assistant treats their daily drop to zero as a meter reset instead of
+  subtracting the previous day's energy.
+
+### Validation
+- Passed 252 main tests and 7 Home Assistant lifecycle tests on Home Assistant
+  2026.1.0, and 259 combined tests on 2026.9.4. Main-suite coverage is 97.08%;
+  Ruff passed.
+
 ## [v0.4.9] - 2026-11-03
 
 ### Added
