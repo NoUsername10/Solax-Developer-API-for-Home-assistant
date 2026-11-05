@@ -64,7 +64,7 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** CI checks all integration modules against the Home Assistant stable mypy interfaces.
 - **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `252` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
+- **Automated tests:** `253` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
 - **Home Assistant versions tested for this version:** main suite on `2026.1.0` and `2026.11.0`; lifecycle suite on `2026.1.0` and `2026.10.4`.
 - **Config-flow coverage:** `99%` on the current stable test run.
 
@@ -213,9 +213,11 @@ The integration validates both authentication and read access during setup. A to
 <br>
 
 1. Download the [latest release](https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant/releases/latest).
-2. Download and extract the GitHub **Source code (zip)** archive.
+2. Download and extract the release asset **solax_developer_api.zip**. For an
+   older release without that asset, extract GitHub's **Source code (zip)** and
+   open its `custom_components/solax_developer_api/` folder instead.
 3. Create `/config/custom_components/solax_developer_api` if it does not exist.
-4. Copy the extracted `custom_components/solax_developer_api` folder contents directly into that directory so `manifest.json` is located at `/config/custom_components/solax_developer_api/manifest.json`.
+4. Copy the extracted files directly into that directory so `manifest.json` is located at `/config/custom_components/solax_developer_api/manifest.json`.
 5. Restart Home Assistant.
 6. Add **SolaX Developer API** from **Settings → Devices & services**.
 
@@ -1075,6 +1077,16 @@ Contributions for additional tested device fields, model mappings, translations,
 
 When reporting API differences, include privacy-redacted diagnostics and describe the device family, business type, and API region.
 
+### Preparing a release
+
+Update the manifest version and add its changelog entry, then push the
+matching version tag. In GitHub, open **Actions → Create Draft Release**,
+select **main**, enter the existing tag, and run the workflow. It checks the
+tagged source with the Home Assistant test suites, typing, HACS validation,
+and Hassfest before creating a draft release with the integration ZIP.
+Review the generated notes, fill in **Help received this release** if needed,
+and publish the draft manually.
+
 ## 📄 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).
@@ -1089,7 +1101,7 @@ Cloud data availability, update frequency, endpoint permissions, and API limits 
 
 - **Home Assistant Quality Scale:** Platinum-standard aligned custom integration
 - **Automated test coverage:** 97.08%
-- **Credential-free automated tests:** 252 plus 7 Home Assistant lifecycle fixture tests
+- **Credential-free automated tests:** 253 plus 7 Home Assistant lifecycle fixture tests
 - **Hassfest:** Zero invalid integrations
 - **Read functionality:** Active
 - **Automatic discovery:** Active

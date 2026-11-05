@@ -1,38 +1,195 @@
-name: Release
+name: Create Draft Release
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag, for example v0.4.11"
+        required: true
+        type: string
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: draft-release-${{ inputs.tag }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  preflight:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Verify release version
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+      - name: Verify release tag and source
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.tag }}
         run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Run Create Draft Release from the main branch." >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Enter a version tag such as v0.4.11." >&2
+            exit 1
+          fi
+          git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null
+          git fetch origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "The release tag must point to a commit on main." >&2
+            exit 1
+          fi
           python - <<'PY'
           import json
           import os
           from pathlib import Path
 
+          from scripts.prepare_release import _changelog_entry
+
+          tag = os.environ["RELEASE_TAG"]
           manifest = json.loads(
               Path("custom_components/solax_developer_api/manifest.json").read_text()
           )
-          if manifest["version"] != os.environ["RELEASE_TAG"]:
-              raise SystemExit(
-                  f"Manifest version {manifest['version']} does not match "
-                  f"tag {os.environ['RELEASE_TAG']}"
-              )
+          if manifest["version"] != tag:
+              raise SystemExit(f"Manifest version {manifest['version']} does not match {tag}")
+          _changelog_entry(Path("CHANGELOG.md").read_text(), tag)
           PY
-      - name: Publish GitHub release
-        uses: softprops/action-gh-release@v2
+
+  test:
+    needs: preflight
+    name: Home Assistant ${{ matrix.homeassistant }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        homeassistant:
+          - "2026.1.0"
+          - stable
+    container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
+    steps:
+      - uses: actions/checkout@v5
         with:
-          generate_release_notes: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          ref: refs/tags/${{ inputs.tag }}
+      - name: Trust this container-mounted checkout for Git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Install test tools
+        run: pip install --quiet pytest pytest-asyncio pytest-cov ruff
+      - name: Compile
+        run: python -m compileall -q custom_components tests tests_ha scripts
+      - name: Translation validation
+        run: python scripts/check_translation_keys.py
+      - name: Ruff
+        run: ruff check custom_components tests tests_ha scripts
+      - name: Tests and coverage
+        run: >-
+          pytest -q
+          --cov=custom_components/solax_developer_api
+          --cov-report=term-missing
+          --cov-report=json:coverage.json
+          --cov-fail-under=96
+      - name: Per-module coverage
+        run: python scripts/check_module_coverage.py coverage.json --minimum 95
+      - uses: actions/upload-artifact@v4
+        if: matrix.homeassistant == '2026.1.0'
+        with:
+          name: release-coverage
+          path: coverage.json
+          if-no-files-found: error
+
+  home-assistant-lifecycle:
+    needs: preflight
+    name: Home Assistant ${{ matrix.homeassistant }} lifecycle fixtures
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - homeassistant: "2026.1.0"
+            pytest_homeassistant: "0.13.305"
+          - homeassistant: "2026.10.4"
+            pytest_homeassistant: "0.13.375"
+    container: ghcr.io/home-assistant/home-assistant:${{ matrix.homeassistant }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - name: Install Home Assistant fixture tools
+        run: |
+          pip install --quiet --no-cache-dir \
+            "homeassistant==${{ matrix.homeassistant }}" \
+            "pytest-homeassistant-custom-component==${{ matrix.pytest_homeassistant }}"
+      - name: Lifecycle tests
+        run: pytest -q tests_ha
+
+  strict-typing:
+    needs: preflight
+    name: Home Assistant strict typing
+    runs-on: ubuntu-latest
+    container: ghcr.io/home-assistant/home-assistant:stable
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - name: Install mypy
+        run: pip install --quiet mypy==1.19.1
+      - name: Strict type check
+        run: mypy --config-file mypy.ini custom_components/solax_developer_api
+
+  validate-hacs:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
+  hassfest:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Translation key guard
+        run: python3 scripts/check_translation_keys.py
+      - uses: home-assistant/actions/hassfest@master
+
+  draft-release:
+    needs: [test, home-assistant-lifecycle, strict-typing, validate-hacs, hassfest]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-coverage
+      - name: Build integration ZIP and draft notes
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          python scripts/prepare_release.py \
+            --tag "$RELEASE_TAG" \
+            --coverage coverage.json \
+            --output-dir dist
+      - name: Create draft GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          args=(--draft --verify-tag --title "$RELEASE_TAG" --notes-file dist/release-notes.md)
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            args+=(--prerelease)
+          fi
+          gh release create "$RELEASE_TAG" dist/solax_developer_api.zip "${args[@]}"

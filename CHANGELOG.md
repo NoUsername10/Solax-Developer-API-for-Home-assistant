@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Add a manual **Create Draft Release** GitHub Action. It runs the Home
+  Assistant tests, typing, HACS validation, and Hassfest for an existing
+  version tag before creating a draft with an integration-only ZIP asset.
+  Draft notes include measured test coverage and a blank help-received
+  section for manual editing before publication.
+
 ## [v0.4.10] - 2026-11-05
 
 ### Fixed
