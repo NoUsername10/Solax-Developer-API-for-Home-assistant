@@ -1,6 +1,7 @@
 {
   "domain": "solax_developer_api",
   "name": "Solax Developer API for Home Assistant",
+  "categories": ["energy.solar_batteries"],
   "codeowners": ["@NoUsername10"],
   "config_flow": true,
   "dependencies": ["frontend", "http"],

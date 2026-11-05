@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Add the Solar & batteries integration category for HACS discovery and update
+  the release artifact actions to Node.js 24 versions.
 - Add a manual **Create Draft Release** GitHub Action. It runs the Home
   Assistant tests, typing, HACS validation, and Hassfest for an existing
   version tag before creating a draft with an integration-only ZIP asset.
