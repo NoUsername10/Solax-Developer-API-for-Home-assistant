@@ -5,6 +5,7 @@ import pytest
 from custom_components.solax_developer_api.inverter_modes import (
     command_for_mode,
     configured_modes,
+    configured_profiles,
     inverter_family,
     profile_settings,
 )
@@ -85,15 +86,14 @@ def test_manual_actions_require_one_reviewed_manual_profile():
         assert payload["manualMode"] == value
 
 
-def test_unreviewed_or_missing_inventory_context_blocks_commands():
+def test_legacy_review_flag_no_longer_blocks_modes_but_inventory_does():
     serial = "INV-3"
     device = {"deviceSn": serial, "deviceType": 1, "deviceModel": 33, "businessType": 1}
     options = _options(serial, "standard", "manual")
     options["inverter_mode_profiles"][serial]["manual"]["reviewed"] = False
-    with pytest.raises(ValueError, match="inverter_mode_not_enabled"):
-        command_for_mode(
-            options=options, device=device, serial=serial, action="manual_charge"
-        )
+    assert command_for_mode(
+        options=options, device=device, serial=serial, action="manual_charge"
+    )[1]["manualMode"] == 1
     options["inverter_mode_profiles"][serial]["manual"]["reviewed"] = True
     with pytest.raises(ValueError, match="inverter_mode_target_unverified"):
         command_for_mode(
@@ -169,3 +169,95 @@ def test_a1_time_picker_seconds_are_normalized_before_api_submission():
     assert payload["backUpChargeStartTime"] == "08:00"
     assert payload["backUpChargeEndTime"] == "23:00"
     assert inverter_family({**device, "businessType": 2}) is None
+
+
+def test_named_profiles_apply_distinct_grid_charging_settings():
+    serial = "INV-5"
+    device = {"deviceSn": serial, "deviceType": 1, "deviceModel": 33, "businessType": 1}
+    base = {"name": "Sunny", "family": "standard", "min_soc": 20,
+            "charge_upper_soc": 80, "charge_from_grid_enable": False}
+    options = {"inverter_mode_controls_enabled": True,
+               "inverter_mode_profiles": {serial: {"self_use": {"profiles": {
+                   "sunny": base,
+                   "cloudy": {**base, "name": "Cloudy", "charge_from_grid_enable": True},
+               }}}}}
+    assert configured_profiles(options, serial, "standard") == [
+        ("self_use", "sunny", "Sunny"), ("self_use", "cloudy", "Cloudy")
+    ]
+    sunny = command_for_mode(options=options, device=device, serial=serial,
+                             action="self_use", profile_id="sunny")[1]
+    cloudy = command_for_mode(options=options, device=device, serial=serial,
+                              action="self_use", profile_id="cloudy")[1]
+    assert sunny["chargeFromGridEnable"] == 0
+    assert cloudy["chargeFromGridEnable"] == 1
+
+
+def test_scheduled_profile_accepts_overnight_window_and_blocks_overlap():
+    values = {"min_soc": 20, "charge_upper_soc": 80,
+              "charge_from_grid_enable": True, "schedule_enabled": True,
+              "charge_start_time_period1": "22:00",
+              "charge_end_time_period1": "06:00",
+              "enable_time_period2": True,
+              "charge_start_time_period2": "13:00",
+              "charge_end_time_period2": "15:00"}
+    settings = profile_settings("standard", "self_use", values)
+    assert settings["charge_start_time_period1"] == "22:00"
+    assert settings["enable_time_period2"] is True
+    serial = "INV-SCHEDULE"
+    options = _options(serial, "standard", "self_use", **values)
+    payload = command_for_mode(
+        options=options,
+        device={"deviceSn": serial, "deviceType": 1, "deviceModel": 33,
+                "businessType": 1},
+        serial=serial, action="self_use",
+    )[1]
+    assert payload["chargeStartTimePeriod1"] == "22:00"
+    assert payload["chargeEndTimePeriod1"] == "06:00"
+    assert payload["enableTimePeriod2"] == 1
+    assert payload["chargeStartTimePeriod2"] == "13:00"
+    assert "scheduleEnabled" not in payload
+    with pytest.raises(ValueError, match="discharge_start_time_period1"):
+        profile_settings("standard", "self_use", {
+            **values, "discharge_start_time_period1": "05:00",
+            "discharge_end_time_period1": "07:00"})
+    with pytest.raises(ValueError, match="charge_end_time_period1"):
+        profile_settings("standard", "self_use", {
+            **values, "charge_end_time_period1": ""})
+
+
+@pytest.mark.parametrize(
+    ("changes", "field"),
+    [
+        ({"schedule_enabled": 1}, "schedule_enabled"),
+        ({"schedule_enabled": False}, "schedule_enabled"),
+        ({"charge_start_time_period1": "25:00"}, "charge_start_time_period1"),
+        ({"charge_end_time_period1": "22:00"}, "charge_end_time_period1"),
+        ({"enable_time_period2": False, "charge_start_time_period2": "13:00",
+          "charge_end_time_period2": "15:00"}, "enable_time_period2"),
+        ({"charge_start_time_period1": None, "charge_end_time_period1": None,
+          "enable_time_period2": False}, "schedule_enabled"),
+        ({"enable_time_period2": 1}, "enable_time_period2"),
+        ({"enable_time_period2": True}, "enable_time_period2"),
+    ],
+)
+def test_schedule_validation_rejects_ambiguous_or_unsafe_windows(changes, field):
+    base = {"min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": True, "schedule_enabled": True,
+            "charge_start_time_period1": "22:00",
+            "charge_end_time_period1": "06:00",
+            "enable_time_period2": False}
+    with pytest.raises(ValueError, match=field):
+        profile_settings("standard", "self_use", {**base, **changes})
+
+
+def test_schedule_picker_seconds_normalize_and_empty_names_hide_profiles():
+    values = {"min_soc": 20, "charge_upper_soc": 80,
+              "charge_from_grid_enable": True, "schedule_enabled": True,
+              "charge_start_time_period1": "22:00:00",
+              "charge_end_time_period1": "06:00:00"}
+    assert profile_settings("standard", "self_use", values)["charge_start_time_period1"] == "22:00"
+    options = {"inverter_mode_controls_enabled": True,
+               "inverter_mode_profiles": {"INV": {"self_use": {"profiles": {
+                   "invalid": {"name": " ", "family": "standard", **values}
+               }}}}}
+    assert configured_profiles(options, "INV", "standard") == []

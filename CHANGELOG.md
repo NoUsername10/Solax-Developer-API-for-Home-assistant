@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.11] - 2026-11-12
+
 ### Changed
+- Add named inverter mode profiles with automation buttons, optional validated
+  charge/discharge periods on standard inverters, and migration of existing
+  single-mode settings to a Default profile. Saving a profile no longer requires
+  a per-mode review checkbox; the global control opt-in remains.
+- Distinguish accepted, pending, and explicit device-failure outcomes for inverter
+  mode commands. Include recent privacy-safe command outcomes in diagnostics.
 - Add the Solar & batteries integration category for HACS discovery and update
   the release artifact actions to Node.js 24 versions.
 - Add a manual **Create Draft Release** GitHub Action. It runs the Home
@@ -12,6 +20,13 @@ All notable changes to this project will be documented in this file.
   version tag before creating a draft with an integration-only ZIP asset.
   Draft notes include measured test coverage and a blank help-received
   section for manual editing before publication.
+
+### Validation
+- Passed 272 main tests on Home Assistant 2026.1.0 with 97.02% coverage, and
+  7 setup/reload lifecycle tests on both 2026.1.0 and 2026.10.4. Strict mypy,
+  Ruff, translation compilation and parity, and per-module coverage passed.
+- The affected user's command response and overnight 22:00–06:00 schedule
+  behavior still require validation on compatible hardware.
 
 ## [v0.4.10] - 2026-11-05
 

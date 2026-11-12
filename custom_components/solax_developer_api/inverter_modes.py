@@ -53,6 +53,55 @@ MANUAL_ACTIONS = {
     "manual_discharge": 2,
 }
 
+SCHEDULE_MODES = frozenset({"self_use", "feed_in_priority", "back_up"})
+SCHEDULE_PAIRS = (
+    ("charge_start_time_period1", "charge_end_time_period1"),
+    ("discharge_start_time_period1", "discharge_end_time_period1"),
+    ("charge_start_time_period2", "charge_end_time_period2"),
+    ("discharge_start_time_period2", "discharge_end_time_period2"),
+)
+
+
+def mode_profiles(
+    options: Mapping[str, Any], serial: str, mode: str
+) -> dict[str, Mapping[str, Any]]:
+    """Read new named profiles and legacy single-mode settings without data loss."""
+    all_profiles = options.get(CONF_INVERTER_MODE_PROFILES) or {}
+    device = all_profiles.get(serial) if isinstance(all_profiles, Mapping) else None
+    saved = device.get(mode) if isinstance(device, Mapping) else None
+    if not isinstance(saved, Mapping):
+        return {}
+    nested = saved.get("profiles")
+    if isinstance(nested, Mapping):
+        return {
+            str(profile_id): profile
+            for profile_id, profile in nested.items()
+            if isinstance(profile_id, str) and isinstance(profile, Mapping)
+        }
+    return {"default": {"name": "Default", **saved}}
+
+
+def configured_profiles(
+    options: Mapping[str, Any], serial: str, family: str
+) -> list[tuple[str, str, str]]:
+    """Return (mode, immutable ID, display name) for valid profiles."""
+    if not options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False):
+        return []
+    ready: list[tuple[str, str, str]] = []
+    for mode in MODE_SERVICES[family]:
+        for profile_id, profile in mode_profiles(options, serial, mode).items():
+            if profile.get("family") != family:
+                continue
+            name = profile.get("name")
+            if not isinstance(name, str) or not name.strip():
+                continue
+            try:
+                profile_settings(family, mode, profile)
+            except (KeyError, TypeError, ValueError):
+                continue
+            ready.append((mode, profile_id, name.strip()))
+    return ready
+
 
 def inverter_family(device: Mapping[str, Any]) -> str | None:
     """Identify a discovered inverter and its documented command family."""
@@ -110,30 +159,54 @@ def profile_settings(
     if "min_soc" in settings and "charge_upper_soc" in settings:
         if settings["charge_upper_soc"] < settings["min_soc"]:
             raise ValueError("charge_upper_soc")
+    if family == "standard" and mode in SCHEDULE_MODES:
+        schedule_enabled = values.get("schedule_enabled", False)
+        if type(schedule_enabled) is not bool:
+            raise ValueError("schedule_enabled")
+        present = [key for pair in SCHEDULE_PAIRS for key in pair if values.get(key)]
+        if not schedule_enabled:
+            if present:
+                raise ValueError("schedule_enabled")
+        else:
+            periods: list[tuple[int, int]] = []
+            for index, (start_key, end_key) in enumerate(SCHEDULE_PAIRS):
+                start, end = values.get(start_key), values.get(end_key)
+                if bool(start) != bool(end):
+                    raise ValueError(end_key)
+                if not start:
+                    continue
+                for key, value in ((start_key, start), (end_key, end)):
+                    if isinstance(value, str) and len(value) == 8 and value.endswith(":00"):
+                        value = value[:5]
+                    if not isinstance(value, str) or not validate_hhmm(value):
+                        raise ValueError(key)
+                    settings[key] = value
+                first = int(settings[start_key][:2]) * 60 + int(settings[start_key][3:])
+                last = int(settings[end_key][:2]) * 60 + int(settings[end_key][3:])
+                if first == last:
+                    raise ValueError(end_key)
+                segments = [(first, last)] if first < last else [(first, 1440), (0, last)]
+                for segment in segments:
+                    if any(segment[0] < prior[1] and prior[0] < segment[1] for prior in periods):
+                        raise ValueError(start_key)
+                    periods.append(segment)
+                if index >= 2 and not values.get("enable_time_period2", False):
+                    raise ValueError("enable_time_period2")
+            if not periods or not any(key in settings for key in SCHEDULE_PAIRS[0] + SCHEDULE_PAIRS[1]):
+                raise ValueError("schedule_enabled")
+            period2 = values.get("enable_time_period2", False)
+            if type(period2) is not bool:
+                raise ValueError("enable_time_period2")
+            if period2 and not any(key in settings for key in SCHEDULE_PAIRS[2] + SCHEDULE_PAIRS[3]):
+                raise ValueError("enable_time_period2")
+            settings["enable_time_period2"] = period2
+            settings["schedule_enabled"] = True
     return settings
 
 
 def configured_modes(options: Mapping[str, Any], serial: str, family: str) -> list[str]:
-    """Return only reviewed, still-valid modes for an inverter."""
-    if not options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False):
-        return []
-    profiles = options.get(CONF_INVERTER_MODE_PROFILES) or {}
-    per_device = profiles.get(serial) if isinstance(profiles, Mapping) else None
-    if not isinstance(per_device, Mapping):
-        return []
-    ready: list[str] = []
-    for mode in MODE_SERVICES[family]:
-        profile = per_device.get(mode)
-        if not isinstance(profile, Mapping) or profile.get("reviewed") is not True:
-            continue
-        if profile.get("family") != family:
-            continue
-        try:
-            profile_settings(family, mode, profile)
-        except (KeyError, TypeError, ValueError):
-            continue
-        ready.append(mode)
-    return ready
+    """Return unique modes with at least one valid profile."""
+    return list(dict.fromkeys(mode for mode, _, _ in configured_profiles(options, serial, family)))
 
 
 def command_for_mode(
@@ -142,6 +215,7 @@ def command_for_mode(
     device: Mapping[str, Any],
     serial: str,
     action: str,
+    profile_id: str = "default",
 ) -> tuple[str, dict[str, Any]]:
     """Build a validated API command from an explicitly reviewed profile."""
     family = inverter_family(device)
@@ -150,17 +224,20 @@ def command_for_mode(
     if str(device.get("deviceSn") or "").casefold() != serial.casefold():
         raise ValueError("inverter_mode_target_unverified")
     mode = "manual" if action in MANUAL_ACTIONS else action
-    if mode not in configured_modes(options, serial, family):
+    if (mode, profile_id) not in {
+        (saved_mode, saved_id)
+        for saved_mode, saved_id, _ in configured_profiles(options, serial, family)
+    }:
         raise ValueError("inverter_mode_not_enabled")
     service = MODE_SERVICES[family][mode]
-    profiles = options[CONF_INVERTER_MODE_PROFILES]
-    settings = profile_settings(family, mode, profiles[serial][mode])
+    settings = profile_settings(family, mode, mode_profiles(options, serial, mode)[profile_id])
     payload: dict[str, Any] = {
         "sn_list": [serial],
         "business_type": int(device["businessType"]),
     }
     for field, value in settings.items():
-        payload[field] = int(value) if field.endswith("_enable") else value
+        if field != "schedule_enabled":
+            payload[field] = int(value) if field.endswith("_enable") or field == "enable_time_period2" else value
     if action in MANUAL_ACTIONS:
         payload["manual_mode"] = MANUAL_ACTIONS[action]
     try:

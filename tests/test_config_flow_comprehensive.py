@@ -501,7 +501,7 @@ async def test_options_finish_and_simple_pages(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_inverter_mode_options_require_opt_in_and_per_mode_review(monkeypatch):
+async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatch):
     monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
     entry = _entry()
     coordinator = SimpleNamespace(
@@ -536,22 +536,46 @@ async def test_inverter_mode_options_require_opt_in_and_per_mode_review(monkeypa
     ))["step_id"] == "inverter_mode_choice"
     assert (await handler.async_step_inverter_mode_choice(
         {"mode": "self_use"}
+    ))["step_id"] == "inverter_profile_choice"
+    assert (await handler.async_step_inverter_profile_choice(
+        {"profile": "new"}
     ))["step_id"] == "inverter_mode_settings"
     result = await handler.async_step_inverter_mode_settings({
+        "profile_name": "Cloudy",
         "min_soc": 20,
         "charge_upper_soc": 80,
         "charge_from_grid_enable": False,
-        "reviewed": True,
     })
     assert result["type"] == "create_entry"
-    saved = entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]
+    profiles = entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]["profiles"]
+    assert len(profiles) == 1
+    saved = next(iter(profiles.values()))
     assert saved == {
+        "name": "Cloudy",
         "family": "standard",
         "min_soc": 20,
         "charge_upper_soc": 80,
         "charge_from_grid_enable": False,
-        "reviewed": True,
     }
+    profile_id = next(iter(profiles))
+    edit_handler = _options_handler(entry)
+    await edit_handler.async_step_inverter_modes({"inverter_serial": "INV-1"})
+    await edit_handler.async_step_inverter_mode_choice({"mode": "self_use"})
+    await edit_handler.async_step_inverter_profile_choice({"profile": profile_id})
+    edited = await edit_handler.async_step_inverter_mode_settings({
+        "profile_name": "Sunny", "min_soc": 20, "charge_upper_soc": 80,
+        "charge_from_grid_enable": False,
+    })
+    assert edited["type"] == "create_entry"
+    assert entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]["profiles"][profile_id]["name"] == "Sunny"
+
+    remove_handler = _options_handler(entry)
+    await remove_handler.async_step_inverter_modes({"inverter_serial": "INV-1"})
+    await remove_handler.async_step_inverter_mode_choice({"mode": "self_use"})
+    await remove_handler.async_step_inverter_profile_choice({"profile": profile_id})
+    removed = await remove_handler.async_step_inverter_mode_settings({"remove_profile": True})
+    assert removed["type"] == "create_entry"
+    assert "self_use" not in entry.options["inverter_mode_profiles"]["INV-1"]
 
     a1_handler = _options_handler(entry)
     await a1_handler.async_step_inverter_modes({"inverter_serial": "A1-1"})
@@ -559,14 +583,15 @@ async def test_inverter_mode_options_require_opt_in_and_per_mode_review(monkeypa
         {"mode": "manual"}
     ))["errors"]["base"] == "inverter_mode_selection_invalid"
     await a1_handler.async_step_inverter_mode_choice({"mode": "back_up"})
+    await a1_handler.async_step_inverter_profile_choice({"profile": "new"})
     result = await a1_handler.async_step_inverter_mode_settings({
+        "profile_name": "Reserve",
         "back_up_grid_enable": True,
         "back_up_charge_start_time": "08:00",
         "back_up_charge_end_time": "23:00",
-        "reviewed": False,
     })
     assert result["type"] == "create_entry"
-    assert entry.options["inverter_mode_profiles"]["A1-1"]["back_up"]["reviewed"] is False
+    assert len(entry.options["inverter_mode_profiles"]["A1-1"]["back_up"]["profiles"]) == 1
 
 
 @pytest.mark.asyncio

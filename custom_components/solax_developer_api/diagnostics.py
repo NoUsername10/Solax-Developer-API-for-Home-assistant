@@ -37,6 +37,8 @@ SECRET_KEY_HINTS = (
     "api_key",
     "apikey",
     "secret",
+    "request_id",
+    "requestid",
 )
 SERIAL_KEY_HINTS = (
     "serial",
@@ -645,6 +647,9 @@ def _build_coordinator_snapshot(coordinator: Any, state: dict[str, Any]) -> dict
         "ev_charger_control_commands": len(
             getattr(coordinator, "ev_charger_control_commands", []) or []
         ),
+        "inverter_mode_commands": len(
+            getattr(coordinator, "inverter_mode_commands", []) or []
+        ),
         "ev_charger_controls_enabled": meta.get("ev_charger_controls_enabled"),
         "manual_meter_serial_count": meta.get("manual_meter_serial_count"),
         "manual_ems_system_count": meta.get("manual_ems_system_count"),
@@ -683,6 +688,9 @@ def _build_and_sanitize_payload(
         "ev_charger_control_commands": deepcopy(
             getattr(coordinator, "ev_charger_control_commands", []) or []
         ),
+        "inverter_mode_commands": deepcopy(
+            getattr(coordinator, "inverter_mode_commands", []) or []
+        ),
     }
 
     inventory_issues = []
@@ -717,6 +725,11 @@ def _build_and_sanitize_payload(
     ):
         if raw_secret:
             known_secret_values.add(raw_secret.casefold())
+    known_secret_values.update(
+        str(request_id).casefold()
+        for request_id in (getattr(coordinator, "request_result_cache", {}) or {})
+        if str(request_id).strip()
+    )
 
     known_serial_values = _collect_known_serials(state)
     known_serial_values.update(_collect_known_serials_from_raw(raw_api_responses))

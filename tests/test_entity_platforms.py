@@ -226,8 +226,8 @@ async def test_reviewed_inverter_modes_create_device_actions_for_automations():
     }
     commands = []
 
-    async def execute(*, serial, action):
-        commands.append((serial, action))
+    async def execute(*, serial, action, profile_id):
+        commands.append((serial, action, profile_id))
         return {"accepted": True, "command_failed": False}
 
     coordinator.async_execute_inverter_mode = execute
@@ -239,7 +239,7 @@ async def test_reviewed_inverter_modes_create_device_actions_for_automations():
         entity for entity in added if isinstance(entity, button.SolaxInverterModeButton)
     ]
     assert {entity._action for entity in inverter_buttons} == {
-        "manual_stop", "manual_charge", "manual_discharge"
+        "manual_stop", "manual_charge", "manual_discharge", "self_use"
     }
     assert all(
         entity.device_info["identifiers"] == {("solax_developer_api", "INV-1")}
@@ -247,7 +247,7 @@ async def test_reviewed_inverter_modes_create_device_actions_for_automations():
     )
     assert all(entity.available for entity in inverter_buttons)
     await inverter_buttons[1].async_press()
-    assert commands == [("INV-1", inverter_buttons[1]._action)]
+    assert commands == [("INV-1", inverter_buttons[1]._action, "default")]
 
     coordinator.data["devices"].pop("INV-1")
     assert not inverter_buttons[1].available
@@ -255,14 +255,14 @@ async def test_reviewed_inverter_modes_create_device_actions_for_automations():
         "deviceSn": "INV-1", "deviceType": 1, "deviceModel": 33, "businessType": 1
     }
 
-    async def reject(*, serial, action):
+    async def reject(*, serial, action, profile_id):
         return {"accepted": False, "command_failed": True}
 
     coordinator.async_execute_inverter_mode = reject
-    with pytest.raises(HomeAssistantError, match="did not accept"):
+    with pytest.raises(HomeAssistantError, match="reported that"):
         await inverter_buttons[1].async_press()
 
-    async def invalid(*, serial, action):
+    async def invalid(*, serial, action, profile_id):
         raise ValueError("inverter_mode_not_enabled")
 
     coordinator.async_execute_inverter_mode = invalid
