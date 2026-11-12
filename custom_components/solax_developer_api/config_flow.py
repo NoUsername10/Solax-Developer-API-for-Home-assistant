@@ -6,6 +6,7 @@ import ast
 import logging
 from collections.abc import Mapping
 import json
+from uuid import uuid4
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -77,7 +78,14 @@ from .const import (
     MIN_SCAN_INTERVAL,
 )
 from .runtime import SolaxConfigEntry
-from .inverter_modes import MODE_FIELDS, MODE_SERVICES, inverter_family, profile_settings
+from .inverter_modes import (
+    MODE_FIELDS,
+    MODE_SERVICES,
+    SCHEDULE_PAIRS,
+    inverter_family,
+    mode_profiles,
+    profile_settings,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -844,6 +852,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         self._mode_serial: str | None = None
         self._mode_family: str | None = None
         self._mode_name: str | None = None
+        self._mode_profile_id: str | None = None
 
     async def _async_finish(
         self,
@@ -1140,7 +1149,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 errors["base"] = "inverter_mode_selection_invalid"
             else:
                 self._mode_name = mode
-                return await self.async_step_inverter_mode_settings()
+                return await self.async_step_inverter_profile_choice()
         return self.async_show_form(
             step_id="inverter_mode_choice",
             data_schema=vol.Schema(
@@ -1151,11 +1160,38 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             errors=errors,
         )
 
+    async def async_step_inverter_profile_choice(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Create a named profile or edit an existing one for this mode."""
+        await async_ensure_catalog_loaded(self.hass)
+        serial, mode = self._mode_serial, self._mode_name
+        if not serial or not mode:
+            return self.async_abort(reason="inverter_mode_selection_invalid")
+        existing = mode_profiles(self._config_entry.options, serial, mode)
+        choices = {"new": "Create new profile"}
+        choices.update({key: str(value.get("name") or "Default") for key, value in existing.items()})
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            choice = str(user_input.get("profile") or "")
+            if choice not in choices:
+                errors["base"] = "inverter_mode_selection_invalid"
+            else:
+                self._mode_profile_id = None if choice == "new" else choice
+                return await self.async_step_inverter_mode_settings()
+        return self.async_show_form(
+            step_id="inverter_profile_choice",
+            data_schema=vol.Schema({
+                vol.Required("profile"): _mapped_select_selector(choices),
+            }),
+            errors=errors,
+        )
+
     async def async_step_inverter_mode_settings(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
-        """Save required settings and the user's explicit review for one mode."""
+        """Save or remove one named mode profile without sending a command."""
         await async_ensure_catalog_loaded(self.hass)
         serial, family, mode = self._mode_serial, self._mode_family, self._mode_name
         if not serial or not family or not mode:
@@ -1174,29 +1210,53 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         per_device = (
             all_profiles.get(serial) if isinstance(all_profiles, Mapping) else None
         )
-        existing = per_device.get(mode) if isinstance(per_device, Mapping) else None
-        if not isinstance(existing, Mapping):
-            existing = {}
+        saved_profiles = mode_profiles(current_options, serial, mode)
+        profile_id = self._mode_profile_id
+        existing = saved_profiles.get(profile_id, {}) if profile_id else {}
         fields = MODE_FIELDS[family][mode]
         errors: dict[str, str] = {}
         if user_input is not None:
-            try:
-                settings = profile_settings(family, mode, user_input)
-            except (KeyError, TypeError, ValueError):
-                errors["base"] = "inverter_mode_settings_invalid"
-            else:
+            if profile_id and user_input.get("remove_profile") is True:
                 updated_profiles = dict(all_profiles)
                 updated_device = dict(per_device or {})
-                updated_device[mode] = {
-                    "family": family,
-                    **settings,
-                    "reviewed": user_input.get("reviewed") is True,
-                }
+                remaining = dict(saved_profiles)
+                remaining.pop(profile_id, None)
+                if remaining:
+                    updated_device[mode] = {"profiles": remaining}
+                else:
+                    updated_device.pop(mode, None)
                 updated_profiles[serial] = updated_device
                 current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
                 return await self._async_finish(options=current_options)
+            else:
+                name = str(user_input.get("profile_name") or "").strip()
+                if not name or len(name) > 48 or any(
+                    key != profile_id and name.casefold() == str(profile.get("name") or "").casefold()
+                    for key, profile in saved_profiles.items()
+                ):
+                    errors["base"] = "inverter_mode_settings_invalid"
+                else:
+                    try:
+                        settings = profile_settings(family, mode, user_input)
+                    except (KeyError, TypeError, ValueError):
+                        errors["base"] = "inverter_mode_settings_invalid"
+                    else:
+                        updated_profiles = dict(all_profiles)
+                        updated_device = dict(per_device or {})
+                        saved = dict(saved_profiles)
+                        saved[profile_id or uuid4().hex] = {
+                            "name": name,
+                            "family": family,
+                            **settings,
+                        }
+                        updated_device[mode] = {"profiles": saved}
+                        updated_profiles[serial] = updated_device
+                        current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
+                        return await self._async_finish(options=current_options)
 
-        schema: dict[Any, Any] = {}
+        schema: dict[Any, Any] = {
+            vol.Required("profile_name", default=existing.get("name", "")): _text_selector(),
+        }
         for field in fields:
             marker = (
                 vol.Required(field, default=existing[field])
@@ -1209,7 +1269,14 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 schema[marker] = selector.TimeSelector()
             else:
                 schema[marker] = _number_selector(0, 100)
-        schema[vol.Required("reviewed", default=False)] = selector.BooleanSelector()
+        if family == "standard" and mode != "manual":
+            schema[vol.Required("schedule_enabled", default=existing.get("schedule_enabled", False))] = selector.BooleanSelector()
+            for start_key, end_key in SCHEDULE_PAIRS:
+                for key in (start_key, end_key):
+                    schema[vol.Optional(key, default=existing[key]) if key in existing else vol.Optional(key)] = selector.TimeSelector()
+            schema[vol.Required("enable_time_period2", default=existing.get("enable_time_period2", False))] = selector.BooleanSelector()
+        if profile_id:
+            schema[vol.Required("remove_profile", default=False)] = selector.BooleanSelector()
         return self.async_show_form(
             step_id="inverter_mode_settings",
             data_schema=vol.Schema(schema),

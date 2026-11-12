@@ -227,6 +227,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._master_control_cache: dict[str, dict[str, Any]] = {}
         self._control_dry_runs: list[dict[str, Any]] = []
         self._ev_charger_control_commands: list[dict[str, Any]] = []
+        self._inverter_mode_commands: list[dict[str, Any]] = []
         self._ev_charger_gui_state: dict[str, dict[str, Any]] = {}
         self._manual_meter_entries = self._normalize_manual_meter_entries(
             options.get(CONF_MANUAL_METER_SERIALS)
@@ -3064,8 +3065,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         *,
         serial: str,
         action: str,
+        profile_id: str = "default",
     ) -> dict[str, Any]:
-        """Apply one reviewed profile to its discovered inverter."""
+        """Apply one configured profile to its discovered inverter."""
         if not self.inverter_mode_controls_enabled:
             raise ValueError("inverter_mode_controls_disabled")
         devices = (self.data or {}).get("devices") or {}
@@ -3077,34 +3079,99 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             device=device,
             serial=serial,
             action=action,
+            profile_id=profile_id,
         )
         definition = CONTROL_SERVICE_DEFINITIONS[service]
-        response = await self.client.execute_control(
-            path=definition["endpoint"],
-            payload=payload,
-        )
+        try:
+            response = await self.client.execute_control(
+                path=definition["endpoint"],
+                payload=payload,
+            )
+        except SolaxApiError as err:
+            event = {
+                "timestamp": dt_util.utcnow().isoformat(),
+                "service": service,
+                "serial": serial,
+                "action": action,
+                "profile_id": profile_id,
+                "api_code": err.code,
+                "api_error_type": err.classification,
+                "accepted": False,
+                "command_failed": True,
+                "outcome": "failed",
+                "confirmation_state": "request_failed",
+                "confirmation_attempts": 0,
+            }
+            self.data.setdefault("meta", {})["last_inverter_mode_control"] = event
+            self._inverter_mode_commands.append(event)
+            del self._inverter_mode_commands[:-10]
+            raise
         initial_summary = self._control_response_status_summary(response)
         request_id = str(response.get("requestId") or "").strip()
         confirmation = await self._confirm_device_control(
             request_id=request_id,
             initial_summary=initial_summary,
+            target_serial=serial,
         )
+        statuses = confirmation["device_statuses"]
+        initial_target_status = next(
+            (
+                value for key, value in initial_summary["device_statuses"].items()
+                if key.casefold() == serial.casefold()
+            ),
+            None,
+        )
+        target_status = next(
+            (value for key, value in statuses.items() if key.casefold() == serial.casefold()),
+            None,
+        )
+        explicit_failure = bool(target_status and target_status["failed"])
+        acknowledged = bool(target_status and target_status["device_acknowledged"])
+        outcome = "failed" if explicit_failure else "accepted" if acknowledged else "pending"
+        confirmation_state = confirmation["confirmation_state"]
+        if explicit_failure:
+            confirmation_state = "failed"
+        elif acknowledged:
+            confirmation_state = "device_acknowledged"
+        elif confirmation_state not in {"query_failed", "unavailable"}:
+            confirmation_state = "pending"
         event = {
             "timestamp": dt_util.utcnow().isoformat(),
             "service": service,
             "serial": serial,
             "action": action,
-            "request_id": request_id or None,
-            "accepted": bool(confirmation["accepted"])
-            and any(
-                target.casefold() == serial.casefold()
-                for target in confirmation["device_statuses"]
+            "profile_id": profile_id,
+            "api_code": response.get("code"),
+            "initial_result_shape": self._control_result_shape(response.get("result")),
+            "initial_status_count": len(initial_summary["device_statuses"]),
+            "initial_target_status": initial_target_status,
+            "request_id_present": bool(request_id),
+            "accepted": not explicit_failure,
+            "command_failed": explicit_failure,
+            "outcome": outcome,
+            "confirmation_state": confirmation_state,
+            "confirmation_attempts": confirmation["confirmation_attempts"],
+            "confirmation_api_code": (
+                confirmation["confirmation_response"].get("code")
+                if isinstance(confirmation["confirmation_response"], Mapping)
+                else None
             ),
-            "command_failed": bool(confirmation["command_failed"]),
-            "confirmation_state": confirmation["confirmation_state"],
-            "device_statuses": confirmation["device_statuses"],
+            "confirmation_result_shape": (
+                self._control_result_shape(confirmation["confirmation_response"].get("result"))
+                if isinstance(confirmation["confirmation_response"], Mapping)
+                else None
+            ),
+            "confirmation_error_type": (
+                confirmation["confirmation_error"].get("classification")
+                if isinstance(confirmation["confirmation_error"], Mapping)
+                else None
+            ),
+            "status_count": len(statuses),
+            "target_status": target_status,
         }
         self.data.setdefault("meta", {})["last_inverter_mode_control"] = event
+        self._inverter_mode_commands.append(event)
+        del self._inverter_mode_commands[:-10]
         return event
 
     def _validate_ev_charger_control_targets(
@@ -3197,12 +3264,53 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "pending": pending,
         }
 
+    @staticmethod
+    def _control_result_shape(result: Any) -> str:
+        """Describe a control result without copying serial-number keys."""
+        if isinstance(result, list):
+            return "record_list"
+        if isinstance(result, Mapping):
+            if "status" in result:
+                return "status_object"
+            if any(isinstance(value, Mapping) and "status" in value for value in result.values()):
+                return "device_map"
+            return "other_map"
+        return type(result).__name__
+
+    @staticmethod
+    def _target_control_status_summary(
+        summary: dict[str, Any], serial: str
+    ) -> dict[str, Any]:
+        """Ignore acknowledgements and failures for other device serials."""
+        statuses = {
+            key: value
+            for key, value in summary["device_statuses"].items()
+            if key.casefold() == serial.casefold()
+        }
+        return {
+            **summary,
+            "device_statuses": statuses,
+            "command_failed": any(value["failed"] for value in statuses.values()),
+            "device_acknowledged": bool(statuses) and all(
+                value["device_acknowledged"] for value in statuses.values()
+            ),
+            "pending": not statuses or any(
+                not value["failed"] and not value["device_acknowledged"]
+                for value in statuses.values()
+            ),
+        }
+
     async def _confirm_device_control(
         self,
         *,
         request_id: str,
         initial_summary: dict[str, Any],
+        target_serial: str | None = None,
     ) -> dict[str, Any]:
+        if target_serial is not None:
+            initial_summary = self._target_control_status_summary(
+                initial_summary, target_serial
+            )
         if initial_summary.get("command_failed"):
             return {
                 "confirmation_state": "failed",
@@ -3249,6 +3357,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 continue
 
             queried_summary = self._control_response_status_summary(latest_response)
+            if target_serial is not None:
+                queried_summary = self._target_control_status_summary(
+                    queried_summary, target_serial
+                )
             if queried_summary.get("device_statuses"):
                 latest_summary = queried_summary
             if latest_summary.get("command_failed"):
@@ -3401,6 +3513,11 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def request_result_cache(self) -> dict[str, dict[str, Any]]:
         return dict(self._request_result_cache)
+
+    @property
+    def inverter_mode_commands(self) -> list[dict[str, Any]]:
+        """Recent inverter mode outcomes for privacy-safe diagnostics."""
+        return list(self._inverter_mode_commands)
 
     @property
     def master_control_cache(self) -> dict[str, dict[str, Any]]:

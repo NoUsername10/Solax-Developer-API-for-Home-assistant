@@ -223,6 +223,7 @@ def _make(client=None):
     instance._control_dry_runs = []
     instance._ev_charger_controls_enabled = False
     instance._ev_charger_control_commands = []
+    instance._inverter_mode_commands = []
     instance._manual_meter_entries = [
         {
             "serial": "MANUALMETER",
@@ -307,8 +308,9 @@ async def test_inverter_mode_command_uses_reviewed_inventory_and_checks_target_s
     )
     assert event["accepted"] is True
     assert event["confirmation_state"] == "device_acknowledged"
-    assert event["device_statuses"]["INV-MODE"]["status"] == 4
+    assert event["target_status"]["status"] == 4
     assert instance.data["meta"]["last_inverter_mode_control"] is event
+    assert instance.inverter_mode_commands == [event]
     assert client.sent == [{
         "path": "/openapi/v2/device/inverter_work_mode/batch_set_spontaneity_self_use",
         "payload": {
@@ -324,6 +326,117 @@ async def test_inverter_mode_command_uses_reviewed_inventory_and_checks_target_s
     with pytest.raises(ValueError, match="inverter_mode_controls_disabled"):
         await instance.async_execute_inverter_mode(serial="INV-MODE", action="self_use")
     assert len(client.sent) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("result", "expected"),
+    [
+        ({"INV-MODE": {"status": 3}}, "pending"),
+        ({"INV-MODE": {"status": 5}}, "failed"),
+        ({"other": {"status": 4}}, "pending"),
+        ([{"sn": "INV-MODE", "status": 4}], "accepted"),
+        ({}, "pending"),
+    ],
+)
+async def test_inverter_mode_outcomes_do_not_confuse_delivery_with_rejection(result, expected):
+    class _ModeClient(_FullClient):
+        async def execute_control(self, **kwargs):
+            return {"code": 10000, "result": result}
+
+    instance = _make(_ModeClient())
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {
+            "INV-MODE": {"self_use": {"profiles": {
+                "cloudy": {"name": "Cloudy", "family": "standard", "min_soc": 20,
+                           "charge_upper_soc": 80, "charge_from_grid_enable": True}
+            }}}
+        },
+    }
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="self_use", profile_id="cloudy"
+    )
+    assert event["outcome"] == expected
+    assert event["command_failed"] is (expected == "failed")
+    assert event["accepted"] is (expected != "failed")
+    assert event["profile_id"] == "cloudy"
+    assert "request_id" not in event
+    assert event["initial_result_shape"] == (
+        "record_list" if isinstance(result, list) else
+        "device_map" if result else "other_map"
+    )
+
+
+@pytest.mark.asyncio
+async def test_inverter_confirmation_ignores_other_device_then_queries_target(monkeypatch):
+    class _ModeClient(_FullClient):
+        async def execute_control(self, **kwargs):
+            return {"code": 10000, "requestId": "REQ-MODE",
+                    "result": {"OTHER": {"status": 4}}}
+
+        async def query_request_result(self, **kwargs):
+            return {"code": 0, "result": [{"sn": "INV-MODE", "status": 4}]}
+
+    monkeypatch.setattr(
+        "custom_components.solax_developer_api.coordinator.EV_CHARGER_CONFIRMATION_POLL_SECONDS",
+        0.001,
+    )
+    monkeypatch.setattr(
+        "custom_components.solax_developer_api.coordinator.EV_CHARGER_CONFIRMATION_TIMEOUT_SECONDS",
+        0.001,
+    )
+    instance = _make(_ModeClient())
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {"INV-MODE": {"self_use": {
+            "family": "standard", "min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": False,
+        }}},
+    }
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="self_use"
+    )
+    assert event["outcome"] == "accepted"
+    assert event["confirmation_attempts"] == 1
+    assert event["initial_target_status"] is None
+    assert event["target_status"]["status"] == 4
+
+
+@pytest.mark.asyncio
+async def test_inverter_api_rejection_is_recorded_without_raw_response():
+    class _ModeClient(_FullClient):
+        async def execute_control(self, **kwargs):
+            raise SolaxApiError(code=10403, message="private upstream text",
+                                classification="permission")
+
+    instance = _make(_ModeClient())
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {"INV-MODE": {"self_use": {
+            "family": "standard", "min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": False,
+        }}},
+    }
+    with pytest.raises(SolaxApiError):
+        await instance.async_execute_inverter_mode(serial="INV-MODE", action="self_use")
+    event = instance.inverter_mode_commands[-1]
+    assert event["outcome"] == "failed"
+    assert event["api_code"] == 10403
+    assert event["api_error_type"] == "permission"
+    assert "private upstream text" not in str(event)
 
 
 class _AlarmManagerStub:

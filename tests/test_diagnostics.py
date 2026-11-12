@@ -49,6 +49,30 @@ def test_sanitize_masks_nested_secret_and_serial_values():
     assert sanitized["nested"]["raw_api_token_masked"] == "2026***9532"
 
 
+def test_inverter_command_diagnostics_redact_request_ids_and_serials():
+    payload = {
+        "inverter_mode_commands": [{
+            "serial": "INVERTER123456",
+            "api_code": 10000,
+            "outcome": "pending",
+            "requestId": "REQUEST998877",
+            "device_statuses": {"INVERTER123456": {"status": 3}},
+        }],
+        "request_result_cache": {
+            "REQUEST998877": {"response": {"requestId": "REQUEST998877"}}
+        },
+    }
+    sanitized = _sanitize_for_diagnostics(
+        payload,
+        known_serials={"inverter123456"},
+        known_secrets={"request998877"},
+    )
+    as_text = json.dumps(sanitized)
+    assert "INVERTER123456" not in as_text
+    assert "REQUEST998877" not in as_text
+    assert sanitized["inverter_mode_commands"][0]["outcome"] == "pending"
+
+
 def test_sanitize_redacts_personal_fields_and_keeps_token_expires_at():
     payload = {
         "plantId": "1983359809783000000",

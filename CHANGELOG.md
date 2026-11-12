@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- Add named inverter mode profiles with automation buttons, optional validated
+  charge/discharge periods on standard inverters, and migration of existing
+  single-mode settings to a Default profile. Saving a profile no longer requires
+  a per-mode review checkbox; the global control opt-in remains.
+- Distinguish accepted, pending, and explicit device-failure outcomes for inverter
+  mode commands. Include recent privacy-safe command outcomes in diagnostics.
 - Add the Solar & batteries integration category for HACS discovery and update
   the release artifact actions to Node.js 24 versions.
 - Add a manual **Create Draft Release** GitHub Action. It runs the Home
