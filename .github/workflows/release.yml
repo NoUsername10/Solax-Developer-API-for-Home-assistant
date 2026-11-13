@@ -56,6 +56,8 @@ jobs:
               raise SystemExit(f"Manifest version {manifest['version']} does not match {tag}")
           _changelog_entry(Path("CHANGELOG.md").read_text(), tag)
           PY
+      - name: GUI settings tests
+        run: node --test scripts/test_settings_panel.cjs
 
   test:
     needs: preflight

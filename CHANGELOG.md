@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Added an optional admin-only GUI configuration page with General, Polling &
+  Live View, Devices, Workmodes, and Advanced sections. Configure now offers
+  Classic or GUI configuration; Classic retains the existing options flow.
+  The GUI uses that same flow for saves and validation, and the Workmodes page
+  lists named profiles beside the editor with Create, Edit, and Delete actions.
+
 ## [v0.4.11] - 2026-11-12
 
 ### Changed

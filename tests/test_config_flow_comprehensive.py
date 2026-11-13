@@ -501,6 +501,21 @@ async def test_options_finish_and_simple_pages(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_options_offer_classic_and_gui_when_panel_registered(monkeypatch):
+    monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
+    handler = _options_handler()
+    handler.hass.data = {
+        config_flow.RUNTIME_RELOAD_STATE: {"settings_panel_registered": True}
+    }
+    assert (await handler.async_step_init())["menu_options"] == ["classic", "gui"]
+    assert (await handler.async_step_classic())["step_id"] == "classic"
+    gui = await handler.async_step_gui()
+    assert gui["step_id"] == "gui"
+    assert "entry-1" in gui["description_placeholders"]["url"]
+    assert (await handler.async_step_gui({}))["reason"] == "gui_opened"
+
+
+@pytest.mark.asyncio
 async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatch):
     monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
     entry = _entry()
@@ -523,13 +538,14 @@ async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatc
     entry.runtime_data = SimpleNamespace(coordinator=coordinator)
     handler = _options_handler(entry)
 
-    assert "inverter_modes" not in (await handler.async_step_init())["menu_options"]
+    assert (await handler.async_step_init())["menu_options"] == ["classic"]
+    assert "inverter_modes" not in (await handler.async_step_classic())["menu_options"]
     assert (await handler.async_step_inverter_modes())["reason"] == (
         "inverter_mode_controls_disabled"
     )
 
     entry.options["inverter_mode_controls_enabled"] = True
-    assert "inverter_modes" in (await handler.async_step_init())["menu_options"]
+    assert "inverter_modes" in (await handler.async_step_classic())["menu_options"]
     assert (await handler.async_step_inverter_modes())["step_id"] == "inverter_modes"
     assert (await handler.async_step_inverter_modes(
         {"inverter_serial": "INV-1"}

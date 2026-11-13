@@ -4,7 +4,7 @@
   "categories": ["energy.solar_batteries"],
   "codeowners": ["@NoUsername10"],
   "config_flow": true,
-  "dependencies": ["frontend", "http"],
+  "dependencies": ["frontend", "http", "panel_custom"],
   "documentation": "https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/NoUsername10/Solax-Developer-API-for-Home-assistant/issues",

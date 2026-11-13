@@ -76,7 +76,8 @@ async def test_options_root_is_a_four_page_menu(monkeypatch):
     result = await handler.async_step_init()
 
     assert result["step_id"] == "init"
-    assert result["menu_options"] == [
+    assert result["menu_options"] == ["classic"]
+    assert (await handler.async_step_classic())["menu_options"] == [
         "credentials",
         "polling",
         "manual_devices",

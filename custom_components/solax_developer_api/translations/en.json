@@ -71,6 +71,14 @@
     "step": {
       "init": {
         "title": "SolaX Developer API Options",
+        "description": "Choose how to configure the integration.",
+        "menu_options": {
+          "classic": "Classic configuration",
+          "gui": "GUI configuration"
+        }
+      },
+      "classic": {
+        "title": "Classic configuration",
         "description": "Choose which part of the integration to configure.",
         "menu_options": {
           "credentials": "Credentials and system",
@@ -79,6 +87,10 @@
           "advanced": "Advanced and diagnostics",
           "inverter_modes": "Inverter work-mode settings"
         }
+      },
+      "gui": {
+        "title": "GUI configuration",
+        "description": "[Open SolaX settings]({url}) in Home Assistant. The classic settings remain available from Configure."
       },
       "credentials": {
         "title": "Credentials and system",
@@ -224,7 +236,8 @@
     "abort": {
       "inverter_mode_controls_disabled": "Enable inverter work-mode controls under Advanced and diagnostics first.",
       "inverter_mode_no_verified_inverter": "No inverter with a verified type, business type, and model is available.",
-      "inverter_mode_selection_invalid": "The inverter or mode is no longer available."
+      "inverter_mode_selection_invalid": "The inverter or mode is no longer available.",
+      "gui_opened": "Open the GUI settings from the link above."
     }
   },
   "issues": {

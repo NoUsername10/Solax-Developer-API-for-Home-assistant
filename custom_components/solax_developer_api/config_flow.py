@@ -76,6 +76,7 @@ from .const import (
     MIN_LIVE_VIEW_INTERVAL,
     MIN_NIGHT_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    RUNTIME_RELOAD_STATE,
 )
 from .runtime import SolaxConfigEntry
 from .inverter_modes import (
@@ -1063,7 +1064,23 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
-        """Show the focused options menu."""
+        """Let the administrator choose the existing or visual settings UI."""
+        await async_ensure_catalog_loaded(self.hass)
+        menu_options = ["classic"]
+        if getattr(self.hass, "data", {}).get(RUNTIME_RELOAD_STATE, {}).get(
+            "settings_panel_registered"
+        ):
+            menu_options.append("gui")
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=menu_options,
+        )
+
+    async def async_step_classic(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Keep the established options menu available."""
         await async_ensure_catalog_loaded(self.hass)
         menu_options = [
             "credentials",
@@ -1074,8 +1091,31 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         if self._config_entry.options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False):
             menu_options.append("inverter_modes")
         return self.async_show_menu(
-            step_id="init",
+            step_id="classic",
             menu_options=menu_options,
+        )
+
+    async def async_step_gui(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Link to the admin-only panel from the supported options flow."""
+        if user_input is not None:
+            return self.async_abort(reason="gui_opened")
+        return self.async_show_form(
+            step_id="gui",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "url": (
+                    "/solax-developer-api-settings?entry_id="
+                    f"{self._config_entry.entry_id}"
+                    + (
+                        f"&launch_flow_id={self.flow_id}"
+                        if getattr(self, "flow_id", None)
+                        else ""
+                    )
+                )
+            },
         )
 
     async def async_step_inverter_modes(

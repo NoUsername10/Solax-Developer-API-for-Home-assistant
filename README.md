@@ -184,7 +184,16 @@ These device controls use the same validated execution path as the service actio
 
 ### Inverter work-mode controls
 
-Under **Settings → Devices & services → SolaX Developer API → Configure → Advanced and diagnostics**, enable **Inverter work-mode controls**. This is off by default. Reopen **Configure → Inverter work-mode settings**, choose a discovered inverter, a mode, and **Create new profile**. Give the profile a name and enter its settings. Saving reloads the integration and makes an activation button available on the inverter device. **Press that button to apply the profile**; saving settings does not send a command. You can create more than one profile per mode, edit a profile, or remove it. Existing single-mode settings appear as a **Default** profile with the same button entity ID.
+After initial setup, **Configure** offers **Classic configuration** and **GUI
+configuration**. Classic opens the existing settings menus. GUI opens a link to
+an administrator-only SolaX settings page with General, Polling & Live View,
+Devices, Workmodes, and Advanced tabs. The page has no SolaX sidebar item and
+requires no dashboard card. Both choices save to the same integration settings;
+the GUI submits changes through Home Assistant's existing options flow. The
+Workmodes tab shows saved profiles beside a Create/Edit/Delete form. Deleting a
+profile removes its button, so update any automations that use that button.
+
+Under **Settings → Devices & services → SolaX Developer API → Configure → Classic configuration → Advanced and diagnostics**, enable **Inverter work-mode controls**. This is off by default. Reopen **Configure → Classic configuration → Inverter work-mode settings**, choose a discovered inverter, a mode, and **Create new profile**. Give the profile a name and enter its settings. Saving reloads the integration and makes an activation button available on the inverter device. **Press that button to apply the profile**; saving settings does not send a command. You can create more than one profile per mode, edit a profile, or remove it. Existing single-mode settings appear as a **Default** profile with the same button entity ID.
 
 Each named profile appears as a button on the inverter device page and can be used in automations with the native **Press button** action. Standard inverters offer Self Use, Feed-in Priority, Back Up, and Manual (stop, force charge, or force discharge). Self Use and Back Up profiles include the required grid-charging choice; a profile can also include up to two charge and discharge time periods. The optional time periods are sent as part of the mode command, and overlapping periods are rejected. SolaX does not document whether omitted time fields leave existing inverter schedules unchanged; configure the periods explicitly in every profile used for tariff switching. Allowing grid charging does not itself force immediate charging. **Overnight periods such as 22:00–06:00 have not yet been validated on a real inverter**, so do not rely on them for a tariff automation until confirmed on the target hardware. A1-Hybrid-G2 offers Self Use and Feed-in Priority without user settings, and Back Up with its required grid-charging choice and charge start/end times. The Developer API does not document A1 Manual mode. TOU configuration is not included. The integration takes `businessType` from the discovered inverter; users do not enter it.
 
@@ -428,7 +437,7 @@ Most devices are discovered automatically. Some meters can be queried by serial 
 
 To add one:
 
-1. Open **Configure → Manual devices**.
+1. Open **Configure → Classic configuration → Manual devices** (or the **Devices** tab in GUI configuration).
 2. Enter one meter serial per line.
 3. Optionally add `|1` or `|4` to specify the business type.
 4. Submit the form.
@@ -967,7 +976,7 @@ Current states can be unavailable until SolaX returns fresh data, but a temporar
 
 Some readable meters are not returned by `page_device_info`.
 
-1. Open **Configure → Manual devices**.
+1. Open **Configure → Classic configuration → Manual devices** (or the **Devices** tab in GUI configuration).
 2. Add the exact meter serial.
 3. Let the integration validate realtime access.
 
@@ -975,7 +984,7 @@ After restart, the saved manual meter remains part of inventory polling and appe
 
 ### Manual device disappears after restart
 
-- Confirm the device still appears under **Configure → Manual devices**.
+- Confirm the device still appears under **Configure → Classic configuration → Manual devices** (or the **Devices** tab in GUI configuration).
 - Download diagnostics and inspect `manual_meter_config_present` or the manual-device summary.
 - Recheck that the API still returns matching realtime data for the saved serial.
 
