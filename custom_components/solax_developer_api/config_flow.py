@@ -82,6 +82,7 @@ from .runtime import SolaxConfigEntry
 from .inverter_modes import (
     MODE_FIELDS,
     MODE_SERVICES,
+    ProfileSettingsError,
     SCHEDULE_PAIRS,
     inverter_family,
     mode_profiles,
@@ -1270,14 +1271,20 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 return await self._async_finish(options=current_options)
             else:
                 name = str(user_input.get("profile_name") or "").strip()
-                if not name or len(name) > 48 or any(
+                if not name:
+                    errors["profile_name"] = "profile_name_required"
+                elif len(name) > 48:
+                    errors["profile_name"] = "profile_name_too_long"
+                elif any(
                     key != profile_id and name.casefold() == str(profile.get("name") or "").casefold()
                     for key, profile in saved_profiles.items()
                 ):
-                    errors["base"] = "inverter_mode_settings_invalid"
+                    errors["profile_name"] = "profile_name_duplicate"
                 else:
                     try:
                         settings = profile_settings(family, mode, user_input)
+                    except ProfileSettingsError as err:
+                        errors[err.field] = err.code
                     except (KeyError, TypeError, ValueError):
                         errors["base"] = "inverter_mode_settings_invalid"
                     else:

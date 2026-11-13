@@ -98,10 +98,11 @@ test("GUI keeps edited profile values when Home Assistant returns an error", asy
   ] };
   panel._next = async () => ({
     type: "form",
-    errors: { base: "inverter_mode_settings_invalid" },
+    errors: { min_soc: "profile_invalid_soc" },
+    step_id: "inverter_mode_settings",
     data_schema: panel._form.data_schema,
   });
-  panel._hass = { localize: () => "Check the values" };
+  panel._hass = { localize: (key) => key.endsWith("profile_invalid_soc") ? "Enter a whole-number percentage from 0 to 100." : key.endsWith("min_soc") ? "Minimum SOC" : "" };
   const fields = new Map([
     ["profile_name", { value: "Cloudy draft" }],
     ["min_soc", { value: "35" }],
@@ -109,7 +110,7 @@ test("GUI keeps edited profile values when Home Assistant returns an error", asy
   await panel._save({ elements: { namedItem: (name) => fields.get(name) } });
   assert.equal(panel._draftValues.profile_name, "Cloudy draft");
   assert.equal(panel._draftValues.min_soc, 35);
-  assert.equal(panel._error, "Check the values");
+  assert.equal(panel._error, "Minimum SOC: Enter a whole-number percentage from 0 to 100.");
 });
 
 test("delete submits complete profile data through the options flow", async () => {

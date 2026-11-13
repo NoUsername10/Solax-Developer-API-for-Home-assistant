@@ -3,12 +3,31 @@
 import pytest
 
 from custom_components.solax_developer_api.inverter_modes import (
+    ProfileSettingsError,
     command_for_mode,
     configured_modes,
     configured_profiles,
     inverter_family,
     profile_settings,
 )
+
+
+@pytest.mark.parametrize(
+    ("settings", "field", "code"),
+    [
+        ({"charge_upper_soc": 80, "charge_from_grid_enable": True}, "min_soc", "profile_required_value"),
+        ({"min_soc": 101, "charge_upper_soc": 80, "charge_from_grid_enable": True}, "min_soc", "profile_invalid_soc"),
+        ({"min_soc": 20, "charge_upper_soc": 10, "charge_from_grid_enable": True}, "charge_upper_soc", "profile_upper_soc_below_min"),
+        ({"min_soc": 20, "charge_upper_soc": 80, "charge_from_grid_enable": "yes"}, "charge_from_grid_enable", "profile_invalid_boolean"),
+        ({"min_soc": 20, "charge_upper_soc": 80, "charge_from_grid_enable": True, "schedule_enabled": True}, "schedule_enabled", "profile_period1_required"),
+        ({"min_soc": 20, "charge_upper_soc": 80, "charge_from_grid_enable": True, "schedule_enabled": True, "charge_start_time_period1": "22:00"}, "charge_end_time_period1", "profile_time_pair_incomplete"),
+        ({"min_soc": 20, "charge_upper_soc": 80, "charge_from_grid_enable": True, "schedule_enabled": True, "charge_start_time_period1": "22:00", "charge_end_time_period1": "22:00"}, "charge_end_time_period1", "profile_time_same"),
+    ],
+)
+def test_profile_validation_reports_field_and_reason(settings, field, code):
+    with pytest.raises(ProfileSettingsError) as caught:
+        profile_settings("standard", "self_use", settings)
+    assert (caught.value.field, caught.value.code) == (field, code)
 
 
 def _options(serial, family, mode, **settings):

@@ -646,7 +646,7 @@ async def test_profile_error_keeps_submitted_values_and_cleared_times(monkeypatc
         "charge_end_time_period1": "07:00",
     }
     error = await handler.async_step_inverter_mode_settings(submitted)
-    assert error["errors"]["base"] == "inverter_mode_settings_invalid"
+    assert error["errors"]["charge_upper_soc"] == "profile_upper_soc_below_min"
     schema = error["data_schema"].schema
     markers = {marker.schema: marker for marker in schema}
     assert markers["profile_name"].default() == "New profile"
@@ -657,6 +657,13 @@ async def test_profile_error_keeps_submitted_values_and_cleared_times(monkeypatc
     assert markers["charge_start_time_period1"].description["suggested_value"] == "21:00"
     assert not (markers["charge_start_time_period2"].description or {}).get("suggested_value")
     assert list(markers).index("enable_time_period2") < list(markers).index("charge_start_time_period2")
+
+    for name, reason in (
+        ("", "profile_name_required"),
+        ("x" * 49, "profile_name_too_long"),
+    ):
+        name_error = await handler.async_step_inverter_mode_settings({**submitted, "profile_name": name})
+        assert name_error["errors"]["profile_name"] == reason
 
     submitted["charge_upper_soc"] = 80
     saved = await handler.async_step_inverter_mode_settings(submitted)

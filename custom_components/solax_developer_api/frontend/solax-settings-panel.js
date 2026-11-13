@@ -330,6 +330,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     if (this._tab === "inverter_modes" && data.schedule_enabled !== undefined) {
       this._fieldErrors = validatePeriods(data);
       if (Object.keys(this._fieldErrors).length) {
+        const [field, reason] = Object.entries(this._fieldErrors)[0];
+        this._error = `${this._label(this._form.step_id, field)}: ${reason}`;
         this._render();
         return;
       }
@@ -341,7 +343,10 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       const result = await this._next(data);
       if (result.type === "form") {
         this._form = result;
-        this._error = result.errors?.base ? this._errorText(result.errors.base) : "Check the highlighted fields.";
+        const [field, code] = Object.entries(result.errors || {})[0] || [];
+        this._error = field === "base" ? this._errorText(code)
+          : field ? `${this._label(result.step_id, field)}: ${this._errorText(code)}`
+            : "Check the highlighted fields.";
       } else if (result.type === "create_entry") {
         const savedTab = this._tab;
         this._flow = null;

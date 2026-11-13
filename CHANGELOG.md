@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 - Keep submitted work-mode profile values after a validation error, and allow
   charge/discharge windows to overlap while retaining complete-pair and
   nonzero-duration checks.
+- Show the affected setting and specific validation reason in Classic and GUI
+  configuration when a work-mode profile cannot be saved.
 - Put the period-2 switch before its clocks in Classic configuration. In the
   GUI, disable period-2 clocks until the switch is enabled.
 
