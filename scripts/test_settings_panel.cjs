@@ -34,33 +34,82 @@ vm.runInNewContext(
 );
 const { validatePeriods, Panel } = context.testExports;
 
-test("time validation catches incomplete and overlapping periods", () => {
+test("time validation catches incomplete periods and allows overlaps", () => {
   assert.equal(validatePeriods({ schedule_enabled: false }).schedule_enabled, undefined);
   assert.match(
     validatePeriods({ schedule_enabled: true, charge_start_time_period1: "22:00" })
       .charge_end_time_period1,
     /both/,
   );
-  assert.match(
-    validatePeriods({
-      schedule_enabled: true,
-      charge_start_time_period1: "22:00",
-      charge_end_time_period1: "06:00",
-      discharge_start_time_period1: "05:00",
-      discharge_end_time_period1: "07:00",
-    }).discharge_start_time_period1,
-    /overlaps/,
-  );
   assert.equal(
     Object.keys(validatePeriods({
       schedule_enabled: true,
       charge_start_time_period1: "22:00",
       charge_end_time_period1: "06:00",
-      discharge_start_time_period1: "13:00",
-      discharge_end_time_period1: "15:00",
+      discharge_start_time_period1: "05:00",
+      discharge_end_time_period1: "07:00",
     })).length,
     0,
   );
+});
+
+test("period 2 clocks stay disabled until enabled without clearing entered values", () => {
+  const panel = new Panel();
+  const controls = new Map([
+    ["schedule_enabled", { checked: true }],
+    ["enable_time_period2", { checked: false }],
+  ]);
+  for (const pair of [
+    ["charge_start_time_period1", "charge_end_time_period1"],
+    ["discharge_start_time_period1", "discharge_end_time_period1"],
+    ["charge_start_time_period2", "charge_end_time_period2"],
+    ["discharge_start_time_period2", "discharge_end_time_period2"],
+  ]) {
+    for (const name of pair) controls.set(name, { value: "13:00", disabled: false });
+  }
+  const form = { elements: { namedItem: (name) => controls.get(name) } };
+  panel._syncScheduleFields(form);
+  assert.equal(controls.get("charge_start_time_period1").disabled, false);
+  assert.equal(controls.get("charge_start_time_period2").disabled, true);
+  panel._form = { data_schema: [
+    { name: "charge_start_time_period1", selector: { time: {} } },
+    { name: "charge_start_time_period2", selector: { time: {} } },
+  ] };
+  assert.equal(panel._collectForm(form).charge_start_time_period2, undefined);
+  assert.equal(panel._collectForm(form, true).charge_start_time_period2, "13:00");
+  controls.get("enable_time_period2").checked = true;
+  panel._syncScheduleFields(form);
+  assert.equal(controls.get("charge_start_time_period2").disabled, false);
+  assert.equal(controls.get("charge_start_time_period2").value, "13:00");
+  controls.get("schedule_enabled").checked = false;
+  panel._syncScheduleFields(form);
+  assert.equal(controls.get("charge_start_time_period1").disabled, true);
+  assert.equal(controls.get("charge_start_time_period2").disabled, true);
+});
+
+test("GUI keeps edited profile values when Home Assistant returns an error", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._flow = "flow-1";
+  panel._tab = "inverter_modes";
+  panel._form = { type: "form", data_schema: [
+    { name: "profile_name", required: true, selector: { text: {} } },
+    { name: "min_soc", required: true, selector: { number: {} } },
+  ] };
+  panel._next = async () => ({
+    type: "form",
+    errors: { base: "inverter_mode_settings_invalid" },
+    data_schema: panel._form.data_schema,
+  });
+  panel._hass = { localize: () => "Check the values" };
+  const fields = new Map([
+    ["profile_name", { value: "Cloudy draft" }],
+    ["min_soc", { value: "35" }],
+  ]);
+  await panel._save({ elements: { namedItem: (name) => fields.get(name) } });
+  assert.equal(panel._draftValues.profile_name, "Cloudy draft");
+  assert.equal(panel._draftValues.min_soc, 35);
+  assert.equal(panel._error, "Check the values");
 });
 
 test("delete submits complete profile data through the options flow", async () => {

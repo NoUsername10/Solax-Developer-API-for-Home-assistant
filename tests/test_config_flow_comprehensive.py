@@ -611,6 +611,63 @@ async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatc
 
 
 @pytest.mark.asyncio
+async def test_profile_error_keeps_submitted_values_and_cleared_times(monkeypatch):
+    monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
+    entry = _entry(options={
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {"INV-1": {"self_use": {"profiles": {
+            "profile-1": {
+                "name": "Old profile", "family": "standard", "min_soc": 20,
+                "charge_upper_soc": 80, "charge_from_grid_enable": True,
+                "schedule_enabled": True, "enable_time_period2": True,
+                "charge_start_time_period1": "22:00",
+                "charge_end_time_period1": "06:00",
+                "charge_start_time_period2": "13:00",
+                "charge_end_time_period2": "15:00",
+            }
+        }}}},
+    })
+    entry.runtime_data = SimpleNamespace(coordinator=SimpleNamespace(data={
+        "devices": {"INV-1": {
+            "deviceSn": "INV-1", "deviceType": 1, "deviceModel": 33,
+            "businessType": 1,
+        }}
+    }))
+    handler = _options_handler(entry)
+    await handler.async_step_inverter_modes({"inverter_serial": "INV-1"})
+    await handler.async_step_inverter_mode_choice({"mode": "self_use"})
+    await handler.async_step_inverter_profile_choice({"profile": "profile-1"})
+
+    submitted = {
+        "profile_name": "New profile", "min_soc": 40,
+        "charge_upper_soc": 30, "charge_from_grid_enable": False,
+        "schedule_enabled": True, "enable_time_period2": False,
+        "charge_start_time_period1": "21:00",
+        "charge_end_time_period1": "07:00",
+    }
+    error = await handler.async_step_inverter_mode_settings(submitted)
+    assert error["errors"]["base"] == "inverter_mode_settings_invalid"
+    schema = error["data_schema"].schema
+    markers = {marker.schema: marker for marker in schema}
+    assert markers["profile_name"].default() == "New profile"
+    assert markers["min_soc"].default() == 40
+    assert markers["charge_upper_soc"].default() == 30
+    assert markers["charge_from_grid_enable"].default() is False
+    assert markers["enable_time_period2"].default() is False
+    assert markers["charge_start_time_period1"].description["suggested_value"] == "21:00"
+    assert not (markers["charge_start_time_period2"].description or {}).get("suggested_value")
+    assert list(markers).index("enable_time_period2") < list(markers).index("charge_start_time_period2")
+
+    submitted["charge_upper_soc"] = 80
+    saved = await handler.async_step_inverter_mode_settings(submitted)
+    assert saved["type"] == "create_entry"
+    profile = entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]["profiles"]["profile-1"]
+    assert profile["name"] == "New profile"
+    assert profile["charge_start_time_period1"] == "21:00"
+    assert "charge_start_time_period2" not in profile
+
+
+@pytest.mark.asyncio
 async def test_options_credentials_changed_and_unchanged(monkeypatch):
     monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
     entry = _entry()

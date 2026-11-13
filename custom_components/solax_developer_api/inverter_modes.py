@@ -168,7 +168,8 @@ def profile_settings(
             if present:
                 raise ValueError("schedule_enabled")
         else:
-            periods: list[tuple[int, int]] = []
+            has_period1 = False
+            has_period2 = False
             for index, (start_key, end_key) in enumerate(SCHEDULE_PAIRS):
                 start, end = values.get(start_key), values.get(end_key)
                 if bool(start) != bool(end):
@@ -185,19 +186,18 @@ def profile_settings(
                 last = int(settings[end_key][:2]) * 60 + int(settings[end_key][3:])
                 if first == last:
                     raise ValueError(end_key)
-                segments = [(first, last)] if first < last else [(first, 1440), (0, last)]
-                for segment in segments:
-                    if any(segment[0] < prior[1] and prior[0] < segment[1] for prior in periods):
-                        raise ValueError(start_key)
-                    periods.append(segment)
+                if index < 2:
+                    has_period1 = True
+                else:
+                    has_period2 = True
                 if index >= 2 and not values.get("enable_time_period2", False):
                     raise ValueError("enable_time_period2")
-            if not periods or not any(key in settings for key in SCHEDULE_PAIRS[0] + SCHEDULE_PAIRS[1]):
+            if not has_period1:
                 raise ValueError("schedule_enabled")
             period2 = values.get("enable_time_period2", False)
             if type(period2) is not bool:
                 raise ValueError("enable_time_period2")
-            if period2 and not any(key in settings for key in SCHEDULE_PAIRS[2] + SCHEDULE_PAIRS[3]):
+            if period2 and not has_period2:
                 raise ValueError("enable_time_period2")
             settings["enable_time_period2"] = period2
             settings["schedule_enabled"] = True

@@ -52,14 +52,6 @@ function fieldKind(field) {
   return "text";
 }
 
-function timeSegments(start, end) {
-  const toMinutes = (value) => Number(value.slice(0, 2)) * 60 + Number(value.slice(3, 5));
-  const first = toMinutes(start);
-  const last = toMinutes(end);
-  if (first === last) return null;
-  return first < last ? [[first, last]] : [[first, 1440], [0, last]];
-}
-
 function validatePeriods(data) {
   const errors = {};
   const anyTime = TIME_PAIRS.some(([start, end]) => data[start] || data[end]);
@@ -67,7 +59,6 @@ function validatePeriods(data) {
     if (anyTime) errors.schedule_enabled = "Enable time periods or clear the entered times.";
     return errors;
   }
-  const used = [];
   let firstPeriod = false;
   let secondPeriod = false;
   for (const [index, [startKey, endKey]] of TIME_PAIRS.entries()) {
@@ -83,18 +74,9 @@ function validatePeriods(data) {
     if (index >= 2 && !data.enable_time_period2) {
       errors.enable_time_period2 = "Enable period 2 or clear its times.";
     }
-    const segments = timeSegments(start, end);
-    if (!segments) {
+    if (start.slice(0, 5) === end.slice(0, 5)) {
       errors[endKey] = "Start and end time must differ.";
-      continue;
     }
-    for (const segment of segments) {
-      if (used.some((prior) => segment[0] < prior[1] && prior[0] < segment[1])) {
-        errors[startKey] = "This period overlaps another charge or discharge period.";
-        break;
-      }
-    }
-    used.push(...segments);
   }
   if (!firstPeriod) errors.schedule_enabled = "Enter at least one period 1 window.";
   if (data.enable_time_period2 && !secondPeriod) {
@@ -311,12 +293,25 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     return `<label class="field ${kind === "boolean" ? "toggle" : ""} ${error ? "invalid" : ""}"><span>${label}</span>${control}${error ? `<small class="field-error">${escapeHtml(error)}</small>` : ""}</label>`;
   }
 
-  _collectForm(form) {
+  _syncScheduleFields(form) {
+    const schedule = form.elements.namedItem("schedule_enabled");
+    const period2 = form.elements.namedItem("enable_time_period2");
+    if (!schedule || !period2) return;
+    TIME_PAIRS.forEach(([start, end], index) => {
+      for (const name of [start, end]) {
+        const input = form.elements.namedItem(name);
+        if (input) input.disabled = !schedule.checked || (index >= 2 && !period2.checked);
+      }
+    });
+  }
+
+  _collectForm(form, includeDisabled = false) {
     const data = {};
     for (const field of schemaFields(this._form)) {
       if (field.name === "remove_profile") continue;
       const input = form.elements.namedItem(field.name);
       if (!input) continue;
+      if (input.disabled && !includeDisabled) continue;
       const kind = fieldKind(field);
       if (kind === "boolean") data[field.name] = input.checked;
       else if (kind === "number") data[field.name] = Number(input.value);
@@ -329,7 +324,7 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
   async _save(form) {
     if (!this._flow || !this._form) return;
     const data = this._collectForm(form);
-    this._draftValues = { ...data };
+    this._draftValues = this._collectForm(form, true);
     if (this._tab === "credentials") this._draftValues.client_secret = form.elements.namedItem("client_secret")?.value || "";
     this._fieldErrors = {};
     if (this._tab === "inverter_modes" && data.schedule_enabled !== undefined) {
@@ -433,7 +428,7 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
         *{box-sizing:border-box}button,input,select,textarea{font:inherit}button{cursor:pointer;border-radius:8px;border:1px solid var(--divider-color,#454b54);background:var(--secondary-background-color,#232b35);color:var(--primary-text-color,#fff);padding:10px 14px}button:hover:not(:disabled){filter:brightness(1.12)}button:disabled{opacity:.5;cursor:default}button.primary{background:var(--primary-color,#03a9f4);border-color:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff);font-weight:600}button.danger{color:var(--error-color,#f77)}
         .wrap{max-width:1440px;margin:0 auto;padding:28px 30px 48px}.head{display:flex;align-items:center;gap:16px;margin-bottom:22px}.head h1{font-size:28px;line-height:1.2;margin:0}.head p{margin:5px 0 0;color:var(--secondary-text-color,#aeb6c2)}.back{white-space:nowrap;text-decoration:none;color:var(--primary-color,#03a9f4)}.menu-toggle{padding:7px 11px;font-size:20px}
         nav{display:flex;gap:4px;overflow:auto;border-bottom:1px solid var(--divider-color,#3c4652);margin-bottom:26px}nav button{border:none;border-radius:0;background:transparent;white-space:nowrap;padding:13px 17px;color:var(--secondary-text-color,#aeb6c2)}nav button.active{color:var(--primary-color,#03a9f4);border-bottom:3px solid var(--primary-color,#03a9f4);font-weight:600}
-        .columns{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:22px}.card{background:var(--card-background-color,#1c232d);border:1px solid var(--divider-color,#3c4652);border-radius:14px;padding:24px;min-width:0}.card h2{font-size:21px;margin:0 0 20px}.single{max-width:820px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.field{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;font-weight:600}.field>span{color:var(--primary-text-color,#eee)}.field input:not([type=checkbox]),.field select,.field textarea,.create-row select{width:100%;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:10px;min-height:42px}.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary-color,#03a9f4);outline-offset:1px}.field.toggle{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--divider-color,#4d5866);border-radius:7px}.field.toggle input{width:20px;height:20px}.field.invalid input,.field.invalid select{border-color:var(--error-color,#f66)}.field-error{color:var(--error-color,#f66);font-weight:400}.form-actions{display:flex;justify-content:flex-end;margin-top:24px}.muted,.empty{color:var(--secondary-text-color,#aeb6c2);font-size:14px}.empty{padding:16px 0}.notice,.alert{padding:13px 16px;border-radius:8px;margin-bottom:20px;background:var(--secondary-background-color,#26374b)}.alert.error{border-left:4px solid var(--error-color,#f66)}.alert.success{border-left:4px solid var(--success-color,#46be87)}
+        .columns{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:22px}.card{background:var(--card-background-color,#1c232d);border:1px solid var(--divider-color,#3c4652);border-radius:14px;padding:24px;min-width:0}.card h2{font-size:21px;margin:0 0 20px}.single{max-width:820px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.field{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;font-weight:600}.field>span{color:var(--primary-text-color,#eee)}.field input:not([type=checkbox]),.field select,.field textarea,.create-row select{width:100%;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:10px;min-height:42px}.field input:disabled{opacity:.45;cursor:not-allowed}.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary-color,#03a9f4);outline-offset:1px}.field.toggle{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--divider-color,#4d5866);border-radius:7px}.field.toggle input{width:20px;height:20px}.field.invalid input,.field.invalid select{border-color:var(--error-color,#f66)}.field-error{color:var(--error-color,#f66);font-weight:400}.form-actions{display:flex;justify-content:flex-end;margin-top:24px}.muted,.empty{color:var(--secondary-text-color,#aeb6c2);font-size:14px}.empty{padding:16px 0}.notice,.alert{padding:13px 16px;border-radius:8px;margin-bottom:20px;background:var(--secondary-background-color,#26374b)}.alert.error{border-left:4px solid var(--error-color,#f66)}.alert.success{border-left:4px solid var(--success-color,#46be87)}
         .create-row{display:flex;gap:10px;margin:18px 0}.create-row select{flex:1}.profile-list{display:grid;gap:10px}.profile-row{border:1px solid var(--divider-color,#45505e);border-radius:9px;padding:15px;display:flex;gap:12px;align-items:center;justify-content:space-between}.profile-row strong{display:block;margin-bottom:5px}.row-actions{display:flex;gap:6px;flex-shrink:0}.row-actions button{padding:7px 9px}
         @media(max-width:900px){.columns{grid-template-columns:1fr}.wrap{padding:18px}.fields{grid-template-columns:1fr}.head{flex-wrap:wrap}}@media(max-width:600px){.profile-row{align-items:flex-start;flex-direction:column}.row-actions{align-self:flex-end}.create-row{flex-direction:column}}
       </style>
@@ -453,6 +448,15 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       event.preventDefault();
       void this._save(event.currentTarget);
     });
+    const settingsForm = this.shadowRoot.querySelector("#settings-form");
+    if (settingsForm) {
+      this._syncScheduleFields(settingsForm);
+      for (const name of ["schedule_enabled", "enable_time_period2"]) {
+        settingsForm.elements.namedItem(name)?.addEventListener("change", () => {
+          this._syncScheduleFields(settingsForm);
+        });
+      }
+    }
     this.shadowRoot.querySelector("#inverter-choice")?.addEventListener("change", (event) => {
       this._selectedSerial = event.currentTarget.value;
       this._editing = null;

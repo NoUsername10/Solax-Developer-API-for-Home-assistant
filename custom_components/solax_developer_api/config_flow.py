@@ -1294,13 +1294,29 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                         current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
                         return await self._async_finish(options=current_options)
 
+        form_values = dict(existing)
+        if user_input is not None:
+            form_values.update(user_input)
+            # Omitted optional times mean the user cleared them. Do not restore
+            # saved times when redisplaying a form with a validation error.
+            for start_key, end_key in SCHEDULE_PAIRS:
+                for key in (start_key, end_key):
+                    if key not in user_input:
+                        form_values.pop(key, None)
         schema: dict[Any, Any] = {
-            vol.Required("profile_name", default=existing.get("name", "")): _text_selector(),
+            vol.Required(
+                "profile_name",
+                default=(
+                    user_input.get("profile_name", existing.get("name", ""))
+                    if user_input is not None
+                    else existing.get("name", "")
+                ),
+            ): _text_selector(),
         }
         for field in fields:
             marker = (
-                vol.Required(field, default=existing[field])
-                if field in existing
+                vol.Required(field, default=form_values[field])
+                if field in form_values
                 else vol.Required(field)
             )
             if field.endswith("_enable"):
@@ -1310,13 +1326,26 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             else:
                 schema[marker] = _number_selector(0, 100)
         if family == "standard" and mode != "manual":
-            schema[vol.Required("schedule_enabled", default=existing.get("schedule_enabled", False))] = selector.BooleanSelector()
-            for start_key, end_key in SCHEDULE_PAIRS:
+            schema[vol.Required("schedule_enabled", default=form_values.get("schedule_enabled", False))] = selector.BooleanSelector()
+            for start_key, end_key in SCHEDULE_PAIRS[:2]:
                 for key in (start_key, end_key):
-                    schema[vol.Optional(key, default=existing[key]) if key in existing else vol.Optional(key)] = selector.TimeSelector()
-            schema[vol.Required("enable_time_period2", default=existing.get("enable_time_period2", False))] = selector.BooleanSelector()
+                    marker = (
+                        vol.Optional(key, description={"suggested_value": form_values[key]})
+                        if key in form_values and form_values[key]
+                        else vol.Optional(key)
+                    )
+                    schema[marker] = selector.TimeSelector()
+            schema[vol.Required("enable_time_period2", default=form_values.get("enable_time_period2", False))] = selector.BooleanSelector()
+            for start_key, end_key in SCHEDULE_PAIRS[2:]:
+                for key in (start_key, end_key):
+                    marker = (
+                        vol.Optional(key, description={"suggested_value": form_values[key]})
+                        if key in form_values and form_values[key]
+                        else vol.Optional(key)
+                    )
+                    schema[marker] = selector.TimeSelector()
         if profile_id:
-            schema[vol.Required("remove_profile", default=False)] = selector.BooleanSelector()
+            schema[vol.Required("remove_profile", default=form_values.get("remove_profile", False))] = selector.BooleanSelector()
         return self.async_show_form(
             step_id="inverter_mode_settings",
             data_schema=vol.Schema(schema),

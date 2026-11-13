@@ -192,7 +192,7 @@ def test_named_profiles_apply_distinct_grid_charging_settings():
     assert cloudy["chargeFromGridEnable"] == 1
 
 
-def test_scheduled_profile_accepts_overnight_window_and_blocks_overlap():
+def test_scheduled_profile_accepts_overnight_and_overlapping_windows():
     values = {"min_soc": 20, "charge_upper_soc": 80,
               "charge_from_grid_enable": True, "schedule_enabled": True,
               "charge_start_time_period1": "22:00",
@@ -216,10 +216,20 @@ def test_scheduled_profile_accepts_overnight_window_and_blocks_overlap():
     assert payload["enableTimePeriod2"] == 1
     assert payload["chargeStartTimePeriod2"] == "13:00"
     assert "scheduleEnabled" not in payload
-    with pytest.raises(ValueError, match="discharge_start_time_period1"):
-        profile_settings("standard", "self_use", {
-            **values, "discharge_start_time_period1": "05:00",
-            "discharge_end_time_period1": "07:00"})
+    overlapping = profile_settings("standard", "self_use", {
+        **values, "discharge_start_time_period1": "05:00",
+        "discharge_end_time_period1": "07:00"})
+    assert overlapping["discharge_start_time_period1"] == "05:00"
+    assert overlapping["discharge_end_time_period1"] == "07:00"
+    overlapping_payload = command_for_mode(
+        options=_options(serial, "standard", "self_use", **values,
+                         discharge_start_time_period1="05:00",
+                         discharge_end_time_period1="07:00"),
+        device={"deviceSn": serial, "deviceType": 1, "deviceModel": 33,
+                "businessType": 1},
+        serial=serial, action="self_use",
+    )[1]
+    assert overlapping_payload["dischargeStartTimePeriod1"] == "05:00"
     with pytest.raises(ValueError, match="charge_end_time_period1"):
         profile_settings("standard", "self_use", {
             **values, "charge_end_time_period1": ""})
