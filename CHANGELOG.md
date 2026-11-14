@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.12] - 2026-11-14
+
 ### Fixed
 - Keep submitted work-mode profile values after a validation error, and allow
   charge/discharge windows to overlap while retaining complete-pair and

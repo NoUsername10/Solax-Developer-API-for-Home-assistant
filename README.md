@@ -1094,7 +1094,9 @@ select **main**, enter the existing tag, and run the workflow. It checks the
 tagged source with the Home Assistant test suites, typing, HACS validation,
 and Hassfest before creating a draft release with the integration ZIP.
 Review the generated notes, fill in **Help received this release** if needed,
-and publish the draft manually.
+and publish the draft manually. For a public test release, select **Set as a
+pre-release** when publishing the draft; HACS users must enable beta versions
+for this repository to install it.
 
 ## 📄 License
 
