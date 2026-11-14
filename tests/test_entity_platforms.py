@@ -18,6 +18,47 @@ from custom_components.solax_developer_api.ev_charger import (
 )
 
 
+def test_deleted_profile_removes_only_its_own_registered_buttons(monkeypatch):
+    entry = _entry()
+    hass = _Hass(entry)
+    registered = {}
+    for action in ("manual_stop", "manual_charge", "manual_discharge"):
+        unique_id = button.inverter_mode_button_unique_id(
+            "sds", "INV-1", action, "deleted"
+        )
+        registered[unique_id] = SimpleNamespace(
+            entity_id=f"button.{unique_id}", config_entry_id=entry.entry_id
+        )
+    other = button.inverter_mode_button_unique_id(
+        "sds", "INV-1", "manual_stop", "another"
+    )
+    registered[other] = SimpleNamespace(
+        entity_id=f"button.{other}", config_entry_id=entry.entry_id
+    )
+
+    class Registry:
+        def async_get_entity_id(self, domain, platform, unique_id):
+            assert (domain, platform) == ("button", "solax_developer_api")
+            entity = registered.get(unique_id)
+            return entity.entity_id if entity else None
+
+        def async_get(self, entity_id):
+            return next(
+                (entity for entity in registered.values() if entity.entity_id == entity_id),
+                None,
+            )
+
+        def async_remove(self, entity_id):
+            unique_id = entity_id.removeprefix("button.")
+            registered.pop(unique_id)
+
+    monkeypatch.setattr(button.er, "async_get", lambda _hass: Registry())
+    button.remove_inverter_mode_profile_buttons(
+        hass, entry, "INV-1", "manual", "deleted"
+    )
+    assert set(registered) == {other}
+
+
 class _Config:
     language = "en"
 

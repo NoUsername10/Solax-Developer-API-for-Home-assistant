@@ -74,7 +74,7 @@
         "description": "Choose how to configure the integration.",
         "menu_options": {
           "classic": "Classic configuration",
-          "gui": "GUI configuration"
+          "gui": "GUI configuration (Recommended)"
         }
       },
       "classic": {
