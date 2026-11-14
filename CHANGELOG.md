@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.13] - 2026-11-14
+
 ### Changed
 - In GUI configuration, enabling EV charger or inverter work-mode controls now
   requires an explicit risk acknowledgement before settings are saved.
