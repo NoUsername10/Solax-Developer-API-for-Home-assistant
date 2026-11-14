@@ -20,6 +20,10 @@ const TIME_PAIRS = [
   ["charge_start_time_period2", "charge_end_time_period2"],
   ["discharge_start_time_period2", "discharge_end_time_period2"],
 ];
+const CONTROL_RISK_LABELS = {
+  ev_charger_controls_enabled: "EV charger controls",
+  inverter_mode_controls_enabled: "inverter work-mode controls",
+};
 
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -103,6 +107,9 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._editing = null;
     this._secretDefault = "";
     this._draftValues = null;
+    this._pendingRiskData = null;
+    this._riskControls = [];
+    this._riskAccepted = false;
     this._loaded = false;
   }
 
@@ -201,6 +208,9 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._form = null;
     this._editing = null;
     this._draftValues = null;
+    this._pendingRiskData = null;
+    this._riskControls = [];
+    this._riskAccepted = false;
     this._tab = tab;
     this._render();
     try {
@@ -290,7 +300,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       control = `<input name="${escapeHtml(name)}" type="${kind === "password" ? "password" : kind}" value="${escapeHtml(value)}" ${bounds} ${placeholder} ${required}>`;
     }
     const error = this._fieldErrors[name] || (this._form?.errors?.[name] && this._errorText(this._form.errors[name]));
-    return `<label class="field ${kind === "boolean" ? "toggle" : ""} ${error ? "invalid" : ""}"><span>${label}</span>${control}${error ? `<small class="field-error">${escapeHtml(error)}</small>` : ""}</label>`;
+    const scheduleClass = ["schedule_enabled", "enable_time_period2"].includes(name) ? "schedule-toggle" : "";
+    return `<label class="field ${kind === "boolean" ? "toggle" : ""} ${scheduleClass} ${error ? "invalid" : ""}"><span>${label}</span>${control}${error ? `<small class="field-error">${escapeHtml(error)}</small>` : ""}</label>`;
   }
 
   _syncScheduleFields(form) {
@@ -336,6 +347,39 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
         return;
       }
     }
+    if (this._tab === "advanced") {
+      const newlyEnabled = schemaFields(this._form)
+        .filter((field) => Object.hasOwn(CONTROL_RISK_LABELS, field.name)
+          && data[field.name] === true && initialValue(field) !== true)
+        .map((field) => CONTROL_RISK_LABELS[field.name]);
+      if (newlyEnabled.length) {
+        this._pendingRiskData = data;
+        this._riskControls = newlyEnabled;
+        this._riskAccepted = false;
+        this._render();
+        return;
+      }
+    }
+    await this._submitData(data);
+  }
+
+  async _confirmRisk() {
+    if (!this._pendingRiskData || !this._riskAccepted) return;
+    const data = this._pendingRiskData;
+    this._pendingRiskData = null;
+    this._riskControls = [];
+    this._riskAccepted = false;
+    await this._submitData(data);
+  }
+
+  _cancelRisk() {
+    this._pendingRiskData = null;
+    this._riskControls = [];
+    this._riskAccepted = false;
+    this._render();
+  }
+
+  async _submitData(data) {
     this._busy = true;
     this._error = "";
     this._render();
@@ -418,9 +462,21 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     if (!this._form || this._form.type !== "form") return '<div class="empty">Loading settings…</div>';
     const step = this._form.step_id;
     const fields = schemaFields(this._form).filter((field) => field.name !== "remove_profile");
-    const markup = fields.map((field) => this._fieldMarkup(field, step)).join("");
+    const markup = fields.map((field) => {
+      const divider = step === "inverter_mode_settings" && field.name === "schedule_enabled"
+        ? '<div class="section-divider"><span>Time period 1</span></div>'
+        : step === "inverter_mode_settings" && field.name === "enable_time_period2"
+          ? '<div class="section-divider"><span>Time period 2</span></div>' : "";
+      return divider + this._fieldMarkup(field, step);
+    }).join("");
     const note = step === "credentials" ? '<p class="muted">The current client secret is never displayed. Leave that field blank to keep it.</p>' : "";
     return `<form id="settings-form">${note}<div class="fields">${markup}</div><div class="form-actions"><button class="primary" type="submit" ${this._busy ? "disabled" : ""}>${this._editing ? (this._editing.profileId ? "Save changes" : "Create profile") : "Save settings"}</button></div></form>`;
+  }
+
+  _renderRiskDialog() {
+    if (!this._pendingRiskData) return "";
+    const controls = escapeHtml(this._riskControls.join(" and "));
+    return `<dialog id="risk-dialog" class="risk-dialog" aria-labelledby="risk-title" aria-describedby="risk-description"><h2 id="risk-title">Enable device controls?</h2><p id="risk-description">You are enabling ${controls}. These controls send real commands to your SolaX devices. Incorrect settings or automations can change charging and inverter operation. Use them at your own risk.</p><label class="risk-ack"><input id="risk-acknowledge" type="checkbox"><span>I understand the risks and want to enable these controls.</span></label><div class="dialog-actions"><button id="risk-cancel" type="button">Cancel</button><button id="risk-confirm" class="primary" type="button" disabled>Enable and save</button></div></dialog>`;
   }
 
   _render() {
@@ -433,7 +489,7 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
         *{box-sizing:border-box}button,input,select,textarea{font:inherit}button{cursor:pointer;border-radius:8px;border:1px solid var(--divider-color,#454b54);background:var(--secondary-background-color,#232b35);color:var(--primary-text-color,#fff);padding:10px 14px}button:hover:not(:disabled){filter:brightness(1.12)}button:disabled{opacity:.5;cursor:default}button.primary{background:var(--primary-color,#03a9f4);border-color:var(--primary-color,#03a9f4);color:var(--text-primary-color,#fff);font-weight:600}button.danger{color:var(--error-color,#f77)}
         .wrap{max-width:1440px;margin:0 auto;padding:28px 30px 48px}.head{display:flex;align-items:center;gap:16px;margin-bottom:22px}.head h1{font-size:28px;line-height:1.2;margin:0}.head p{margin:5px 0 0;color:var(--secondary-text-color,#aeb6c2)}.back{white-space:nowrap;text-decoration:none;color:var(--primary-color,#03a9f4)}.menu-toggle{padding:7px 11px;font-size:20px}
         nav{display:flex;gap:4px;overflow:auto;border-bottom:1px solid var(--divider-color,#3c4652);margin-bottom:26px}nav button{border:none;border-radius:0;background:transparent;white-space:nowrap;padding:13px 17px;color:var(--secondary-text-color,#aeb6c2)}nav button.active{color:var(--primary-color,#03a9f4);border-bottom:3px solid var(--primary-color,#03a9f4);font-weight:600}
-        .columns{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:22px}.card{background:var(--card-background-color,#1c232d);border:1px solid var(--divider-color,#3c4652);border-radius:14px;padding:24px;min-width:0}.card h2{font-size:21px;margin:0 0 20px}.single{max-width:820px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.field{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;font-weight:600}.field>span{color:var(--primary-text-color,#eee)}.field input:not([type=checkbox]),.field select,.field textarea,.create-row select{width:100%;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:10px;min-height:42px}.field input:disabled{opacity:.45;cursor:not-allowed}.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary-color,#03a9f4);outline-offset:1px}.field.toggle{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--divider-color,#4d5866);border-radius:7px}.field.toggle input{width:20px;height:20px}.field.invalid input,.field.invalid select{border-color:var(--error-color,#f66)}.field-error{color:var(--error-color,#f66);font-weight:400}.form-actions{display:flex;justify-content:flex-end;margin-top:24px}.muted,.empty{color:var(--secondary-text-color,#aeb6c2);font-size:14px}.empty{padding:16px 0}.notice,.alert{padding:13px 16px;border-radius:8px;margin-bottom:20px;background:var(--secondary-background-color,#26374b)}.alert.error{border-left:4px solid var(--error-color,#f66)}.alert.success{border-left:4px solid var(--success-color,#46be87)}
+        .columns{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:22px}.card{background:var(--card-background-color,#1c232d);border:1px solid var(--divider-color,#3c4652);border-radius:14px;padding:24px;min-width:0}.card h2{font-size:21px;margin:0 0 20px}.single{max-width:820px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.section-divider{grid-column:1/-1;display:flex;align-items:center;gap:12px;color:var(--secondary-text-color,#aeb6c2);font-size:14px;font-weight:600;margin-top:14px}.section-divider::after{content:"";height:1px;flex:1;background:var(--divider-color,#4d5866)}.field{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;font-weight:600}.field>span{color:var(--primary-text-color,#eee)}.field input:not([type=checkbox]),.field select,.field textarea,.create-row select{width:100%;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:10px;min-height:42px}.field input:disabled{opacity:.45;cursor:not-allowed}.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary-color,#03a9f4);outline-offset:1px}.field.toggle{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--divider-color,#4d5866);border-radius:7px}.field.schedule-toggle{grid-column:1/-1}.field.toggle input{width:20px;height:20px}.field.invalid input,.field.invalid select{border-color:var(--error-color,#f66)}.field-error{color:var(--error-color,#f66);font-weight:400}.form-actions{display:flex;justify-content:flex-end;margin-top:24px}.muted,.empty{color:var(--secondary-text-color,#aeb6c2);font-size:14px}.empty{padding:16px 0}.notice,.alert{padding:13px 16px;border-radius:8px;margin-bottom:20px;background:var(--secondary-background-color,#26374b)}.alert.error{border-left:4px solid var(--error-color,#f66)}.alert.success{border-left:4px solid var(--success-color,#46be87)}.risk-dialog{width:min(calc(100% - 36px),520px);max-height:90vh;overflow:auto;background:var(--card-background-color,#1c232d);color:var(--primary-text-color,#f5f5f5);border:1px solid var(--divider-color,#4d5866);border-radius:14px;padding:25px;box-shadow:0 14px 40px rgba(0,0,0,.35)}.risk-dialog::backdrop{background:rgba(0,0,0,.7)}.risk-dialog h2{margin:0 0 12px}.risk-dialog p{line-height:1.5}.risk-ack{display:flex;align-items:flex-start;gap:10px;margin:20px 0}.risk-ack input{margin-top:3px}.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
         .create-row{display:flex;gap:10px;margin:18px 0}.create-row select{flex:1}.profile-list{display:grid;gap:10px}.profile-row{border:1px solid var(--divider-color,#45505e);border-radius:9px;padding:15px;display:flex;gap:12px;align-items:center;justify-content:space-between}.profile-row strong{display:block;margin-bottom:5px}.row-actions{display:flex;gap:6px;flex-shrink:0}.row-actions button{padding:7px 9px}
         @media(max-width:900px){.columns{grid-template-columns:1fr}.wrap{padding:18px}.fields{grid-template-columns:1fr}.head{flex-wrap:wrap}}@media(max-width:600px){.profile-row{align-items:flex-start;flex-direction:column}.row-actions{align-self:flex-end}.create-row{flex-direction:column}}
       </style>
@@ -442,7 +498,20 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       ${this._error ? `<div class="alert error" role="alert">${escapeHtml(this._error)}</div>` : ""}
       ${this._success ? `<div class="alert success" role="status">${escapeHtml(this._success)}</div>` : ""}
       ${this._busy ? '<p class="muted">Working…</p>' : ""}${body}
-    </div>`;
+    </div>${this._renderRiskDialog()}`;
+    this.shadowRoot.querySelector("#risk-acknowledge")?.addEventListener("change", (event) => {
+      this._riskAccepted = event.currentTarget.checked;
+      this.shadowRoot.querySelector("#risk-confirm").disabled = !this._riskAccepted;
+    });
+    this.shadowRoot.querySelector("#risk-cancel")?.addEventListener("click", () => this._cancelRisk());
+    this.shadowRoot.querySelector("#risk-confirm")?.addEventListener("click", () => void this._confirmRisk());
+    const riskDialog = this.shadowRoot.querySelector("#risk-dialog");
+    riskDialog?.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      this._cancelRisk();
+    });
+    riskDialog?.showModal();
+    this.shadowRoot.querySelector("#risk-acknowledge")?.focus();
     for (const button of this.shadowRoot.querySelectorAll("[data-tab]")) {
       button.addEventListener("click", () => void this._openSection(button.dataset.tab));
     }

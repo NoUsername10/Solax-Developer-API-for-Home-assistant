@@ -113,6 +113,78 @@ test("GUI keeps edited profile values when Home Assistant returns an error", asy
   assert.equal(panel._error, "Minimum SOC: Enter a whole-number percentage from 0 to 100.");
 });
 
+test("new device-control opt-ins require risk acknowledgement before saving", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._flow = "flow-1";
+  panel._tab = "advanced";
+  panel._form = { type: "form", step_id: "advanced", data_schema: [
+    { name: "ev_charger_controls_enabled", default: false, selector: { boolean: {} } },
+    { name: "inverter_mode_controls_enabled", default: false, selector: { boolean: {} } },
+  ] };
+  const sent = [];
+  panel._next = async (data) => {
+    sent.push(data);
+    return { type: "form", step_id: "advanced", errors: { base: "invalid" } };
+  };
+  const form = { elements: { namedItem: () => ({ checked: true }) } };
+  await panel._save(form);
+  assert.equal(sent.length, 0);
+  assert.deepEqual(Array.from(panel._riskControls), ["EV charger controls", "inverter work-mode controls"]);
+  assert.match(panel._renderRiskDialog(), /Use them at your own risk/);
+  assert.match(panel._renderRiskDialog(), /risk-confirm[^>]*disabled/);
+  await panel._confirmRisk();
+  assert.equal(sent.length, 0);
+  panel._cancelRisk();
+  assert.equal(panel._draftValues.ev_charger_controls_enabled, true);
+  assert.equal(sent.length, 0);
+  await panel._save(form);
+  panel._riskAccepted = true;
+  await panel._confirmRisk();
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].ev_charger_controls_enabled, true);
+  assert.equal(sent[0].inverter_mode_controls_enabled, true);
+});
+
+test("already-enabled controls save without another acknowledgement", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._flow = "flow-1";
+  panel._tab = "advanced";
+  panel._form = { type: "form", step_id: "advanced", data_schema: [
+    { name: "ev_charger_controls_enabled", default: true, selector: { boolean: {} } },
+    { name: "inverter_mode_controls_enabled", default: false, selector: { boolean: {} } },
+  ] };
+  let saved;
+  panel._next = async (data) => {
+    saved = data;
+    return { type: "form", step_id: "advanced", errors: { base: "invalid" } };
+  };
+  const controls = new Map([
+    ["ev_charger_controls_enabled", { checked: true }],
+    ["inverter_mode_controls_enabled", { checked: false }],
+  ]);
+  await panel._save({ elements: { namedItem: (name) => controls.get(name) } });
+  assert.equal(panel._pendingRiskData, null);
+  assert.equal(saved.ev_charger_controls_enabled, true);
+});
+
+test("time periods have separate headings and full-width switches", () => {
+  const panel = new Panel();
+  panel._form = { type: "form", step_id: "inverter_mode_settings", data_schema: [
+    { name: "schedule_enabled", selector: { boolean: {} } },
+    { name: "charge_start_time_period1", selector: { time: {} } },
+    { name: "enable_time_period2", selector: { boolean: {} } },
+    { name: "charge_start_time_period2", selector: { time: {} } },
+  ] };
+  const markup = panel._renderForm();
+  assert.ok(markup.indexOf("Time period 1") < markup.indexOf('name="schedule_enabled"'));
+  assert.ok(markup.indexOf('name="charge_start_time_period1"') < markup.indexOf("Time period 2"));
+  assert.ok(markup.indexOf("Time period 2") < markup.indexOf('name="enable_time_period2"'));
+  assert.ok(markup.indexOf('name="enable_time_period2"') < markup.indexOf('name="charge_start_time_period2"'));
+  assert.match(markup, /schedule-toggle/);
+});
+
 test("delete submits complete profile data through the options flow", async () => {
   const panel = new Panel();
   let sent;
