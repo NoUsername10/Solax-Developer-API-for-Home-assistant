@@ -192,6 +192,9 @@ requires no dashboard card. Both choices save to the same integration settings;
 the GUI submits changes through Home Assistant's existing options flow. The
 Workmodes tab shows saved profiles beside a Create/Edit/Delete form. Deleting a
 profile removes its button, so update any automations that use that button.
+When enabling EV charger or inverter work-mode controls in the GUI's Advanced
+tab, review the risk dialog and acknowledge it before saving. Cancelling keeps
+the unsaved form values without enabling controls.
 
 Under **Settings → Devices & services → SolaX Developer API → Configure → Classic configuration → Advanced and diagnostics**, enable **Inverter work-mode controls**. This is off by default. Reopen **Configure → Classic configuration → Inverter work-mode settings**, choose a discovered inverter, a mode, and **Create new profile**. Give the profile a name and enter its settings. Saving reloads the integration and makes an activation button available on the inverter device. **Press that button to apply the profile**; saving settings does not send a command. You can create more than one profile per mode, edit a profile, or remove it. Existing single-mode settings appear as a **Default** profile with the same button entity ID.
 
