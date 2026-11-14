@@ -70,6 +70,14 @@
   "options": {
     "step": {
       "init": {
+        "title": "SolaX Developer API options",
+        "description": "Choose how to configure the integration.",
+        "menu_options": {
+          "classic": "Classic configuration",
+          "gui": "GUI configuration"
+        }
+      },
+      "classic": {
         "title": "SolaX Developer API seçenekleri",
         "description": "Entegrasyonun yapılandırılacak bölümünü seçin.",
         "menu_options": {
@@ -79,6 +87,10 @@
           "advanced": "Gelişmiş ayarlar ve tanılama",
           "inverter_modes": "Inverter work-mode settings"
         }
+      },
+      "gui": {
+        "title": "GUI configuration",
+        "description": "[Open SolaX settings]({url}) in Home Assistant. The classic settings remain available from Configure."
       },
       "credentials": {
         "title": "Kimlik bilgileri ve sistem",
@@ -219,12 +231,27 @@
       "manual_ems_remove_target_required": "Kaldırmadan önce elle eklenen bir EMS sistemi seçin.",
       "manual_ems_remove_target_missing": "Seçilen elle eklenmiş EMS sistemi geçerli ayarlarda bulunamadı.",
       "inverter_mode_selection_invalid": "Choose a valid inverter and a mode supported by its model.",
+      "profile_name_required": "Enter a profile name.",
+      "profile_name_too_long": "Profile name must be 48 characters or fewer.",
+      "profile_name_duplicate": "A profile with this name already exists for this mode.",
+      "profile_required_value": "This setting is required.",
+      "profile_invalid_boolean": "Choose an enabled or disabled value.",
+      "profile_invalid_time": "Enter a valid time in HH:MM format.",
+      "profile_invalid_soc": "Enter a whole-number percentage from 0 to 100.",
+      "profile_upper_soc_below_min": "Charge upper SOC must be at least the minimum SOC.",
+      "profile_enable_schedule_or_clear_times": "Enable time periods or clear the entered times.",
+      "profile_time_pair_incomplete": "Enter both the start and end time.",
+      "profile_time_same": "Start and end time must differ.",
+      "profile_enable_period2_or_clear_times": "Enable period 2 or clear its times.",
+      "profile_period1_required": "Enter at least one charge or discharge window for period 1.",
+      "profile_period2_required": "Enter at least one charge or discharge window for period 2.",
       "inverter_mode_settings_invalid": "Check the required values and their allowed ranges."
     },
     "abort": {
       "inverter_mode_controls_disabled": "Enable inverter work-mode controls under Advanced and diagnostics first.",
       "inverter_mode_no_verified_inverter": "No inverter with a verified type, business type, and model is available.",
-      "inverter_mode_selection_invalid": "The inverter or mode is no longer available."
+      "inverter_mode_selection_invalid": "The inverter or mode is no longer available.",
+      "gui_opened": "Open the GUI settings from the link above."
     }
   },
   "issues": {

@@ -203,6 +203,14 @@ async def _async_register_frontend_assets(hass: HomeAssistant) -> None:
                 hass,
                 f"{FRONTEND_STATIC_URL_PATH}/{filename}?v={version}",
             )
+        try:
+            from .settings_panel import async_register_settings_panel
+
+            await async_register_settings_panel(hass, version=version)
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning("Failed to register GUI settings panel: %s", err)
+        else:
+            runtime_state["settings_panel_registered"] = True
         runtime_state["frontend_registered"] = True
     except Exception as err:  # noqa: BLE001
         _LOGGER.warning("Failed to register frontend assets for %s: %s", DOMAIN, err)

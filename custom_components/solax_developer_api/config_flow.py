@@ -76,11 +76,13 @@ from .const import (
     MIN_LIVE_VIEW_INTERVAL,
     MIN_NIGHT_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    RUNTIME_RELOAD_STATE,
 )
 from .runtime import SolaxConfigEntry
 from .inverter_modes import (
     MODE_FIELDS,
     MODE_SERVICES,
+    ProfileSettingsError,
     SCHEDULE_PAIRS,
     inverter_family,
     mode_profiles,
@@ -1063,7 +1065,23 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
-        """Show the focused options menu."""
+        """Let the administrator choose the existing or visual settings UI."""
+        await async_ensure_catalog_loaded(self.hass)
+        menu_options = ["classic"]
+        if getattr(self.hass, "data", {}).get(RUNTIME_RELOAD_STATE, {}).get(
+            "settings_panel_registered"
+        ):
+            menu_options.append("gui")
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=menu_options,
+        )
+
+    async def async_step_classic(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Keep the established options menu available."""
         await async_ensure_catalog_loaded(self.hass)
         menu_options = [
             "credentials",
@@ -1074,8 +1092,31 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         if self._config_entry.options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False):
             menu_options.append("inverter_modes")
         return self.async_show_menu(
-            step_id="init",
+            step_id="classic",
             menu_options=menu_options,
+        )
+
+    async def async_step_gui(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Link to the admin-only panel from the supported options flow."""
+        if user_input is not None:
+            return self.async_abort(reason="gui_opened")
+        return self.async_show_form(
+            step_id="gui",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "url": (
+                    "/solax-developer-api-settings?entry_id="
+                    f"{self._config_entry.entry_id}"
+                    + (
+                        f"&launch_flow_id={self.flow_id}"
+                        if getattr(self, "flow_id", None)
+                        else ""
+                    )
+                )
+            },
         )
 
     async def async_step_inverter_modes(
@@ -1230,14 +1271,20 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                 return await self._async_finish(options=current_options)
             else:
                 name = str(user_input.get("profile_name") or "").strip()
-                if not name or len(name) > 48 or any(
+                if not name:
+                    errors["profile_name"] = "profile_name_required"
+                elif len(name) > 48:
+                    errors["profile_name"] = "profile_name_too_long"
+                elif any(
                     key != profile_id and name.casefold() == str(profile.get("name") or "").casefold()
                     for key, profile in saved_profiles.items()
                 ):
-                    errors["base"] = "inverter_mode_settings_invalid"
+                    errors["profile_name"] = "profile_name_duplicate"
                 else:
                     try:
                         settings = profile_settings(family, mode, user_input)
+                    except ProfileSettingsError as err:
+                        errors[err.field] = err.code
                     except (KeyError, TypeError, ValueError):
                         errors["base"] = "inverter_mode_settings_invalid"
                     else:
@@ -1254,13 +1301,29 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                         current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
                         return await self._async_finish(options=current_options)
 
+        form_values = dict(existing)
+        if user_input is not None:
+            form_values.update(user_input)
+            # Omitted optional times mean the user cleared them. Do not restore
+            # saved times when redisplaying a form with a validation error.
+            for start_key, end_key in SCHEDULE_PAIRS:
+                for key in (start_key, end_key):
+                    if key not in user_input:
+                        form_values.pop(key, None)
         schema: dict[Any, Any] = {
-            vol.Required("profile_name", default=existing.get("name", "")): _text_selector(),
+            vol.Required(
+                "profile_name",
+                default=(
+                    user_input.get("profile_name", existing.get("name", ""))
+                    if user_input is not None
+                    else existing.get("name", "")
+                ),
+            ): _text_selector(),
         }
         for field in fields:
             marker = (
-                vol.Required(field, default=existing[field])
-                if field in existing
+                vol.Required(field, default=form_values[field])
+                if field in form_values
                 else vol.Required(field)
             )
             if field.endswith("_enable"):
@@ -1270,13 +1333,26 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             else:
                 schema[marker] = _number_selector(0, 100)
         if family == "standard" and mode != "manual":
-            schema[vol.Required("schedule_enabled", default=existing.get("schedule_enabled", False))] = selector.BooleanSelector()
-            for start_key, end_key in SCHEDULE_PAIRS:
+            schema[vol.Required("schedule_enabled", default=form_values.get("schedule_enabled", False))] = selector.BooleanSelector()
+            for start_key, end_key in SCHEDULE_PAIRS[:2]:
                 for key in (start_key, end_key):
-                    schema[vol.Optional(key, default=existing[key]) if key in existing else vol.Optional(key)] = selector.TimeSelector()
-            schema[vol.Required("enable_time_period2", default=existing.get("enable_time_period2", False))] = selector.BooleanSelector()
+                    optional_marker = (
+                        vol.Optional(key, description={"suggested_value": form_values[key]})
+                        if key in form_values and form_values[key]
+                        else vol.Optional(key)
+                    )
+                    schema[optional_marker] = selector.TimeSelector()
+            schema[vol.Required("enable_time_period2", default=form_values.get("enable_time_period2", False))] = selector.BooleanSelector()
+            for start_key, end_key in SCHEDULE_PAIRS[2:]:
+                for key in (start_key, end_key):
+                    optional_marker = (
+                        vol.Optional(key, description={"suggested_value": form_values[key]})
+                        if key in form_values and form_values[key]
+                        else vol.Optional(key)
+                    )
+                    schema[optional_marker] = selector.TimeSelector()
         if profile_id:
-            schema[vol.Required("remove_profile", default=False)] = selector.BooleanSelector()
+            schema[vol.Required("remove_profile", default=form_values.get("remove_profile", False))] = selector.BooleanSelector()
         return self.async_show_form(
             step_id="inverter_mode_settings",
             data_schema=vol.Schema(schema),

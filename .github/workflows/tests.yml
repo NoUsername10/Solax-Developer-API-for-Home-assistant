@@ -10,6 +10,13 @@ permissions:
   contents: read
 
 jobs:
+  gui-settings:
+    name: GUI settings
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: node --test scripts/test_settings_panel.cjs
+
   test:
     name: Home Assistant ${{ matrix.homeassistant }}
     runs-on: ubuntu-latest

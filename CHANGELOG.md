@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.4.12] - 2026-11-14
+
+### Fixed
+- Keep submitted work-mode profile values after a validation error, and allow
+  charge/discharge windows to overlap while retaining complete-pair and
+  nonzero-duration checks.
+- Show the affected setting and specific validation reason in Classic and GUI
+  configuration when a work-mode profile cannot be saved.
+- Put the period-2 switch before its clocks in Classic configuration. In the
+  GUI, disable period-2 clocks until the switch is enabled.
+
+### Added
+- Added an optional admin-only GUI configuration page with General, Polling &
+  Live View, Devices, Workmodes, and Advanced sections. Configure now offers
+  Classic or GUI configuration; Classic retains the existing options flow.
+  The GUI uses that same flow for saves and validation, and the Workmodes page
+  lists named profiles beside the editor with Create, Edit, and Delete actions.
+
 ## [v0.4.11] - 2026-11-12
 
 ### Changed

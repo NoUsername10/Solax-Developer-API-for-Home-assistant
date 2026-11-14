@@ -62,6 +62,15 @@ SCHEDULE_PAIRS = (
 )
 
 
+class ProfileSettingsError(ValueError):
+    """A profile setting failed validation, with a UI translation key."""
+
+    def __init__(self, field: str, code: str) -> None:
+        self.field = field
+        self.code = code
+        super().__init__(f"{field}: {code}")
+
+
 def mode_profiles(
     options: Mapping[str, Any], serial: str, mode: str
 ) -> dict[str, Mapping[str, Any]]:
@@ -135,16 +144,20 @@ def profile_settings(
 ) -> dict[str, Any]:
     """Extract and validate only the documented required user settings."""
     fields = MODE_FIELDS[family][mode]
-    settings = {field: values[field] for field in fields}
+    settings = {}
+    for field in fields:
+        if field not in values:
+            raise ProfileSettingsError(field, "profile_required_value")
+        settings[field] = values[field]
     for field, value in settings.items():
         if field.endswith("_enable"):
             if type(value) is not bool:
-                raise ValueError(field)
+                raise ProfileSettingsError(field, "profile_invalid_boolean")
         elif field.endswith("_time"):
             if isinstance(value, str) and value.endswith(":00") and len(value) == 8:
                 value = value[:5]
             if not isinstance(value, str) or not validate_hhmm(value):
-                raise ValueError(field)
+                raise ProfileSettingsError(field, "profile_invalid_time")
             settings[field] = value
         else:
             if (
@@ -154,51 +167,51 @@ def profile_settings(
                 or not float(value).is_integer()
                 or not 0 <= value <= 100
             ):
-                raise ValueError(field)
+                raise ProfileSettingsError(field, "profile_invalid_soc")
             settings[field] = int(value)
     if "min_soc" in settings and "charge_upper_soc" in settings:
         if settings["charge_upper_soc"] < settings["min_soc"]:
-            raise ValueError("charge_upper_soc")
+            raise ProfileSettingsError("charge_upper_soc", "profile_upper_soc_below_min")
     if family == "standard" and mode in SCHEDULE_MODES:
         schedule_enabled = values.get("schedule_enabled", False)
         if type(schedule_enabled) is not bool:
-            raise ValueError("schedule_enabled")
+            raise ProfileSettingsError("schedule_enabled", "profile_invalid_boolean")
+        period2 = values.get("enable_time_period2", False)
+        if type(period2) is not bool:
+            raise ProfileSettingsError("enable_time_period2", "profile_invalid_boolean")
         present = [key for pair in SCHEDULE_PAIRS for key in pair if values.get(key)]
         if not schedule_enabled:
             if present:
-                raise ValueError("schedule_enabled")
+                raise ProfileSettingsError("schedule_enabled", "profile_enable_schedule_or_clear_times")
         else:
-            periods: list[tuple[int, int]] = []
+            has_period1 = False
+            has_period2 = False
             for index, (start_key, end_key) in enumerate(SCHEDULE_PAIRS):
                 start, end = values.get(start_key), values.get(end_key)
                 if bool(start) != bool(end):
-                    raise ValueError(end_key)
+                    raise ProfileSettingsError(end_key if start else start_key, "profile_time_pair_incomplete")
                 if not start:
                     continue
                 for key, value in ((start_key, start), (end_key, end)):
                     if isinstance(value, str) and len(value) == 8 and value.endswith(":00"):
                         value = value[:5]
                     if not isinstance(value, str) or not validate_hhmm(value):
-                        raise ValueError(key)
+                        raise ProfileSettingsError(key, "profile_invalid_time")
                     settings[key] = value
                 first = int(settings[start_key][:2]) * 60 + int(settings[start_key][3:])
                 last = int(settings[end_key][:2]) * 60 + int(settings[end_key][3:])
                 if first == last:
-                    raise ValueError(end_key)
-                segments = [(first, last)] if first < last else [(first, 1440), (0, last)]
-                for segment in segments:
-                    if any(segment[0] < prior[1] and prior[0] < segment[1] for prior in periods):
-                        raise ValueError(start_key)
-                    periods.append(segment)
-                if index >= 2 and not values.get("enable_time_period2", False):
-                    raise ValueError("enable_time_period2")
-            if not periods or not any(key in settings for key in SCHEDULE_PAIRS[0] + SCHEDULE_PAIRS[1]):
-                raise ValueError("schedule_enabled")
-            period2 = values.get("enable_time_period2", False)
-            if type(period2) is not bool:
-                raise ValueError("enable_time_period2")
-            if period2 and not any(key in settings for key in SCHEDULE_PAIRS[2] + SCHEDULE_PAIRS[3]):
-                raise ValueError("enable_time_period2")
+                    raise ProfileSettingsError(end_key, "profile_time_same")
+                if index < 2:
+                    has_period1 = True
+                else:
+                    has_period2 = True
+                if index >= 2 and not period2:
+                    raise ProfileSettingsError("enable_time_period2", "profile_enable_period2_or_clear_times")
+            if not has_period1:
+                raise ProfileSettingsError("schedule_enabled", "profile_period1_required")
+            if period2 and not has_period2:
+                raise ProfileSettingsError("enable_time_period2", "profile_period2_required")
             settings["enable_time_period2"] = period2
             settings["schedule_enabled"] = True
     return settings
