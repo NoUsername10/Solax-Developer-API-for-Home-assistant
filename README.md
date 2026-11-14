@@ -5,7 +5,7 @@
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-donate-orange.svg)](https://www.buymeacoffee.com/DefaultLogin)
 
 
-[<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
+[<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in Marketplace or HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
 
 [![Home Assistant Platinum Standard](https://img.shields.io/badge/Home%20Assistant%20Quality-Platinum-e5e4e2.svg)](https://developers.home-assistant.io/docs/core/integration-quality-scale/) [![Test Coverage](https://img.shields.io/badge/test%20coverage-97.08%25-brightgreen.svg)](#quality-and-validation)
@@ -69,7 +69,7 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 - **Config-flow coverage:** `99%` on the current stable test run.
 
 > [!NOTE]
-> This is a HACS custom integration and is not included in Home Assistant Core. 
+> This is a community custom integration, installed through Marketplace (Home Assistant 2026.11+) or HACS (older versions), and is not included in Home Assistant Core.
 
 
 <!-- Future screenshot locations remain invisible until matching Developer API assets are published. -->
@@ -170,55 +170,25 @@ Open **Service API**, select **Authorize**, and authorize the read/monitoring se
 
 ### 5. Keep control services separate from monitoring
 
-Control service packs are not required for normal monitoring. The existing inverter, battery, grid, VPP, and EMS services remain schema-validated dry-runs. EV charger and reviewed inverter work-mode device controls each require their own explicit opt-in under Advanced and diagnostics.
+For normal monitoring, authorize only the read services above. Control service packs are optional; direct inverter, battery, grid, VPP, and EMS services remain dry-runs in this integration.
 
-When a compatible EV charger is discovered and **EV Charger Controls** are enabled, Home Assistant also creates native controls directly on the EV charger device:
-
-- Buttons for lock, available, start charging, stop charging, apply charge scene, apply QR code, and apply reserve charge.
-- Selects for work mode, start mode, and charge scene.
-- Numbers for current limit and reserve-charge current.
-- Text fields for QR code, OCPP URL, and OCPP charger ID.
-- Time fields for reserve-charge start and end time.
-
-These device controls use the same validated execution path as the service actions; they are just easier to use from the device page.
-
-### Inverter work-mode controls
-
-After initial setup, **Configure** offers **Classic configuration** and **GUI
-configuration**. Classic opens the existing settings menus. GUI opens a link to
-an administrator-only SolaX settings page with General, Polling & Live View,
-Devices, Workmodes, and Advanced tabs. The page has no SolaX sidebar item and
-requires no dashboard card. Both choices save to the same integration settings;
-the GUI submits changes through Home Assistant's existing options flow. The
-Workmodes tab shows saved profiles beside a Create/Edit/Delete form. Deleting a
-profile removes its button, so update any automations that use that button.
-When enabling EV charger or inverter work-mode controls in the GUI's Advanced
-tab, review the risk dialog and acknowledge it before saving. Cancelling keeps
-the unsaved form values without enabling controls.
-
-Under **Settings → Devices & services → SolaX Developer API → Configure → Classic configuration → Advanced and diagnostics**, enable **Inverter work-mode controls**. This is off by default. Reopen **Configure → Classic configuration → Inverter work-mode settings**, choose a discovered inverter, a mode, and **Create new profile**. Give the profile a name and enter its settings. Saving reloads the integration and makes an activation button available on the inverter device. **Press that button to apply the profile**; saving settings does not send a command. You can create more than one profile per mode, edit a profile, or remove it. Existing single-mode settings appear as a **Default** profile with the same button entity ID.
-
-Each named profile appears as a button on the inverter device page and can be used in automations with the native **Press button** action. Standard inverters offer Self Use, Feed-in Priority, Back Up, and Manual (stop, force charge, or force discharge). Self Use and Back Up profiles include the required grid-charging choice; a profile can also include up to two charge and discharge time periods. The optional time periods are sent as part of the mode command, and overlapping periods are accepted. A user reports that SolaX gives charging priority when charge and discharge periods overlap; verify that behavior on your inverter before relying on it in an automation. In GUI configuration, period-2 clocks are disabled until **Enable time period 2** is on. Classic configuration keeps those clocks visible for compatibility with Home Assistant 2026.1. SolaX does not document whether omitted time fields leave existing inverter schedules unchanged; configure the periods explicitly in every profile used for tariff switching. Allowing grid charging does not itself force immediate charging. **Overnight periods such as 22:00–06:00 have not yet been validated on a real inverter**, so do not rely on them for a tariff automation until confirmed on the target hardware. A1-Hybrid-G2 offers Self Use and Feed-in Priority without user settings, and Back Up with its required grid-charging choice and charge start/end times. The Developer API does not document A1 Manual mode. TOU configuration is not included. The integration takes `businessType` from the discovered inverter; users do not enter it.
-
-These buttons issue commands and have no selected state. A successful button press means SolaX accepted the request; it can still be pending device acknowledgement. Recent outcomes, status codes, and confirmation attempts are included in redacted integration diagnostics. An explicit device failure raises an error. The Developer API documents inverter `deviceStatus` values including Self Use (150), Back Up (152), Feed-in Priority (153), and Debug Mode (171); the existing device-status sensor displays that field when SolaX returns it. When SolaX returns `null` or another operating status, the current work mode cannot be inferred from that value, so a dedicated current-mode control is deferred until readback behavior is verified. EV charger `deviceWorkingMode` is a separate field and is not used for the inverter. Existing direct inverter control services remain dry-runs even when device actions are enabled.
+After adding the integration to Home Assistant, you can separately enable **EV Charger Controls** or **Inverter work-mode controls**. Both start off. See the [illustrated settings guide](#settings-after-setup) to enable controls and create an inverter profile.
 
 <img src="https://raw.githubusercontent.com/NoUsername10/Solax-Developer-API-for-Home-assistant/main/assets/setup/5_control.png" alt="SolaX Developer Portal control service examples" width="80%">
 
 The integration validates both authentication and read access during setup. A token alone is not considered a successful configuration unless at least one plant-information request succeeds.
 
-## 📦 Installation with HACS (Step 2)
+## 📦 Install from Marketplace or HACS (Step 2)
 
-[<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
+[<img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open this integration in Marketplace or HACS">](https://my.home-assistant.io/redirect/hacs_repository/?owner=NoUsername10&repository=Solax-Developer-API-for-Home-assistant&category=integration)
 
-**HACS is the recommended installation method.** SolaX Developer API for Home Assistant is included in the HACS repository list, so no custom-repository setup is required.
+This integration is in the community catalog; you do not need to add a custom repository. The button above opens it in either [Marketplace](https://www.home-assistant.io/integrations/marketplace/) or HACS.
 
-1. Install and configure [HACS](https://www.hacs.xyz/docs/use/download/download/) if it is not already available.
-2. Select the button above, or open **HACS** in Home Assistant.
-3. Search for **SolaX Developer API for Home Assistant**.
-4. Open the repository and select **Download**.
-5. Restart Home Assistant when HACS requests it.
-6. Go to **Settings → Devices & services → Add integration**.
-7. Search for **SolaX Developer API** and complete the setup flow.
+**Home Assistant 2026.11 or newer:** Open **Settings → Marketplace**, search for **SolaX Developer API for Home Assistant**, open its page, and select **Install**. Marketplace is built into Home Assistant and replaces HACS in these versions.
+
+**Home Assistant 2026.1 through 2026.10:** Install and configure [HACS](https://www.hacs.xyz/docs/use/download/download/) if needed. Open **HACS**, find **SolaX Developer API for Home Assistant**, and select **Download**.
+
+Restart Home Assistant if prompted. Then go to **Settings → Devices & services → Add integration**, search for **SolaX Developer API**, and complete the [initial setup](#initial-home-assistant-setup).
 
 <details>
 <summary><strong>Manual installation</strong></summary>
@@ -241,9 +211,132 @@ The integration validates both authentication and read access during setup. A to
 2. Open **SolaX Developer API**.
 3. Open the integration menu (`⋮`) and select **Delete**.
 4. Restart Home Assistant if prompted.
-5. If installed through HACS, open HACS and remove **SolaX Developer API for Home Assistant** after deleting the config entry.
+5. Open Marketplace or HACS, whichever your Home Assistant version uses, and remove **SolaX Developer API for Home Assistant** after deleting the config entry.
 
 Deleting the config entry unloads all platforms, removes integration services when no loaded entry remains, clears transient notifications and repair issues, and leaves Home Assistant's historical recorder data under Home Assistant's normal retention rules.
+
+<a id="initial-home-assistant-setup"></a>
+## ⚙️ Initial Home Assistant Setup (Step 3)
+
+1. Go to **Settings → Devices & services**.
+2. Click **Add integration**.
+3. Search for **SolaX Developer API**.
+4. Enter:
+   - **Client ID** - From the SolaX Developer Portal application.
+   - **Client Secret** - From the same application.
+   - **System Name** - Used for the System Totals device and stable entity prefix.
+   - **Scan Interval** - Standard polling interval in seconds. Default: `120`.
+   - **API Region** - EU, CN, or IN.
+5. Submit the form.
+
+The integration verifies the credentials and plant read access, then discovers authorized plants and devices. This first-time form uses Home Assistant's standard setup flow. The GUI settings page becomes available **after** setup.
+
+<a id="settings-after-setup"></a>
+## ⚙️ Settings after setup (Step 4)
+
+Go to **Settings → Devices & services → SolaX Developer API → Configure**. The GUI is an administrator-only page inside Home Assistant; it has no sidebar item or dashboard card. GUI and Classic configuration save to the same integration settings. Saving changes reloads the integration.
+
+### 1. Choose GUI configuration
+
+Select **GUI configuration (Recommended)**. **Classic configuration** remains available below it.
+
+<img src="assets/settings/01-choose-gui-configuration.png" alt="Home Assistant Configure menu with GUI configuration recommended above Classic configuration" width="80%">
+
+### 2. Open the settings page
+
+Select **Open SolaX settings**. The page has General, Polling & Live View, Devices, Workmodes, and Advanced tabs. You can also bookmark `/solax-developer-api-settings` in your Home Assistant instance.
+
+<img src="assets/settings/02-open-solax-settings.png" alt="GUI configuration dialog with the Open SolaX settings link" width="80%">
+
+### 3. Enable controls if you need them
+
+In **Advanced**, enable **EV Charger Controls** or **Inverter work-mode controls** separately, then select **Save settings**. Both are off by default. When enabling either control, read and acknowledge the risk dialog before the settings are saved. Monitoring works without enabling controls.
+
+<img src="assets/settings/03-advanced-controls.png" alt="Advanced settings tab with separate EV charger and inverter work-mode control switches" width="100%">
+
+### 4. Create an inverter work-mode profile
+
+Open **Workmodes**, select an inverter and mode, then select **Create profile**. Enter a name and the settings your inverter needs. Time periods are optional for compatible modes; period-2 clocks become available when **Enable time period 2** is on.
+
+<img src="assets/settings/04-create-workmode-profile.png" alt="Workmodes tab with inverter selection and Self Use profile settings, including two time periods" width="100%">
+
+### 5. Review the saved profile
+
+The profile appears in the list, where you can **Edit** or **Delete** it. Saving creates an activation button on the inverter device; it does not send a mode command. Deleting a profile removes its button, so update automations that use it.
+
+<img src="assets/settings/05-saved-workmode-profile.png" alt="Saved Self Use profile with Edit and Delete actions in the Workmodes tab" width="100%">
+
+### 6. Apply the profile
+
+On the inverter device page, select **Press** on the profile button. Automations can use Home Assistant's **Press button** action on the same entity.
+
+<img src="assets/settings/06-inverter-profile-button.png" alt="Inverter device Controls section with a Press action for the saved Self Use profile" width="80%">
+
+<details>
+<summary><strong>Control options and important limitations</strong></summary>
+<br>
+
+- Standard inverters offer Self Use, Feed-in Priority, Back Up, and Manual (stop, force charge, or force discharge). Self Use and Back Up require a grid-charging choice. A1-Hybrid-G2 offers Self Use and Feed-in Priority without user settings, plus Back Up with its required grid choice and charge start/end times. A1 Manual mode and TOU configuration are not included. The integration reads `businessType` from the inverter; you do not enter it.
+- Standard profiles can include up to two charge and discharge periods. Overlaps are accepted; a user reports that charging takes priority, but verify this on your inverter. SolaX does not document whether omitted times preserve its existing schedule. Set explicit periods for tariff profiles. Allowing grid charging does not force immediate charging. **Overnight periods such as 22:00–06:00 are not yet validated on a real inverter.** Classic configuration keeps period-2 clocks visible for compatibility with Home Assistant 2026.1.
+- A press sends a command, but the button has no selected state. SolaX can accept a request while device acknowledgement is still pending; redacted diagnostics include recent outcomes, status codes, and confirmation attempts. An explicit device failure raises an error. The inverter `deviceStatus` sensor may show Self Use (150), Back Up (152), Feed-in Priority (153), or Debug Mode (171), but `null` or other statuses cannot reliably identify the current work mode. EV charger `deviceWorkingMode` is a separate field.
+- A compatible EV charger gains device buttons, selects, number fields, text fields, and reserve-charge time fields when **EV Charger Controls** is enabled. Its device controls use the same validated execution path as EV service actions. Existing direct non-EV control services remain dry-runs even when inverter mode buttons are enabled.
+
+</details>
+
+### Classic configuration
+
+Select **Configure → Classic configuration** if you prefer Home Assistant's existing settings forms:
+
+| GUI tab | Classic menu |
+| --- | --- |
+| General | Credentials and system |
+| Polling & Live View | Polling and Live View |
+| Devices | Manual devices |
+| Workmodes | Inverter work-mode settings, shown after controls are enabled |
+| Advanced | Advanced and diagnostics |
+
+Changed credentials are validated before saving. Existing single-mode settings appear as a **Default** profile with the same button entity ID.
+
+### ➕ Manual Meters
+
+Most devices are discovered automatically. Some meters can be queried by serial number even though SolaX does not return them from the regular device inventory endpoint.
+
+To add one:
+
+1. Open **Configure → Classic configuration → Manual devices** (or the **Devices** tab in GUI configuration).
+2. Enter one meter serial per line.
+3. Optionally add `|1` or `|4` to specify the business type.
+4. Submit the form.
+
+Examples:
+
+```text
+METER_SERIAL
+METER_SERIAL|1
+METER_SERIAL|4
+```
+
+Before saving, the integration:
+
+- Checks whether the meter is already auto-discovered
+- Tries the supported business types
+- Requires matching realtime meter data
+- Records the fields actually returned
+- Prevents duplicate manual devices
+
+Saved manual meters appear in the same options page and can be selected for removal.
+
+### ➕ Manual EMS Systems
+
+EMS discovery normally uses the C&I master-control relationship. If a compatible C&I account can read an EMS that is not discovered automatically, the options page can accept:
+
+```text
+EMS_SERIAL|PLANT_ID
+```
+
+The dedicated EMS attribute endpoint must validate the serial and plant before the system is saved.
+
+EMS entities and controls remain hidden until an EMS is confirmed. Manual EMS options are shown only for a relevant C&I plant or an existing manual EMS entry, allowing an inventory-omitted EMS to be validated without exposing EMS settings to unrelated residential systems.
 
 ## 🧩 Built-in Dashboard Cards
 
@@ -377,103 +470,6 @@ The card automatically uses the integration's configured Developer API account.
 The card lists the plants and devices already loaded by the integration. Select all plants, one plant, or one device; choose **All**, **Ongoing**, or **Closed**; then press **Fetch Alarms**. Returned records show summary fields and expandable full returned fields. Choosing all plants queries each loaded plant and pages results up to `max_pages`.
 
 </details>
-
-## ⚙️ Configuration (Step 3)
-
-### 🚀 Initial Setup
-
-1. Go to **Settings → Devices & services**.
-2. Click **Add integration**.
-3. Search for **SolaX Developer API**.
-4. Enter:
-   - **Client ID** - From the SolaX Developer Portal application.
-   - **Client Secret** - From the same application.
-   - **System Name** - Used for the System Totals device and stable entity prefix.
-   - **Scan Interval** - Standard polling interval in seconds. Default: `120`.
-   - **API Region** - EU or CN.
-5. Submit the form.
-
-The integration obtains an access token, verifies plant read access, then discovers all authorized plants and devices automatically.
-
-### 🧩 Integration Options
-
-Open the integration and click **Configure**. Settings are organized into four pages:
-
-#### Credentials and system
-
-- Client ID
-- Client Secret
-- API region
-- System name
-
-Changed credentials are validated before they are saved.
-
-#### Polling and Live View
-
-- Standard scan interval
-- Live View default duration
-- Live View target interval
-- Live View call budget
-- Night scan interval
-- Night start and end hours
-
-#### Manual devices
-
-- Add or remove manual meter serials
-- Add or remove manual EMS systems when relevant
-
-#### Advanced and diagnostics
-
-- Enable or disable rate-limit notifications
-- Enable or disable SolaX alarm persistent notifications
-- Set the independent active-alarm polling interval
-- Enable or disable real EV charger controls
-- Enable or disable reviewed inverter work-mode device actions
-
-When inverter work-mode controls are enabled, **Inverter work-mode settings** appears in the Configure menu for per-inverter setup.
-
-The integration reloads automatically after saved option changes.
-
-### ➕ Manual Meters
-
-Most devices are discovered automatically. Some meters can be queried by serial number even though SolaX does not return them from the regular device inventory endpoint.
-
-To add one:
-
-1. Open **Configure → Classic configuration → Manual devices** (or the **Devices** tab in GUI configuration).
-2. Enter one meter serial per line.
-3. Optionally add `|1` or `|4` to specify the business type.
-4. Submit the form.
-
-Examples:
-
-```text
-METER_SERIAL
-METER_SERIAL|1
-METER_SERIAL|4
-```
-
-Before saving, the integration:
-
-- Checks whether the meter is already auto-discovered
-- Tries the supported business types
-- Requires matching realtime meter data
-- Records the fields actually returned
-- Prevents duplicate manual devices
-
-Saved manual meters appear in the same options page and can be selected for removal.
-
-### ➕ Manual EMS Systems
-
-EMS discovery normally uses the C&I master-control relationship. If a compatible C&I account can read an EMS that is not discovered automatically, the options page can accept:
-
-```text
-EMS_SERIAL|PLANT_ID
-```
-
-The dedicated EMS attribute endpoint must validate the serial and plant before the system is saved.
-
-EMS entities and controls remain hidden until an EMS is confirmed. Manual EMS options are shown only for a relevant C&I plant or an existing manual EMS entry, allowing an inventory-omitted EMS to be validated without exposing EMS settings to unrelated residential systems.
 
 ## 📝 API and Polling Behavior
 
@@ -1098,7 +1094,7 @@ tagged source with the Home Assistant test suites, typing, HACS validation,
 and Hassfest before creating a draft release with the integration ZIP.
 Review the generated notes, fill in **Help received this release** if needed,
 and publish the draft manually. For a public test release, select **Set as a
-pre-release** when publishing the draft; HACS users must enable beta versions
+pre-release** when publishing the draft; Marketplace and HACS users must enable beta versions
 for this repository to install it.
 
 ## 📄 License
