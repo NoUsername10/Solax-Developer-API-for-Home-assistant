@@ -8,6 +8,7 @@ from typing import Any
 from homeassistant.components.button import ButtonEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -28,6 +29,37 @@ EV_COMMAND_BUTTONS: tuple[tuple[str, str, int], ...] = (
     ("ev_charger_start_charging", "start_charging", 2),
     ("ev_charger_stop_charging", "stop_charging", 3),
 )
+
+
+def inverter_mode_button_unique_id(
+    system_slug: str, serial: str, action: str, profile_id: str
+) -> str:
+    """Return the stable registry ID of a profile activation button."""
+    suffix = "" if profile_id == "default" else f"_{profile_id}"
+    return f"{system_slug}_inverter_{slugify(serial)}_{action}{suffix}"
+
+
+def remove_inverter_mode_profile_buttons(
+    hass: HomeAssistant,
+    entry: SolaxConfigEntry,
+    serial: str,
+    mode: str,
+    profile_id: str,
+) -> None:
+    """Remove registry entries for a deleted profile after the entry reloads."""
+    _, system_slug = system_identity(hass, entry)
+    registry = er.async_get(hass)
+    actions = MANUAL_ACTIONS if mode == "manual" else (mode,)
+    for action in actions:
+        unique_id = inverter_mode_button_unique_id(
+            system_slug, serial, action, profile_id
+        )
+        entity_id = registry.async_get_entity_id("button", DOMAIN, unique_id)
+        if entity_id is None:
+            continue
+        registry_entry = registry.async_get(entity_id)
+        if registry_entry is not None and registry_entry.config_entry_id == entry.entry_id:
+            registry.async_remove(entity_id)
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -165,10 +197,10 @@ class SolaxInverterModeButton(
         )
         if profile_id == "default" and profile_name == "Default":
             self._attr_translation_key = f"inverter_mode_{action}"
-        slug = slugify(serial)
-        suffix = "" if profile_id == "default" else f"_{profile_id}"
-        self._attr_unique_id = f"{system_slug}_inverter_{slug}_{action}{suffix}"
-        self.entity_id = f"button.{system_slug}_inverter_{slug}_{action}{suffix}"
+        self._attr_unique_id = inverter_mode_button_unique_id(
+            system_slug, serial, action, profile_id
+        )
+        self.entity_id = f"button.{self._attr_unique_id}"
 
     @property
     def device_info(self) -> DeviceInfo:

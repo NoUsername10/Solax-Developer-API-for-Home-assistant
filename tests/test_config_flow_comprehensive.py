@@ -507,7 +507,7 @@ async def test_options_offer_classic_and_gui_when_panel_registered(monkeypatch):
     handler.hass.data = {
         config_flow.RUNTIME_RELOAD_STATE: {"settings_panel_registered": True}
     }
-    assert (await handler.async_step_init())["menu_options"] == ["classic", "gui"]
+    assert (await handler.async_step_init())["menu_options"] == ["gui", "classic"]
     assert (await handler.async_step_classic())["step_id"] == "classic"
     gui = await handler.async_step_gui()
     assert gui["step_id"] == "gui"
@@ -586,12 +586,19 @@ async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatc
     assert entry.options["inverter_mode_profiles"]["INV-1"]["self_use"]["profiles"][profile_id]["name"] == "Sunny"
 
     remove_handler = _options_handler(entry)
+    removed_buttons = []
+    monkeypatch.setattr(
+        config_flow,
+        "remove_inverter_mode_profile_buttons",
+        lambda *args: removed_buttons.append(args),
+    )
     await remove_handler.async_step_inverter_modes({"inverter_serial": "INV-1"})
     await remove_handler.async_step_inverter_mode_choice({"mode": "self_use"})
     await remove_handler.async_step_inverter_profile_choice({"profile": profile_id})
     removed = await remove_handler.async_step_inverter_mode_settings({"remove_profile": True})
     assert removed["type"] == "create_entry"
     assert "self_use" not in entry.options["inverter_mode_profiles"]["INV-1"]
+    assert removed_buttons == [(remove_handler.hass, entry, "INV-1", "self_use", profile_id)]
 
     a1_handler = _options_handler(entry)
     await a1_handler.async_step_inverter_modes({"inverter_serial": "A1-1"})

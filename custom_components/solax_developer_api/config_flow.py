@@ -26,6 +26,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers import selector
 
 from .api import SolaxApiError, SolaxDeveloperApiClient
+from .button import remove_inverter_mode_profile_buttons
 from .i18n import async_ensure_catalog_loaded, translate
 from .coordinator import SolaxDeveloperCoordinator
 from .const import (
@@ -1071,7 +1072,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         if getattr(self.hass, "data", {}).get(RUNTIME_RELOAD_STATE, {}).get(
             "settings_panel_registered"
         ):
-            menu_options.append("gui")
+            menu_options.insert(0, "gui")
         return self.async_show_menu(
             step_id="init",
             menu_options=menu_options,
@@ -1268,7 +1269,11 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                     updated_device.pop(mode, None)
                 updated_profiles[serial] = updated_device
                 current_options[CONF_INVERTER_MODE_PROFILES] = updated_profiles
-                return await self._async_finish(options=current_options)
+                result = await self._async_finish(options=current_options)
+                remove_inverter_mode_profile_buttons(
+                    self.hass, self._config_entry, serial, mode, profile_id
+                )
+                return result
             else:
                 name = str(user_input.get("profile_name") or "").strip()
                 if not name:

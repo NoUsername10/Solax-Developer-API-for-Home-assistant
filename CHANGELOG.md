@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.0] - 2026-11-14
+
+### Added
+- Added the optional GUI configuration page from v0.4.12, including a Workmodes
+  profile list with Create, Edit, and Delete actions.
+
+### Changed
+- Put **GUI configuration (Recommended)** first in the Configure menu when the
+  GUI is available; Classic configuration remains available.
+- Require a risk acknowledgement before newly enabling EV charger or inverter
+  work-mode controls in the GUI, and visually separate the two time periods in
+  the profile editor.
+
+### Fixed
+- Preserve entered profile values after validation errors and show specific
+  field errors. Permit charge and discharge periods to overlap, matching SolaX
+  behavior, while retaining complete-period validation.
+- Remove a deleted profile's activation button or buttons from Home Assistant's
+  entity registry after the integration reloads.
+
 ## [v0.4.13] - 2026-11-14
 
 ### Changed
