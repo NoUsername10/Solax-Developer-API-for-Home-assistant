@@ -1336,21 +1336,21 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             schema[vol.Required("schedule_enabled", default=form_values.get("schedule_enabled", False))] = selector.BooleanSelector()
             for start_key, end_key in SCHEDULE_PAIRS[:2]:
                 for key in (start_key, end_key):
-                    marker = (
+                    optional_marker = (
                         vol.Optional(key, description={"suggested_value": form_values[key]})
                         if key in form_values and form_values[key]
                         else vol.Optional(key)
                     )
-                    schema[marker] = selector.TimeSelector()
+                    schema[optional_marker] = selector.TimeSelector()
             schema[vol.Required("enable_time_period2", default=form_values.get("enable_time_period2", False))] = selector.BooleanSelector()
             for start_key, end_key in SCHEDULE_PAIRS[2:]:
                 for key in (start_key, end_key):
-                    marker = (
+                    optional_marker = (
                         vol.Optional(key, description={"suggested_value": form_values[key]})
                         if key in form_values and form_values[key]
                         else vol.Optional(key)
                     )
-                    schema[marker] = selector.TimeSelector()
+                    schema[optional_marker] = selector.TimeSelector()
         if profile_id:
             schema[vol.Required("remove_profile", default=form_values.get("remove_profile", False))] = selector.BooleanSelector()
         return self.async_show_form(
