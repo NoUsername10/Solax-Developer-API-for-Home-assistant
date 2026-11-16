@@ -21,9 +21,12 @@ from .const import (
     CONF_MANUAL_METER_SERIALS,
     CONF_SCAN_INTERVAL,
     CONF_SYSTEM_NAME,
+    COMMAND_STATUS_MAP,
+    CONTROL_SERVICE_DEFINITIONS,
     DEFAULT_SCAN_INTERVAL,
     config_value,
 )
+from .validation import validate_hhmm
 
 MASK_META_SUFFIXES = ("_masked", "_length", "_present")
 NON_SECRET_TOKEN_KEYS = ("token_expires_at",)
@@ -39,6 +42,8 @@ SECRET_KEY_HINTS = (
     "secret",
     "request_id",
     "requestid",
+    "trace_id",
+    "traceid",
 )
 SERIAL_KEY_HINTS = (
     "serial",
@@ -63,6 +68,8 @@ FULLY_REDACTED_ACCESS_KEYS = (
     "ocppurl",
     "ocppchargerid",
     "qrcode",
+    "requestid",
+    "traceid",
 )
 REDACTED_VALUE = "*REDACTED*"
 
@@ -347,6 +354,97 @@ def _sanitize_for_diagnostics(
             return REDACTED_VALUE
 
     return value
+
+
+def _inverter_command_diagnostics(commands: Any) -> list[dict[str, Any]]:
+    """Keep useful command evidence without exporting device or profile IDs."""
+    if not isinstance(commands, list):
+        return []
+    inverter_labels: dict[str, str] = {}
+    profile_labels: dict[tuple[str, str], str] = {}
+    safe_event_fields = (
+        "timestamp", "action", "api_code",
+        "api_error_type", "initial_result_shape", "initial_status_count",
+        "request_id_present", "accepted",
+        "command_failed", "outcome", "confirmation_state",
+        "confirmation_attempts", "confirmation_api_code",
+        "confirmation_result_shape", "confirmation_error_type", "status_count",
+    )
+
+    def safe_status(value: Any) -> dict[str, Any] | None:
+        if not isinstance(value, Mapping) or type(value.get("status")) is not int:
+            return None
+        status = value["status"]
+        return {
+            "status": status,
+            "status_name": COMMAND_STATUS_MAP.get(status, "Unknown"),
+            "accepted": status in {3, 4},
+            "device_acknowledged": status == 4,
+            "failed": status in {1, 2, 5, 6},
+        }
+
+    result: list[dict[str, Any]] = []
+    for command in commands:
+        if not isinstance(command, Mapping):
+            continue
+        serial = str(command.get("serial") or "").casefold()
+        inverter = inverter_labels.setdefault(
+            serial, f"Inverter {len(inverter_labels) + 1}"
+        )
+        profile_id = str(command.get("profile_id") or "")
+        profile_key = (serial, profile_id)
+        profile = profile_labels.setdefault(
+            profile_key, f"Profile {len(profile_labels) + 1}"
+        )
+        service = str(command.get("service") or "")
+        definition = CONTROL_SERVICE_DEFINITIONS.get(service)
+        if definition is None:
+            continue
+        projected = {
+            key: deepcopy(command[key]) for key in safe_event_fields if key in command
+        }
+        projected["inverter"] = inverter
+        projected["profile"] = profile
+        projected["service"] = service
+        projected["request_path"] = definition["endpoint"]
+        projected["initial_target_status"] = safe_status(
+            command.get("initial_target_status")
+        )
+        projected["target_status"] = safe_status(command.get("target_status"))
+        history = command.get("confirmation_history")
+        if isinstance(history, list):
+            projected["confirmation_history"] = [
+                {
+                    "attempt": item.get("attempt"),
+                    "timestamp": item.get("timestamp"),
+                    "api_code": item.get("api_code"),
+                    "result_shape": item.get("result_shape"),
+                    "target_present": item.get("target_present"),
+                    "target_status": safe_status(item.get("target_status")),
+                    "request_id_echo_match": item.get("request_id_echo_match"),
+                    "query_error_type": item.get("query_error_type"),
+                    "query_error_code": item.get("query_error_code"),
+                }
+                for item in history if isinstance(item, Mapping)
+            ]
+
+        # Only endpoint-declared scalar parameters are exposed. Inverter serials
+        # in snList are represented by the pseudonymous inverter label above.
+        declared = {**definition.get("required", {}), **definition.get("optional", {})}
+        sent = command.get("sent_parameters")
+        if isinstance(sent, Mapping):
+            projected["sent_parameters"] = {
+                key: value
+                for key, value in sent.items()
+                if key != "snList" and key in declared
+                and (
+                    (declared[key] is int and type(value) is int)
+                    or (declared[key] is str and isinstance(value, str)
+                        and validate_hhmm(value))
+                )
+            }
+        result.append(projected)
+    return result
 
 
 def _sanitize_comparison_value(field_key: str, value: Any) -> Any:
@@ -689,7 +787,9 @@ def _build_and_sanitize_payload(
             getattr(coordinator, "ev_charger_control_commands", []) or []
         ),
         "inverter_mode_commands": deepcopy(
-            getattr(coordinator, "inverter_mode_commands", []) or []
+            _inverter_command_diagnostics(
+                getattr(coordinator, "inverter_mode_commands", []) or []
+            )
         ),
     }
 

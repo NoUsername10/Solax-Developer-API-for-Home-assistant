@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.1] - 2026-11-16
+
+### Added
+- Include the sent inverter work-mode settings and each request-result poll in
+  diagnostics. Within one export, stable Inverter and Profile labels distinguish
+  commands without exposing serial numbers, profile IDs, request IDs, or trace IDs.
+
+### Validation
+- Verified that Request Result Query posts the unchanged `requestId` returned by
+  the mode command. The affected API responses do not echo it, so the reported
+  status 5 after a visible mode change still needs device-side investigation.
+
 ## [v0.5.0] - 2026-11-14
 
 ### Added

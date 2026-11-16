@@ -226,6 +226,8 @@ async def test_query_request_result_accepts_string_request_id_and_code_zero():
 
     payload = await client.query_request_result(request_id="123456789")
     assert payload["code"] == 0
+    assert session.calls[-1]["url"].endswith("/openapi/apiRequestLog/listByCondition")
+    assert session.calls[-1]["method"] == "POST"
     assert session.calls[-1]["json"] == {"requestId": "123456789"}
 
 

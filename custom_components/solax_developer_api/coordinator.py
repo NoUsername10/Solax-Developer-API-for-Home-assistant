@@ -3082,21 +3082,29 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             profile_id=profile_id,
         )
         definition = CONTROL_SERVICE_DEFINITIONS[service]
+        # The validated command contains one serial in snList. Keep the exact
+        # non-identifying parameters for diagnostics, including schedule times.
+        sent_parameters = {
+            key: value for key, value in payload.items() if key != "snList"
+        }
         try:
             response = await self.client.execute_control(
                 path=definition["endpoint"],
                 payload=payload,
             )
         except SolaxApiError as err:
-            event = {
+            event: dict[str, Any] = {
                 "timestamp": dt_util.utcnow().isoformat(),
                 "service": service,
                 "serial": serial,
                 "action": action,
                 "profile_id": profile_id,
+                "request_path": definition["endpoint"],
+                "sent_parameters": sent_parameters,
                 "api_code": err.code,
                 "api_error_type": err.classification,
                 "accepted": False,
+                "confirmation_history": [],
                 "command_failed": True,
                 "outcome": "failed",
                 "confirmation_state": "request_failed",
@@ -3112,6 +3120,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             request_id=request_id,
             initial_summary=initial_summary,
             target_serial=serial,
+            capture_history=True,
         )
         statuses = confirmation["device_statuses"]
         initial_target_status = next(
@@ -3141,6 +3150,8 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "serial": serial,
             "action": action,
             "profile_id": profile_id,
+            "request_path": definition["endpoint"],
+            "sent_parameters": sent_parameters,
             "api_code": response.get("code"),
             "initial_result_shape": self._control_result_shape(response.get("result")),
             "initial_status_count": len(initial_summary["device_statuses"]),
@@ -3151,6 +3162,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "outcome": outcome,
             "confirmation_state": confirmation_state,
             "confirmation_attempts": confirmation["confirmation_attempts"],
+            "confirmation_history": confirmation["confirmation_history"],
             "confirmation_api_code": (
                 confirmation["confirmation_response"].get("code")
                 if isinstance(confirmation["confirmation_response"], Mapping)
@@ -3306,7 +3318,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         request_id: str,
         initial_summary: dict[str, Any],
         target_serial: str | None = None,
+        capture_history: bool = False,
     ) -> dict[str, Any]:
+        confirmation_history: list[dict[str, Any]] = []
         if target_serial is not None:
             initial_summary = self._target_control_status_summary(
                 initial_summary, target_serial
@@ -3317,6 +3331,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "confirmation_attempts": 0,
                 "confirmation_response": None,
                 "confirmation_error": None,
+                "confirmation_history": confirmation_history,
                 **initial_summary,
             }
         if initial_summary.get("device_acknowledged"):
@@ -3325,6 +3340,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "confirmation_attempts": 0,
                 "confirmation_response": None,
                 "confirmation_error": None,
+                "confirmation_history": confirmation_history,
                 **initial_summary,
             }
         if not request_id:
@@ -3333,6 +3349,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "confirmation_attempts": 0,
                 "confirmation_response": None,
                 "confirmation_error": None,
+                "confirmation_history": confirmation_history,
                 **initial_summary,
             }
 
@@ -3354,6 +3371,13 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 latest_error = None
             except Exception as err:  # noqa: BLE001
                 latest_error = serialize_api_error(err)
+                if capture_history:
+                    confirmation_history.append({
+                        "attempt": completed_attempts,
+                        "timestamp": dt_util.utcnow().isoformat(),
+                        "query_error_type": latest_error.get("classification"),
+                        "query_error_code": self._coerce_int(latest_error.get("code")),
+                    })
                 continue
 
             queried_summary = self._control_response_status_summary(latest_response)
@@ -3361,6 +3385,24 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 queried_summary = self._target_control_status_summary(
                     queried_summary, target_serial
                 )
+            if capture_history:
+                echoed_id = latest_response.get("requestId")
+                confirmation_history.append({
+                    "attempt": completed_attempts,
+                    "timestamp": dt_util.utcnow().isoformat(),
+                    "api_code": self._coerce_int(latest_response.get("code")),
+                    "result_shape": self._control_result_shape(
+                        latest_response.get("result")
+                    ),
+                    "target_status": next(
+                        iter(queried_summary["device_statuses"].values()), None
+                    ),
+                    "target_present": bool(queried_summary["device_statuses"]),
+                    "request_id_echo_match": (
+                        None if echoed_id is None
+                        else str(echoed_id).strip() == request_id
+                    ),
+                })
             if queried_summary.get("device_statuses"):
                 latest_summary = queried_summary
             if latest_summary.get("command_failed"):
@@ -3369,6 +3411,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "confirmation_attempts": completed_attempts,
                     "confirmation_response": latest_response,
                     "confirmation_error": latest_error,
+                    "confirmation_history": confirmation_history,
                     **latest_summary,
                 }
             if latest_summary.get("device_acknowledged"):
@@ -3377,6 +3420,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "confirmation_attempts": completed_attempts,
                     "confirmation_response": latest_response,
                     "confirmation_error": latest_error,
+                    "confirmation_history": confirmation_history,
                     **latest_summary,
                 }
 
@@ -3386,6 +3430,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "confirmation_attempts": completed_attempts,
             "confirmation_response": latest_response,
             "confirmation_error": latest_error,
+            "confirmation_history": confirmation_history,
             **latest_summary,
         }
 

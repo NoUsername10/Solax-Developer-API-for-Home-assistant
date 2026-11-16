@@ -285,14 +285,17 @@ def test_log_redaction_helpers_cover_all_shapes():
     assert _mask_log_serial("abc") == "***"
     assert _mask_log_serial("abcdef") == "ab***ef"
     assert "***" in _mask_log_serial("TESTSERIAL0001")
-    assert _sanitize_dry_run_payload_for_log(
+    sanitized = _sanitize_dry_run_payload_for_log(
         {
             "Authorization": "bearer abcdefghijk",
             "serial": ("TESTSERIAL0001",),
             "value": 1,
             "plain": "text",
+            "memo": "bearer abcdefghijk",
         }
-    )["plain"] == "text"
+    )
+    assert sanitized["plain"] == "text"
+    assert "abcdefghijk" not in sanitized["memo"]
 
 
 @pytest.mark.asyncio
