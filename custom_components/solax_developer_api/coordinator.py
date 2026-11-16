@@ -3093,7 +3093,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 payload=payload,
             )
         except SolaxApiError as err:
-            event = {
+            event: dict[str, Any] = {
                 "timestamp": dt_util.utcnow().isoformat(),
                 "service": service,
                 "serial": serial,
