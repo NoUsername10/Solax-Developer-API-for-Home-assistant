@@ -11,6 +11,7 @@ from custom_components.solax_developer_api.diagnostics import (
     _build_filtered_api_projection,
     _build_raw_vs_filtered_summary,
     _has_meaningful_state,
+    _inverter_command_diagnostics,
     _mask_secret,
     _mask_serial,
     _sanitize_for_diagnostics,
@@ -59,7 +60,9 @@ def test_inverter_command_diagnostics_redact_request_ids_and_serials():
             "device_statuses": {"INVERTER123456": {"status": 3}},
         }],
         "request_result_cache": {
-            "REQUEST998877": {"response": {"requestId": "REQUEST998877"}}
+            "REQUEST998877": {"response": {
+                "requestId": "REQUEST998877", "traceId": "TRACE123456789",
+            }}
         },
     }
     sanitized = _sanitize_for_diagnostics(
@@ -71,6 +74,58 @@ def test_inverter_command_diagnostics_redact_request_ids_and_serials():
     assert "INVERTER123456" not in as_text
     assert "REQUEST998877" not in as_text
     assert sanitized["inverter_mode_commands"][0]["outcome"] == "pending"
+    cached = next(iter(sanitized["request_result_cache"].values()))
+    assert cached["response"]["requestId"] == REDACTED_VALUE
+    assert cached["response"]["traceId"] == REDACTED_VALUE
+
+
+def test_inverter_command_trace_keeps_times_with_stable_anonymous_labels():
+    commands = [
+        {
+            "serial": serial,
+            "profile_id": profile,
+            "service": "batch_set_peace_mode",
+            "action": "back_up",
+            "request_path": "/private/path",
+            "sent_parameters": {
+                "businessType": 1,
+                "minSoc": 20,
+                "chargeStartTimePeriod1": "20:00",
+                "chargeEndTimePeriod1": "21:00",
+                "snList": [serial],
+                "unknownPrivateField": "private@example.com",
+            },
+            "initial_target_status": {"status": 3, "message": "private message"},
+            "target_status": {"status": 5},
+            "confirmation_history": [{
+                "attempt": 1, "api_code": 10000,
+                "target_status": {"status": 5, "message": "private message"},
+                "request_id_echo_match": None,
+                "requestId": "PRIVATE-REQUEST",
+            }],
+        }
+        for serial, profile in (
+            ("INVERTER-ALICE-001", "PRIVATE-PROFILE-A"),
+            ("INVERTER-ALICE-001", "PRIVATE-PROFILE-A"),
+            ("INVERTER-BOB-002", "PRIVATE-PROFILE-B"),
+        )
+    ]
+    projected = _inverter_command_diagnostics(commands)
+    assert [item["inverter"] for item in projected] == [
+        "Inverter 1", "Inverter 1", "Inverter 2"
+    ]
+    assert [item["profile"] for item in projected] == [
+        "Profile 1", "Profile 1", "Profile 2"
+    ]
+    assert projected[0]["sent_parameters"]["chargeStartTimePeriod1"] == "20:00"
+    assert projected[0]["sent_parameters"]["chargeEndTimePeriod1"] == "21:00"
+    assert projected[0]["confirmation_history"][0]["target_status"]["status"] == 5
+    serialized = json.dumps(projected)
+    for private in (
+        "INVERTER-ALICE-001", "INVERTER-BOB-002", "PRIVATE-PROFILE-A",
+        "PRIVATE-REQUEST", "private@example.com", "private message", "/private/path",
+    ):
+        assert private not in serialized
 
 
 def test_sanitize_redacts_personal_fields_and_keeps_token_expires_at():
@@ -411,7 +466,15 @@ async def test_loaded_diagnostics_reports_partial_inventory_errors_and_health():
     state = {"plants": {"PRIVATE-PLANT": {"businessType": 1}}, "devices": {},
              "last_errors": [error], "meta": {"inventory_complete": False,
                                               "last_update_partial": True}}
-    coordinator = SimpleNamespace(data=state, raw_api_responses={}, last_update_success=True)
+    coordinator = SimpleNamespace(
+        data=state, raw_api_responses={}, last_update_success=True,
+        inverter_mode_commands=[{
+            "serial": "INVERTER-PRIVATE-001", "profile_id": "private-profile-id",
+            "service": "batch_set_peace_mode", "action": "back_up",
+            "sent_parameters": {"businessType": 1, "minSoc": 20,
+                                "chargeStartTimePeriod1": "20:00"},
+        }],
+    )
     entry = SimpleNamespace(state=ConfigEntryState.LOADED, entry_id="test", title="Test",
                             data={}, options={}, runtime_data=SimpleNamespace(
                                 coordinator=coordinator, client=SimpleNamespace()))
@@ -423,6 +486,11 @@ async def test_loaded_diagnostics_reports_partial_inventory_errors_and_health():
     assert payload["issues"][1]["type"] == "api_error"
     assert payload["issues"][1]["code"] == 1
     assert payload["filtered_api_responses"]["last_errors"]
+    command = payload["raw_api_responses"]["inverter_mode_commands"][0]
+    assert command["inverter"] == "Inverter 1"
+    assert command["sent_parameters"]["chargeStartTimePeriod1"] == "20:00"
+    assert "INVERTER-PRIVATE-001" not in json.dumps(command)
+    assert "private-profile-id" not in json.dumps(command)
     assert "PRIVATE-PLANT" not in json.dumps(payload["issues"])
     assert "PRIVATE-PLANT" not in json.dumps(payload["coordinator"]["last_errors"])
     assert "PRIVATE-PLANT" not in json.dumps(payload["filtered_api_responses"]["last_errors"])

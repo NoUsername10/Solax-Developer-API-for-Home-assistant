@@ -412,6 +412,69 @@ async def test_inverter_confirmation_ignores_other_device_then_queries_target(mo
 
 
 @pytest.mark.asyncio
+async def test_inverter_diagnostics_trace_uses_issued_request_id(monkeypatch):
+    class _ModeClient(_FullClient):
+        def __init__(self):
+            self.sent = []
+            self.queried_ids = []
+
+        async def execute_control(self, **kwargs):
+            self.sent.append(kwargs)
+            return {
+                "code": 10000, "requestId": "REQ-THIS-COMMAND",
+                "result": {"INV-MODE": {"status": 3}},
+            }
+
+        async def query_request_result(self, **kwargs):
+            self.queried_ids.append(kwargs["request_id"])
+            status = 3 if len(self.queried_ids) == 1 else 5
+            return {
+                "code": 10000,
+                "result": [{"sn": "INV-MODE", "status": status}],
+            }
+
+    monkeypatch.setattr(
+        "custom_components.solax_developer_api.coordinator.EV_CHARGER_CONFIRMATION_POLL_SECONDS",
+        1,
+    )
+    monkeypatch.setattr(
+        "custom_components.solax_developer_api.coordinator.EV_CHARGER_CONFIRMATION_TIMEOUT_SECONDS",
+        2,
+    )
+    client = _ModeClient()
+    instance = _make(client)
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_profiles": {"INV-MODE": {"back_up": {
+            "family": "standard", "min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": True,
+            "schedule_enabled": True,
+            "charge_start_time_period1": "20:00",
+            "charge_end_time_period1": "21:00",
+            "discharge_start_time_period1": "21:00",
+            "discharge_end_time_period1": "22:00",
+        }}},
+    }
+
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="back_up"
+    )
+    assert client.queried_ids == ["REQ-THIS-COMMAND"] * 2
+    assert event["request_id_present"] is True
+    assert event["outcome"] == "failed"
+    assert event["sent_parameters"]["chargeStartTimePeriod1"] == "20:00"
+    assert event["sent_parameters"]["chargeEndTimePeriod1"] == "21:00"
+    assert "snList" not in event["sent_parameters"]
+    assert [row["target_status"]["status"] for row in event["confirmation_history"]] == [3, 5]
+    assert [row["request_id_echo_match"] for row in event["confirmation_history"]] == [None, None]
+    assert "REQ-THIS-COMMAND" not in str(event)
+
+
+@pytest.mark.asyncio
 async def test_inverter_api_rejection_is_recorded_without_raw_response():
     class _ModeClient(_FullClient):
         async def execute_control(self, **kwargs):
