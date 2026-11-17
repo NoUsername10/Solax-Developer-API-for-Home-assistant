@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.3] - 2026-11-17
+
+### Fixed
+- Stop sending empty strings for unused inverter work-mode time fields. A
+  v0.5.2 user response confirmed that SolaX rejects an empty
+  `chargeStartTimePeriod1` with `10200 PARAM_ERROR`.
+
+### Added
+- Add a one-press work-mode diagnostic to the GUI profile list. It sends one
+  selected profile and continues querying the same request ID for 40 seconds,
+  including after status 5. The GUI shows a copyable, privacy-safe report of
+  the sent settings and status timeline. This does not establish that SolaX
+  applied the command; the user must check the inverter.
+
 ## [v0.5.2] - 2026-11-17
 
 ### Changed

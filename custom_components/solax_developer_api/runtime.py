@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
+from dataclasses import field
 from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
@@ -20,6 +22,7 @@ class SolaxRuntimeData:
     coordinator: SolaxDeveloperCoordinator
     rate_limit_unsub: CALLBACK_TYPE | None = None
     alarm_notification_state: str = "none"
+    inverter_diagnostic_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
 
 
 SolaxConfigEntry: TypeAlias = ConfigEntry[SolaxRuntimeData]
