@@ -10,6 +10,10 @@ from custom_components.solax_developer_api.inverter_modes import (
     inverter_family,
     profile_settings,
 )
+from custom_components.solax_developer_api.validation import (
+    ControlValidationError,
+    validate_control_payload,
+)
 
 
 @pytest.mark.parametrize(
@@ -39,7 +43,7 @@ def _options(serial, family, mode, **settings):
     }
 
 
-def test_standard_mode_uses_only_required_fields_and_inventory_business_type():
+def test_standard_mode_sends_empty_optional_times_and_inventory_business_type():
     serial = "INV-1"
     device = {"deviceSn": serial, "deviceType": 1, "deviceModel": 33, "businessType": 4}
     options = _options(
@@ -60,7 +64,57 @@ def test_standard_mode_uses_only_required_fields_and_inventory_business_type():
         "minSoc": 20,
         "chargeUpperSoc": 80,
         "chargeFromGridEnable": 0,
+        "chargeStartTimePeriod1": "",
+        "chargeEndTimePeriod1": "",
+        "dischargeStartTimePeriod1": "",
+        "dischargeEndTimePeriod1": "",
+        "chargeStartTimePeriod2": "",
+        "chargeEndTimePeriod2": "",
+        "dischargeStartTimePeriod2": "",
+        "dischargeEndTimePeriod2": "",
+        "enableTimePeriod2": 0,
     }
+
+
+@pytest.mark.parametrize(
+    ("mode", "extra"),
+    [
+        ("feed_in_priority", {}),
+        ("back_up", {"charge_from_grid_enable": True}),
+    ],
+)
+def test_other_standard_modes_send_empty_optional_times(mode, extra):
+    serial = "INV-EMPTY-TIMES"
+    _, payload = command_for_mode(
+        options=_options(serial, "standard", mode, min_soc=20,
+                         charge_upper_soc=80, **extra),
+        device={"deviceSn": serial, "deviceType": 1, "deviceModel": 33,
+                "businessType": 1},
+        serial=serial,
+        action=mode,
+    )
+    assert payload["enableTimePeriod2"] == 0
+    for field in (
+        "chargeStartTimePeriod1", "chargeEndTimePeriod1",
+        "dischargeStartTimePeriod1", "dischargeEndTimePeriod1",
+        "chargeStartTimePeriod2", "chargeEndTimePeriod2",
+        "dischargeStartTimePeriod2", "dischargeEndTimePeriod2",
+    ):
+        assert payload[field] == ""
+
+
+def test_empty_work_mode_times_do_not_allow_invalid_time_values():
+    payload = {"sn_list": ["INV"], "business_type": 1, "min_soc": 20,
+               "charge_upper_soc": 80, "charge_from_grid_enable": 0,
+               "charge_start_time_period1": ""}
+    assert validate_control_payload(
+        "batch_set_spontaneity_self_use", payload
+    )["chargeStartTimePeriod1"] == ""
+    with pytest.raises(ControlValidationError, match="control_time_format_invalid"):
+        validate_control_payload(
+            "batch_set_spontaneity_self_use",
+            {**payload, "charge_start_time_period1": "not-a-time"},
+        )
 
 
 def test_a1_backup_requires_documented_times_but_not_optional_periods():
@@ -234,6 +288,10 @@ def test_scheduled_profile_accepts_overnight_and_overlapping_windows():
     assert payload["chargeEndTimePeriod1"] == "06:00"
     assert payload["enableTimePeriod2"] == 1
     assert payload["chargeStartTimePeriod2"] == "13:00"
+    assert payload["dischargeStartTimePeriod1"] == ""
+    assert payload["dischargeEndTimePeriod1"] == ""
+    assert payload["dischargeStartTimePeriod2"] == ""
+    assert payload["dischargeEndTimePeriod2"] == ""
     assert "scheduleEnabled" not in payload
     overlapping = profile_settings("standard", "self_use", {
         **values, "discharge_start_time_period1": "05:00",

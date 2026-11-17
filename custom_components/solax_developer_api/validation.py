@@ -8,6 +8,14 @@ from typing import Any
 
 from .const import BUSINESS_TYPES, CONTROL_SERVICE_DEFINITIONS
 
+_WORK_MODE_SCHEDULE_SERVICES = frozenset(
+    {
+        "batch_set_spontaneity_self_use",
+        "batch_set_on_grid_first",
+        "batch_set_peace_mode",
+    }
+)
+
 
 class ControlValidationError(ValueError):
     """Validation exception with translation metadata."""
@@ -273,7 +281,18 @@ def validate_control_payload(service: str, payload: dict[str, Any]) -> dict[str,
         )
 
     for key, value in normalized.items():
-        if isinstance(value, str) and "Time" in key and not validate_hhmm(value):
+        empty_optional_work_mode_time = (
+            service in _WORK_MODE_SCHEDULE_SERVICES
+            and key in optional
+            and "TimePeriod" in key
+            and value == ""
+        )
+        if (
+            isinstance(value, str)
+            and "Time" in key
+            and not empty_optional_work_mode_time
+            and not validate_hhmm(value)
+        ):
             raise ControlValidationError(
                 "runtime.errors.control_time_format_invalid",
                 placeholders={"service": service, "field": key},
