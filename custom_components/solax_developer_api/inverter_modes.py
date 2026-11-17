@@ -251,6 +251,11 @@ def command_for_mode(
     for field, value in settings.items():
         if field != "schedule_enabled":
             payload[field] = int(value) if field.endswith("_enable") or field == "enable_time_period2" else value
+    if family == "standard" and mode in SCHEDULE_MODES:
+        for start_field, end_field in SCHEDULE_PAIRS:
+            payload.setdefault(start_field, "")
+            payload.setdefault(end_field, "")
+        payload.setdefault("enable_time_period2", 0)
     if action in MANUAL_ACTIONS:
         payload["manual_mode"] = MANUAL_ACTIONS[action]
     try:

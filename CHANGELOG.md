@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.2] - 2026-11-17
+
+### Changed
+- As a targeted SolaX command-response experiment, send all eight optional
+  charge/discharge time fields in standard inverter mode commands. Unused times
+  are sent as empty strings, and period 2 is explicitly disabled when unused.
+  This does not change the saved profile or claim to resolve the status 5
+  response reported after an inverter applies its settings.
+
 ## [v0.5.1] - 2026-11-16
 
 ### Added
