@@ -317,11 +317,6 @@ async def test_inverter_mode_command_uses_reviewed_inventory_and_checks_target_s
             "snList": ["INV-MODE"], "minSoc": 20,
             "chargeFromGridEnable": 0, "chargeUpperSoc": 80,
             "businessType": 4,
-            "chargeStartTimePeriod1": "", "chargeEndTimePeriod1": "",
-            "dischargeStartTimePeriod1": "", "dischargeEndTimePeriod1": "",
-            "enableTimePeriod2": 0,
-            "chargeStartTimePeriod2": "", "chargeEndTimePeriod2": "",
-            "dischargeStartTimePeriod2": "", "dischargeEndTimePeriod2": "",
         },
     }]
 

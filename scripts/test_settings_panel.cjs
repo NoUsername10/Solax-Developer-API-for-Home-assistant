@@ -53,6 +53,46 @@ test("time validation catches incomplete periods and allows overlaps", () => {
   );
 });
 
+test("one profile test button sends one diagnostic request and keeps the copyable report", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._entry = { entry_id: "entry-1", controls_enabled: true };
+  panel._selectedSerial = "INV-1";
+  const calls = [];
+  panel._hass = { callWS: async (message) => {
+    calls.push(message);
+    return { command_count: 1, query_samples: [{ status: 5 }, { status: 3 }] };
+  } };
+  await panel._runDiagnostic({ id: "p1", name: "Cloudy", mode: "self_use" });
+  assert.equal(calls.length, 1);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls[0])), {
+    type: "solax_developer_api/run_inverter_mode_diagnostic",
+    entry_id: "entry-1",
+    serial: "INV-1",
+    mode: "self_use",
+    profile_id: "p1",
+  });
+  assert.equal(panel._diagnostic.query_samples[1].status, 3);
+  assert.equal(panel._diagnosticBusy, false);
+});
+
+test("workmode page offers one test action and a copyable redacted report", () => {
+  const panel = new Panel();
+  panel._entry = { controls_enabled: true, inverters: [{
+    serial: "INV-1", family: "standard", modes: ["self_use"],
+    profiles: [{ id: "p1", name: "Cloudy", mode: "self_use", settings: {} }],
+  }] };
+  panel._selectedSerial = "INV-1";
+  let markup = panel._renderWorkmodes();
+  assert.match(markup, /data-diagnose="0"/);
+  assert.match(markup, /Test command/);
+  panel._diagnostic = { command_count: 1, query_samples: [{ status: 5 }, { status: 3 }] };
+  markup = panel._renderWorkmodes();
+  assert.match(markup, /id="diagnostic-report"/);
+  assert.match(markup, /Copy report/);
+  assert.match(markup, /status.*5/);
+});
+
 test("period 2 clocks stay disabled until enabled without clearing entered values", () => {
   const panel = new Panel();
   const controls = new Map([

@@ -1,5 +1,6 @@
 """GUI settings read model and panel registration use the existing options data."""
 
+import asyncio
 from types import SimpleNamespace
 
 import pytest
@@ -138,10 +139,10 @@ def test_snapshot_websocket_requires_admin():
 
 @pytest.mark.asyncio
 async def test_register_panel_is_hidden_and_admin_only(monkeypatch):
-    calls = {}
+    calls = {"commands": []}
 
     def register_command(_hass, command):
-        calls["command"] = command
+        calls["commands"].append(command)
 
     async def register_panel(_hass, **kwargs):
         calls["panel"] = kwargs
@@ -149,7 +150,113 @@ async def test_register_panel_is_hidden_and_admin_only(monkeypatch):
     monkeypatch.setattr(settings_panel.websocket_api, "async_register_command", register_command)
     monkeypatch.setattr(settings_panel.panel_custom, "async_register_panel", register_panel)
     await settings_panel.async_register_settings_panel(SimpleNamespace(), version="v0.4.11")
-    assert calls["command"] is settings_panel.async_settings_snapshot
+    assert calls["commands"] == [
+        settings_panel.async_settings_snapshot,
+        settings_panel.async_run_inverter_mode_diagnostic,
+    ]
     assert calls["panel"]["sidebar_title"] is None
     assert calls["panel"]["require_admin"] is True
     assert "solax-settings-panel.js" in calls["panel"]["module_url"]
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_websocket_requires_admin_and_uses_selected_entry(monkeypatch):
+    entry = SimpleNamespace(
+        entry_id="entry-1",
+        domain="solax_developer_api",
+        runtime_data=SimpleNamespace(
+            coordinator=object(), inverter_diagnostic_lock=asyncio.Lock()
+        ),
+    )
+    pending = []
+    hass = SimpleNamespace(
+        config_entries=SimpleNamespace(
+            async_get_entry=lambda entry_id: entry if entry_id == "entry-1" else None
+        ),
+        async_create_background_task=lambda coro, *_args, **_kwargs: pending.append(
+            asyncio.create_task(coro)
+        ),
+    )
+    results = []
+    connection = SimpleNamespace(
+        user=SimpleNamespace(is_admin=True),
+        send_result=lambda message_id, payload: results.append((message_id, payload)),
+        send_error=lambda message_id, code, message: results.append((message_id, code, message)),
+    )
+    sent = []
+
+    async def fake_diagnostic(coordinator, **kwargs):
+        sent.append((coordinator, kwargs))
+        return {"command_count": 1, "query_samples": []}
+
+    monkeypatch.setattr(settings_panel, "run_inverter_mode_diagnostic", fake_diagnostic)
+    message = {
+        "id": 7, "entry_id": "entry-1", "serial": "INV-1",
+        "mode": "self_use", "profile_id": "p1",
+    }
+    settings_panel.async_run_inverter_mode_diagnostic(hass, connection, message)
+    await pending.pop()
+    assert sent == [(entry.runtime_data.coordinator, {
+        "serial": "INV-1", "mode": "self_use", "profile_id": "p1",
+    })]
+    assert results == [(7, {"command_count": 1, "query_samples": []})]
+
+    connection.user.is_admin = False
+    with pytest.raises(Unauthorized):
+        settings_panel.async_run_inverter_mode_diagnostic(hass, connection, message)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("case", "expected_code"),
+    [
+        ("invalid_request", "invalid_request"),
+        ("missing_entry", "entry_not_found"),
+        ("unloaded_entry", "entry_not_loaded"),
+        ("busy", "diagnostic_busy"),
+        ("invalid_profile", "invalid_profile"),
+    ],
+)
+async def test_diagnostic_websocket_rejects_unavailable_runs(
+    monkeypatch, case, expected_code
+):
+    pending = []
+    results = []
+    lock = asyncio.Lock()
+    if case == "busy":
+        await lock.acquire()
+    entry = SimpleNamespace(
+        domain="solax_developer_api",
+        runtime_data=None if case == "unloaded_entry" else SimpleNamespace(
+            coordinator=object(), inverter_diagnostic_lock=lock
+        ),
+    )
+    hass = SimpleNamespace(
+        config_entries=SimpleNamespace(
+            async_get_entry=lambda _entry_id: None if case == "missing_entry" else entry
+        ),
+        async_create_background_task=lambda coro, *_args, **_kwargs: pending.append(
+            asyncio.create_task(coro)
+        ),
+    )
+    connection = SimpleNamespace(
+        user=SimpleNamespace(is_admin=True),
+        send_result=lambda *_args: pytest.fail("Unexpected diagnostic result"),
+        send_error=lambda _id, code, _message: results.append(code),
+    )
+
+    async def invalid_diagnostic(*_args, **_kwargs):
+        raise ValueError("private details must not be reflected")
+
+    monkeypatch.setattr(settings_panel, "run_inverter_mode_diagnostic", invalid_diagnostic)
+    message = {
+        "id": 8, "entry_id": "entry-1", "serial": "INV-1",
+        "mode": "self_use", "profile_id": "p1",
+    }
+    if case == "invalid_request":
+        del message["profile_id"]
+    settings_panel.async_run_inverter_mode_diagnostic(hass, connection, message)
+    await pending.pop()
+    assert results == [expected_code]
+    if lock.locked():
+        lock.release()

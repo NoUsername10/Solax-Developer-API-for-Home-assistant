@@ -20,10 +20,12 @@ from .inverter_modes import (
     inverter_family,
     mode_profiles,
 )
+from .inverter_mode_diagnostic import run_inverter_mode_diagnostic
 
 PANEL_URL_PATH = "solax-developer-api-settings"
 PANEL_ELEMENT = "solax-developer-settings-panel"
 SNAPSHOT_COMMAND = f"{DOMAIN}/settings_snapshot"
+DIAGNOSTIC_COMMAND = f"{DOMAIN}/run_inverter_mode_diagnostic"
 
 
 def settings_snapshot_payload(hass: HomeAssistant) -> dict[str, Any]:
@@ -98,9 +100,59 @@ def async_settings_snapshot(
     connection.send_result(msg["id"], settings_snapshot_payload(hass))
 
 
+@websocket_api.websocket_command(
+    {
+        "type": DIAGNOSTIC_COMMAND,
+        "entry_id": str,
+        "serial": str,
+        "mode": str,
+        "profile_id": str,
+    }
+)
+@websocket_api.require_admin
+@websocket_api.async_response
+async def async_run_inverter_mode_diagnostic(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Run one reviewed profile and return a copyable, redacted timeline."""
+    if any(not isinstance(msg.get(key), str) or not msg[key] for key in (
+        "entry_id", "serial", "mode", "profile_id"
+    )):
+        connection.send_error(msg["id"], "invalid_request", "Select a saved work-mode profile")
+        return
+    entry = hass.config_entries.async_get_entry(msg["entry_id"])
+    if entry is None or entry.domain != DOMAIN:
+        connection.send_error(msg["id"], "entry_not_found", "Integration entry was not found")
+        return
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is None:
+        connection.send_error(msg["id"], "entry_not_loaded", "Integration is not loaded")
+        return
+    if runtime.inverter_diagnostic_lock.locked():
+        connection.send_error(msg["id"], "diagnostic_busy", "A diagnostic is already running")
+        return
+    async with runtime.inverter_diagnostic_lock:
+        try:
+            result = await run_inverter_mode_diagnostic(
+                runtime.coordinator,
+                serial=msg["serial"],
+                mode=msg["mode"],
+                profile_id=msg["profile_id"],
+            )
+        except ValueError:
+            connection.send_error(
+                msg["id"], "invalid_profile", "The saved profile is unavailable or invalid"
+            )
+            return
+    connection.send_result(msg["id"], result)
+
+
 async def async_register_settings_panel(hass: HomeAssistant, *, version: str) -> None:
     """Expose the page without adding a sidebar item."""
     websocket_api.async_register_command(hass, async_settings_snapshot)
+    websocket_api.async_register_command(hass, async_run_inverter_mode_diagnostic)
     await panel_custom.async_register_panel(
         hass,
         webcomponent_name=PANEL_ELEMENT,

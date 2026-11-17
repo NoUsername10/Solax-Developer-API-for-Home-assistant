@@ -1,6 +1,7 @@
 /* SolaX Developer API GUI settings. Writes go through the existing HA options flow. */
 const OPTIONS_FLOW = "config/config_entries/options/flow";
 const SNAPSHOT = "solax_developer_api/settings_snapshot";
+const MODE_DIAGNOSTIC = "solax_developer_api/run_inverter_mode_diagnostic";
 const MODE_LABELS = {
   self_use: "Self Use",
   feed_in_priority: "Feed-in Priority",
@@ -111,6 +112,9 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._riskControls = [];
     this._riskAccepted = false;
     this._loaded = false;
+    this._diagnostic = null;
+    this._diagnosticBusy = false;
+    this._diagnosticError = "";
   }
 
   set hass(hass) {
@@ -437,6 +441,47 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     }
   }
 
+  async _runDiagnostic(profile) {
+    if (this._diagnosticBusy || !this._entry?.controls_enabled) return;
+    if (!window.confirm(`Test “${profile.name}”? This sends its work-mode command once and may change your inverter's mode or schedule. The result query will continue for about 40 seconds.`)) return;
+    this._diagnosticBusy = true;
+    this._diagnostic = null;
+    this._diagnosticError = "";
+    this._render();
+    try {
+      this._diagnostic = await this._hass.callWS({
+        type: MODE_DIAGNOSTIC,
+        entry_id: this._entry.entry_id,
+        serial: this._selectedSerial,
+        mode: profile.mode,
+        profile_id: profile.id,
+      });
+    } catch (error) {
+      this._diagnosticError = error.message || String(error);
+    } finally {
+      this._diagnosticBusy = false;
+      this._render();
+    }
+  }
+
+  async _copyDiagnostic() {
+    const report = this.shadowRoot.querySelector("#diagnostic-report");
+    if (!report) return;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(report.value);
+      } else {
+        report.select();
+        if (!document.execCommand("copy")) throw new Error("Copy was blocked");
+      }
+      this._success = "Diagnostic report copied. Review it before sharing.";
+    } catch (_error) {
+      this._diagnosticError = "Automatic copy was blocked. Copy the selected report text manually.";
+    }
+    this._render();
+    if (this._diagnosticError) this.shadowRoot.querySelector("#diagnostic-report")?.select();
+  }
+
   _renderWorkmodes() {
     if (!this._entry) return "";
     const inverters = this._entry.inverters;
@@ -449,13 +494,16 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       const settings = profile.settings;
       const periods = TIME_PAIRS.map(([start, end], period) => settings[start] && settings[end]
         ? `${period % 2 === 0 ? "Charge" : "Discharge"}: ${settings[start]}–${settings[end]}` : "").filter(Boolean);
-      return `<div class="profile-row"><div><strong>${escapeHtml(profile.name)}</strong><div class="muted">${escapeHtml(MODE_LABELS[profile.mode] || profile.mode)}${periods.length ? ` · ${escapeHtml(periods.join(" · "))}` : ""}</div></div><div class="row-actions"><button type="button" data-edit="${index}">Edit</button><button type="button" class="danger" data-delete="${index}">Delete</button></div></div>`;
+      return `<div class="profile-row"><div><strong>${escapeHtml(profile.name)}</strong><div class="muted">${escapeHtml(MODE_LABELS[profile.mode] || profile.mode)}${periods.length ? ` · ${escapeHtml(periods.join(" · "))}` : ""}</div></div><div class="row-actions"><button type="button" data-diagnose="${index}" ${!this._entry.controls_enabled || this._diagnosticBusy || profile.mode === "manual" ? "disabled" : ""}>Test command</button><button type="button" data-edit="${index}">Edit</button><button type="button" class="danger" data-delete="${index}">Delete</button></div></div>`;
     }).join("") : '<div class="empty">No profiles yet. Create one to add an inverter button for automations.</div>';
     const modeOptions = inverter.modes.map((mode) => `<option value="${escapeHtml(mode)}" ${mode === this._selectedMode ? "selected" : ""}>${escapeHtml(MODE_LABELS[mode])}</option>`).join("");
     const editor = this._editing && this._form
       ? `<h2>${this._editing.profileId ? "Edit" : "Create"} profile · ${escapeHtml(MODE_LABELS[this._editing.mode])}</h2>${this._renderForm()}`
       : '<div class="empty">Choose a profile to edit, or select a mode and create a profile.</div>';
-    return `${controlsNotice}<div class="columns"><section class="card"><h2>Profiles</h2><label class="field"><span>Inverter</span><select id="inverter-choice">${inverters.map((item) => `<option value="${escapeHtml(item.serial)}" ${item.serial === inverter.serial ? "selected" : ""}>${escapeHtml(item.serial)} · ${item.family === "a1_hybrid_g2" ? "A1-Hybrid-G2" : "Standard"}</option>`).join("")}</select></label><div class="create-row"><select id="mode-choice" aria-label="Mode for new profile">${modeOptions}</select><button type="button" class="primary" id="create-profile" ${!this._entry.controls_enabled ? "disabled" : ""}>+ Create profile</button></div><div class="profile-list">${rows}</div></section><section class="card editor">${editor}</section></div>`;
+    const diagnostic = this._diagnostic
+      ? `<p>One command was sent. The report shows its immediate reply and every later query, including any status changes after a failure. A status 3 means command issuance succeeded; it does not prove the settings were applied.</p><textarea id="diagnostic-report" readonly aria-label="Copyable work-mode diagnostic report">${escapeHtml(JSON.stringify(this._diagnostic, null, 2))}</textarea><div class="form-actions"><button type="button" id="copy-diagnostic">Copy report</button></div>`
+      : `<p class="muted">Use <strong>Test command</strong> on a saved profile. One press sends that profile once and queries the same request for about 40 seconds. Pause automations that change work modes during the test, then check the inverter to confirm whether its mode and times actually changed.</p>`;
+    return `${controlsNotice}<div class="columns"><section class="card"><h2>Profiles</h2><label class="field"><span>Inverter</span><select id="inverter-choice" ${this._diagnosticBusy ? "disabled" : ""}>${inverters.map((item) => `<option value="${escapeHtml(item.serial)}" ${item.serial === inverter.serial ? "selected" : ""}>${escapeHtml(item.serial)} · ${item.family === "a1_hybrid_g2" ? "A1-Hybrid-G2" : "Standard"}</option>`).join("")}</select></label><div class="create-row"><select id="mode-choice" aria-label="Mode for new profile">${modeOptions}</select><button type="button" class="primary" id="create-profile" ${!this._entry.controls_enabled || this._diagnosticBusy ? "disabled" : ""}>+ Create profile</button></div><div class="profile-list">${rows}</div></section><section class="card editor">${editor}</section></div><section class="card diagnostic"><h2>Work-mode diagnostic</h2>${this._diagnosticBusy ? '<p role="status">Testing command and querying SolaX… Keep this page open.</p>' : ""}${this._diagnosticError ? `<div class="alert error" role="alert">${escapeHtml(this._diagnosticError)}</div>` : ""}${diagnostic}</section>`;
   }
 
   _renderForm() {
@@ -490,7 +538,7 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
         .wrap{max-width:1440px;margin:0 auto;padding:28px 30px 48px}.head{display:flex;align-items:center;gap:16px;margin-bottom:22px}.head h1{font-size:28px;line-height:1.2;margin:0}.head p{margin:5px 0 0;color:var(--secondary-text-color,#aeb6c2)}.back{white-space:nowrap;text-decoration:none;color:var(--primary-color,#03a9f4)}.menu-toggle{padding:7px 11px;font-size:20px}
         nav{display:flex;gap:4px;overflow:auto;border-bottom:1px solid var(--divider-color,#3c4652);margin-bottom:26px}nav button{border:none;border-radius:0;background:transparent;white-space:nowrap;padding:13px 17px;color:var(--secondary-text-color,#aeb6c2)}nav button.active{color:var(--primary-color,#03a9f4);border-bottom:3px solid var(--primary-color,#03a9f4);font-weight:600}
         .columns{display:grid;grid-template-columns:minmax(320px,1fr) minmax(360px,1fr);gap:22px}.card{background:var(--card-background-color,#1c232d);border:1px solid var(--divider-color,#3c4652);border-radius:14px;padding:24px;min-width:0}.card h2{font-size:21px;margin:0 0 20px}.single{max-width:820px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.section-divider{grid-column:1/-1;display:flex;align-items:center;gap:12px;color:var(--secondary-text-color,#aeb6c2);font-size:14px;font-weight:600;margin-top:14px}.section-divider::after{content:"";height:1px;flex:1;background:var(--divider-color,#4d5866)}.field{display:flex;flex-direction:column;gap:7px;min-width:0;font-size:14px;font-weight:600}.field>span{color:var(--primary-text-color,#eee)}.field input:not([type=checkbox]),.field select,.field textarea,.create-row select{width:100%;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:10px;min-height:42px}.field input:disabled{opacity:.45;cursor:not-allowed}.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--primary-color,#03a9f4);outline-offset:1px}.field.toggle{flex-direction:row;align-items:center;justify-content:space-between;gap:14px;padding:12px;border:1px solid var(--divider-color,#4d5866);border-radius:7px}.field.schedule-toggle{grid-column:1/-1}.field.toggle input{width:20px;height:20px}.field.invalid input,.field.invalid select{border-color:var(--error-color,#f66)}.field-error{color:var(--error-color,#f66);font-weight:400}.form-actions{display:flex;justify-content:flex-end;margin-top:24px}.muted,.empty{color:var(--secondary-text-color,#aeb6c2);font-size:14px}.empty{padding:16px 0}.notice,.alert{padding:13px 16px;border-radius:8px;margin-bottom:20px;background:var(--secondary-background-color,#26374b)}.alert.error{border-left:4px solid var(--error-color,#f66)}.alert.success{border-left:4px solid var(--success-color,#46be87)}.risk-dialog{width:min(calc(100% - 36px),520px);max-height:90vh;overflow:auto;background:var(--card-background-color,#1c232d);color:var(--primary-text-color,#f5f5f5);border:1px solid var(--divider-color,#4d5866);border-radius:14px;padding:25px;box-shadow:0 14px 40px rgba(0,0,0,.35)}.risk-dialog::backdrop{background:rgba(0,0,0,.7)}.risk-dialog h2{margin:0 0 12px}.risk-dialog p{line-height:1.5}.risk-ack{display:flex;align-items:flex-start;gap:10px;margin:20px 0}.risk-ack input{margin-top:3px}.dialog-actions{display:flex;justify-content:flex-end;gap:10px}
-        .create-row{display:flex;gap:10px;margin:18px 0}.create-row select{flex:1}.profile-list{display:grid;gap:10px}.profile-row{border:1px solid var(--divider-color,#45505e);border-radius:9px;padding:15px;display:flex;gap:12px;align-items:center;justify-content:space-between}.profile-row strong{display:block;margin-bottom:5px}.row-actions{display:flex;gap:6px;flex-shrink:0}.row-actions button{padding:7px 9px}
+        .create-row{display:flex;gap:10px;margin:18px 0}.create-row select{flex:1}.profile-list{display:grid;gap:10px}.profile-row{border:1px solid var(--divider-color,#45505e);border-radius:9px;padding:15px;display:flex;gap:12px;align-items:center;justify-content:space-between}.profile-row strong{display:block;margin-bottom:5px}.row-actions{display:flex;gap:6px;flex-shrink:0}.row-actions button{padding:7px 9px}.diagnostic{margin-top:22px}.diagnostic p{line-height:1.5}.diagnostic textarea{width:100%;min-height:250px;resize:vertical;background:var(--primary-background-color,#11151c);color:var(--primary-text-color,#fff);border:1px solid var(--divider-color,#4d5866);border-radius:7px;padding:12px;font:12px/1.4 monospace}
         @media(max-width:900px){.columns{grid-template-columns:1fr}.wrap{padding:18px}.fields{grid-template-columns:1fr}.head{flex-wrap:wrap}}@media(max-width:600px){.profile-row{align-items:flex-start;flex-direction:column}.row-actions{align-self:flex-end}.create-row{flex-direction:column}}
       </style>
       <div class="wrap"><header class="head">${this._narrow ? '<button class="menu-toggle" type="button" aria-label="Open Home Assistant menu">☰</button>' : ""}<a class="back" href="/config/integrations">← Integrations</a><div><h1>SolaX Developer API settings</h1><p>Choose a section to review or change. Saving reloads the integration.</p></div></header>
@@ -533,6 +581,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     }
     this.shadowRoot.querySelector("#inverter-choice")?.addEventListener("change", (event) => {
       this._selectedSerial = event.currentTarget.value;
+      this._diagnostic = null;
+      this._diagnosticError = "";
       this._editing = null;
       this._form = null;
       const selected = this._entry.inverters.find((item) => item.serial === this._selectedSerial);
@@ -549,9 +599,11 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     });
     const inverter = this._entry?.inverters.find((item) => item.serial === this._selectedSerial);
     inverter?.profiles.forEach((profile, index) => {
+      this.shadowRoot.querySelector(`[data-diagnose="${index}"]`)?.addEventListener("click", () => void this._runDiagnostic(profile));
       this.shadowRoot.querySelector(`[data-edit="${index}"]`)?.addEventListener("click", () => void this._openProfile(profile.mode, profile.id));
       this.shadowRoot.querySelector(`[data-delete="${index}"]`)?.addEventListener("click", () => void this._deleteProfile(profile));
     });
+    this.shadowRoot.querySelector("#copy-diagnostic")?.addEventListener("click", () => void this._copyDiagnostic());
   }
 }
 
