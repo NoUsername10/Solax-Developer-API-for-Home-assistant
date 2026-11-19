@@ -42,6 +42,8 @@ from .const import (
     CONF_ENTITY_PREFIX,
     CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_INVERTER_MODE_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED,
+    CONF_INVERTER_MODE_DEBUG_TEST_ENABLED,
     CONF_INVERTER_MODE_PROFILES,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
     CONF_LIVE_VIEW_DEFAULT_DURATION,
@@ -856,6 +858,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         self._mode_family: str | None = None
         self._mode_name: str | None = None
         self._mode_profile_id: str | None = None
+        self._pending_advanced_options: dict[str, Any] | None = None
 
     async def _async_finish(
         self,
@@ -1124,12 +1127,36 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
-        """Select a discovered inverter and documented work mode to configure."""
-        await async_ensure_catalog_loaded(self.hass)
+        """Link Classic users to Workmodes and serve the GUI's profile editor."""
         if not self._config_entry.options.get(
             CONF_INVERTER_MODE_CONTROLS_ENABLED, False
         ):
             return self.async_abort(reason="inverter_mode_controls_disabled")
+
+        def show_workmodes_link(errors: dict[str, str] | None = None) -> ConfigFlowResult:
+            return self.async_show_form(
+                step_id="inverter_modes",
+                data_schema=vol.Schema({}, extra=vol.ALLOW_EXTRA),
+                errors=errors or {},
+                description_placeholders={
+                    "url": (
+                        "/solax-developer-api-settings?entry_id="
+                        f"{self._config_entry.entry_id}&tab=inverter_modes"
+                        + (
+                            f"&launch_flow_id={self.flow_id}"
+                            if getattr(self, "flow_id", None)
+                            else ""
+                        )
+                    )
+                },
+            )
+
+        if user_input is None:
+            return show_workmodes_link()
+        if not user_input:
+            return self.async_abort(reason="gui_opened")
+
+        await async_ensure_catalog_loaded(self.hass)
         coordinator = self._runtime_coordinator()
         devices = (coordinator.data.get("devices") or {}) if coordinator else {}
         eligible: dict[str, str] = {}
@@ -1148,26 +1175,13 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         if not eligible:
             return self.async_abort(reason="inverter_mode_no_verified_inverter")
 
-        errors: dict[str, str] = {}
-        if user_input is not None:
-            serial = str(user_input.get("inverter_serial") or "")
-            family = families.get(serial)
-            if family is None:
-                errors["base"] = "inverter_mode_selection_invalid"
-            else:
-                self._mode_serial = serial
-                self._mode_family = family
-                return await self.async_step_inverter_mode_choice()
-
-        return self.async_show_form(
-            step_id="inverter_modes",
-            data_schema=vol.Schema(
-                {
-                    vol.Required("inverter_serial"): _mapped_select_selector(eligible),
-                }
-            ),
-            errors=errors,
-        )
+        serial = str(user_input.get("inverter_serial") or "")
+        family = families.get(serial)
+        if family is None:
+            return show_workmodes_link({"base": "inverter_mode_selection_invalid"})
+        self._mode_serial = serial
+        self._mode_family = family
+        return await self.async_step_inverter_mode_choice()
 
     async def async_step_inverter_mode_choice(
         self,
@@ -1814,6 +1828,7 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
         await async_ensure_catalog_loaded(self.hass)
         current_options = dict(self._config_entry.options)
         if user_input is not None:
+            self._pending_advanced_options = None
             current_options[CONF_RATE_LIMIT_NOTIFICATIONS] = bool(
                 user_input[CONF_RATE_LIMIT_NOTIFICATIONS]
             )
@@ -1832,6 +1847,20 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
             current_options[CONF_INVERTER_MODE_CONTROLS_ENABLED] = bool(
                 user_input.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False)
             )
+            current_options[CONF_INVERTER_MODE_DEBUG_TEST_ENABLED] = bool(
+                user_input.get(CONF_INVERTER_MODE_DEBUG_TEST_ENABLED, False)
+            )
+            current_options[CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED] = bool(
+                user_input.get(CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED, False)
+            )
+            if (
+                current_options[CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED]
+                and not self._config_entry.options.get(
+                    CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED, False
+                )
+            ):
+                self._pending_advanced_options = current_options
+                return await self.async_step_advanced_confirmation()
             return await self._async_finish(options=current_options)
 
         return self.async_show_form(
@@ -1876,6 +1905,35 @@ class SolaxDeveloperOptionsFlowHandler(config_entries.OptionsFlow):
                             False,
                         ),
                     ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_INVERTER_MODE_DEBUG_TEST_ENABLED,
+                        default=current_options.get(
+                            CONF_INVERTER_MODE_DEBUG_TEST_ENABLED,
+                            False,
+                        ),
+                    ): selector.BooleanSelector(),
+                    vol.Required(
+                        CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED,
+                        default=current_options.get(
+                            CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED, False
+                        ),
+                    ): selector.BooleanSelector(),
                 }
             ),
+        )
+
+    async def async_step_advanced_confirmation(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Require acknowledgement before suppressing a reported device failure."""
+        if self._pending_advanced_options is None:
+            return self.async_abort(reason="confirmation_not_pending")
+        if user_input is not None and user_input.get("confirm") is True:
+            options = self._pending_advanced_options
+            self._pending_advanced_options = None
+            return await self._async_finish(options=options)
+        return self.async_show_form(
+            step_id="advanced_confirmation",
+            data_schema=vol.Schema({vol.Required("confirm", default=False): selector.BooleanSelector()}),
+            errors={"base": "confirmation_required"} if user_input is not None else {},
         )

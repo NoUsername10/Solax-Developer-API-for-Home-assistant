@@ -12,7 +12,11 @@ from typing import Any
 from homeassistant.components import panel_custom, websocket_api
 from homeassistant.core import HomeAssistant, callback
 
-from .const import CONF_INVERTER_MODE_CONTROLS_ENABLED, DOMAIN
+from .const import (
+    CONF_INVERTER_MODE_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_DEBUG_TEST_ENABLED,
+    DOMAIN,
+)
 from .inverter_modes import (
     MODE_FIELDS,
     MODE_SERVICES,
@@ -82,6 +86,9 @@ def settings_snapshot_payload(hass: HomeAssistant) -> dict[str, Any]:
                 "controls_enabled": bool(
                     entry.options.get(CONF_INVERTER_MODE_CONTROLS_ENABLED, False)
                 ),
+                "debug_test_enabled": bool(
+                    entry.options.get(CONF_INVERTER_MODE_DEBUG_TEST_ENABLED, False)
+                ),
                 "inverters": inverters,
             }
         )
@@ -129,6 +136,13 @@ async def async_run_inverter_mode_diagnostic(
     runtime = getattr(entry, "runtime_data", None)
     if runtime is None:
         connection.send_error(msg["id"], "entry_not_loaded", "Integration is not loaded")
+        return
+    if not entry.options.get(CONF_INVERTER_MODE_DEBUG_TEST_ENABLED, False):
+        connection.send_error(
+            msg["id"],
+            "diagnostic_disabled",
+            "Enable the debug test button under Advanced first",
+        )
         return
     if runtime.inverter_diagnostic_lock.locked():
         connection.send_error(msg["id"], "diagnostic_busy", "A diagnostic is already running")

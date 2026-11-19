@@ -154,29 +154,29 @@ async def test_diagnostic_queries_at_minute_fifteen_and_stops_on_ack(monkeypatch
     monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
     monkeypatch.setattr(diagnostic, "monotonic", lambda: elapsed)
     monkeypatch.setattr(diagnostic, "datetime", FakeDateTime)
-    coordinator, calls = _coordinator(statuses=(3, 5, 5, 5, 5, 5, 5, 5, 5, 4))
+    coordinator, calls = _coordinator(statuses=(3, 5, 5, 5, 5, 4))
     report = await diagnostic.run_inverter_mode_diagnostic(
         coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
     )
 
     assert delays[:5] == [2, 4, 6, 12, 16]
-    assert delays[5:] == [34, 60, 60, 60, 60]
-    assert [call[1] for call in calls if call[0] == "query"] == ["private-request-id"] * 10
-    assert [sample["status"] for sample in report["query_samples"]] == [3] + [5] * 8 + [4]
+    assert delays[5:] == [34]
+    assert [call[1] for call in calls if call[0] == "query"] == ["private-request-id"] * 6
+    assert [sample["status"] for sample in report["query_samples"]] == [3] + [5] * 4 + [4]
     assert report["stop_reason"] == "device_acknowledged"
-    assert report["query_samples"][-1]["elapsed_seconds"] == 314.0
+    assert report["query_samples"][-1]["elapsed_seconds"] == 74.0
     assert all(sample["query_request_id_match"] is True for sample in report["query_samples"])
     assert "private-request-id" not in str(report)
 
     elapsed = 0.0
     delays.clear()
-    coordinator, _calls = _coordinator(statuses=(3,) + (5,) * 10)
+    coordinator, _calls = _coordinator(statuses=(3,) + (5,) * 5)
     report = await diagnostic.run_inverter_mode_diagnostic(
         coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
     )
     assert report["stop_reason"] == "observation_window_ended"
-    assert len(report["query_samples"]) == 11
-    assert report["query_samples"][-1]["elapsed_seconds"] == 374.0
+    assert len(report["query_samples"]) == 6
+    assert report["query_samples"][-1]["elapsed_seconds"] == 74.0
 
 
 @pytest.mark.asyncio

@@ -16,6 +16,7 @@ def test_snapshot_lists_profiles_without_credentials():
         data={"client_id": "private-id", "client_secret": "private-secret"},
         options={
             "inverter_mode_controls_enabled": True,
+            "inverter_mode_debug_test_enabled": True,
             "inverter_mode_profiles": {
                 "INV-1": {
                     "self_use": {
@@ -59,6 +60,7 @@ def test_snapshot_lists_profiles_without_credentials():
 
     result = settings_panel.settings_snapshot_payload(hass)
     assert result["entries"][0]["entry_id"] == "entry-1"
+    assert result["entries"][0]["debug_test_enabled"] is True
     inverter = result["entries"][0]["inverters"][0]
     assert inverter["serial"] == "INV-1"
     assert inverter["profiles"][0]["name"] == "Cloudy"
@@ -82,6 +84,7 @@ def test_snapshot_handles_unloaded_entry_and_unknown_device():
     result = settings_panel.settings_snapshot_payload(hass)
     assert result["entries"][0]["inverters"] == []
     assert result["entries"][0]["controls_enabled"] is False
+    assert result["entries"][0]["debug_test_enabled"] is False
 
 
 def test_snapshot_ignores_invalid_device_records_and_a1_has_only_supported_modes():
@@ -164,6 +167,7 @@ async def test_diagnostic_websocket_requires_admin_and_uses_selected_entry(monke
     entry = SimpleNamespace(
         entry_id="entry-1",
         domain="solax_developer_api",
+        options={"inverter_mode_debug_test_enabled": True},
         runtime_data=SimpleNamespace(
             coordinator=object(), inverter_diagnostic_lock=asyncio.Lock()
         ),
@@ -213,6 +217,7 @@ async def test_diagnostic_websocket_requires_admin_and_uses_selected_entry(monke
         ("invalid_request", "invalid_request"),
         ("missing_entry", "entry_not_found"),
         ("unloaded_entry", "entry_not_loaded"),
+        ("disabled", "diagnostic_disabled"),
         ("busy", "diagnostic_busy"),
         ("invalid_profile", "invalid_profile"),
     ],
@@ -227,6 +232,7 @@ async def test_diagnostic_websocket_rejects_unavailable_runs(
         await lock.acquire()
     entry = SimpleNamespace(
         domain="solax_developer_api",
+        options={"inverter_mode_debug_test_enabled": case != "disabled"},
         runtime_data=None if case == "unloaded_entry" else SimpleNamespace(
             coordinator=object(), inverter_diagnostic_lock=lock
         ),
@@ -256,7 +262,8 @@ async def test_diagnostic_websocket_rejects_unavailable_runs(
     if case == "invalid_request":
         del message["profile_id"]
     settings_panel.async_run_inverter_mode_diagnostic(hass, connection, message)
-    await pending.pop()
+    if pending:
+        await pending.pop()
     assert results == [expected_code]
     if lock.locked():
         lock.release()

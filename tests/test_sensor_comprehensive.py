@@ -658,6 +658,47 @@ def test_plant_sensor_classes():
     assert alarm.device_info["model"] == "Plant Alarms"
 
 
+def test_reported_inverter_model_and_battery_chemistry_diagnostics():
+    coordinator = _Coordinator()
+    inverter = coordinator.data["devices"]["INV1"]
+    inverter["deviceModelName"] = "  X1-VAST  "
+
+    power = sensor.SolaxDeviceFieldSensor(coordinator, "sds", "INV1", 1, "dailyYield")
+    info = sensor.SolaxDeviceInfoSensor(coordinator, "sds", "INV1", 1, "deviceModel")
+    for entity in (power, info):
+        assert entity.device_info["model"] == "X1-VAST"
+        assert entity.device_info["identifiers"] == {("solax_developer_api", "INV1")}
+
+    inverter["deviceModelName"] = "  "
+    assert power.device_info["model"] == "X3-Hybrid-G4"
+    assert info.device_info["model"] == "X3-Hybrid-G4"
+    del inverter["deviceModelName"]
+    assert power.device_info["model"] == "X3-Hybrid-G4"
+
+    coordinator.data["devices"]["BATTERY1"] = {
+        "deviceSn": "BATTERY1", "deviceType": 2, "businessType": 1,
+        "batteryChemistry": 0,
+    }
+    chemistry = sensor.SolaxDeviceInfoSensor(
+        coordinator, "sds", "BATTERY1", 2, "batteryChemistry"
+    )
+    assert chemistry.native_value == "Lead-acid"
+    assert chemistry.extra_state_attributes == {"raw_value": 0}
+    assert chemistry._attr_entity_registry_enabled_default is False
+    assert chemistry.device_info["identifiers"] == {("solax_developer_api", "BATTERY1")}
+
+    coordinator.data["device_realtime"]["INV1"]["battery"] = {
+        "deviceType": 2, "batteryChemistry": 1,
+    }
+    attached = sensor.SolaxDeviceFieldSensor(
+        coordinator, "sds", "INV1", 1, "battery_batteryChemistry"
+    )
+    assert attached.native_value == "Lithium"
+    assert attached.extra_state_attributes == {"raw_value": 1}
+    assert attached.entity_category == sensor.EntityCategory.DIAGNOSTIC
+    assert attached.device_info["identifiers"] == {("solax_developer_api", "INV1")}
+
+
 def test_device_sensor_classes_and_status_mapping():
     coordinator = _Coordinator()
     power = sensor.SolaxDeviceFieldSensor(

@@ -111,6 +111,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._pendingRiskData = null;
     this._riskControls = [];
     this._riskAccepted = false;
+    this._riskConfirmationOptOut = false;
+    this._confirmedAdvancedOptOut = false;
     this._loaded = false;
     this._diagnostic = null;
     this._diagnosticBusy = false;
@@ -155,7 +157,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       }
       await this._refreshSnapshot();
       if (!this._entry) return;
-      await this._openSection("credentials");
+      const requestedTab = new URLSearchParams(window.location.search).get("tab");
+      await this._openSection(requestedTab === "inverter_modes" ? requestedTab : "credentials");
     } catch (error) {
       this._error = `Could not open settings: ${error.message || error}`;
       this._render();
@@ -220,6 +223,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._pendingRiskData = null;
     this._riskControls = [];
     this._riskAccepted = false;
+    this._riskConfirmationOptOut = false;
+    this._confirmedAdvancedOptOut = false;
     this._tab = tab;
     this._render();
     try {
@@ -357,13 +362,17 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       }
     }
     if (this._tab === "advanced") {
+      const optOutField = schemaFields(this._form).find((field) => field.name === "inverter_mode_confirmation_error_disabled");
+      const newlyDisabledConfirmation = optOutField && data.inverter_mode_confirmation_error_disabled === true
+        && initialValue(optOutField) !== true;
       const newlyEnabled = schemaFields(this._form)
         .filter((field) => Object.hasOwn(CONTROL_RISK_LABELS, field.name)
           && data[field.name] === true && initialValue(field) !== true)
         .map((field) => CONTROL_RISK_LABELS[field.name]);
-      if (newlyEnabled.length) {
+      if (newlyEnabled.length || newlyDisabledConfirmation) {
         this._pendingRiskData = data;
         this._riskControls = newlyEnabled;
+        this._riskConfirmationOptOut = Boolean(newlyDisabledConfirmation);
         this._riskAccepted = false;
         this._render();
         return;
@@ -375,8 +384,10 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
   async _confirmRisk() {
     if (!this._pendingRiskData || !this._riskAccepted) return;
     const data = this._pendingRiskData;
+    this._confirmedAdvancedOptOut = this._riskConfirmationOptOut;
     this._pendingRiskData = null;
     this._riskControls = [];
+    this._riskConfirmationOptOut = false;
     this._riskAccepted = false;
     await this._submitData(data);
   }
@@ -384,6 +395,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
   _cancelRisk() {
     this._pendingRiskData = null;
     this._riskControls = [];
+    this._riskConfirmationOptOut = false;
+    this._confirmedAdvancedOptOut = false;
     this._riskAccepted = false;
     this._render();
   }
@@ -393,7 +406,12 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     this._error = "";
     this._render();
     try {
-      const result = await this._next(data);
+      let result = await this._next(data);
+      if (result.type === "form" && result.step_id === "advanced_confirmation"
+        && this._confirmedAdvancedOptOut) {
+        result = await this._next({ confirm: true });
+      }
+      this._confirmedAdvancedOptOut = false;
       if (result.type === "form") {
         this._form = result;
         const [field, code] = Object.entries(result.errors || {})[0] || [];
@@ -468,8 +486,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
   }
 
   async _runDiagnostic(profile) {
-    if (this._diagnosticBusy || !this._entry?.controls_enabled) return;
-    if (!window.confirm(`Test “${profile.name}”? This sends its work-mode command once and may change your inverter's mode or schedule. The test checks promptly, then at :15 past each minute through the six-minute mark (about six to seven minutes total). It stops early if the inverter acknowledges the command. Keep this page open.`)) return;
+    if (this._diagnosticBusy || !this._entry?.controls_enabled || !this._entry?.debug_test_enabled) return;
+    if (!window.confirm(`Test “${profile.name}”? This sends its work-mode command once and may change your inverter's mode or schedule. The test checks promptly, then at :15 past each minute for up to two minutes. It stops early if the inverter acknowledges the command. Keep this page open.`)) return;
     this._diagnosticBusy = true;
     this._diagnosticStartedAt = Date.now();
     this._diagnosticProfileId = profile.id;
@@ -519,6 +537,7 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
     if (!inverters.length) return '<div class="empty">No compatible inverter has been discovered yet.</div>';
     const inverter = inverters.find((item) => item.serial === this._selectedSerial) || inverters[0];
     const profiles = inverter.profiles;
+    const showDebugTest = this._entry.debug_test_enabled === true;
     const controlsNotice = this._entry.controls_enabled ? "" :
       '<div class="notice">Inverter work-mode controls are off. Enable them under Advanced before creating or applying profiles.</div>';
     const rows = profiles.length ? profiles.map((profile, index) => {
@@ -526,7 +545,8 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       const periods = TIME_PAIRS.map(([start, end], period) => settings[start] && settings[end]
         ? `${period % 2 === 0 ? "Charge" : "Discharge"}: ${settings[start]}–${settings[end]}` : "").filter(Boolean);
       const testing = this._diagnosticBusy && this._diagnosticProfileId === profile.id;
-      return `<div class="profile-row"><div><strong>${escapeHtml(profile.name)}</strong><div class="muted">${escapeHtml(MODE_LABELS[profile.mode] || profile.mode)}${periods.length ? ` · ${escapeHtml(periods.join(" · "))}` : ""}</div></div><div class="row-actions"><button type="button" class="${testing ? "testing-command" : ""}" data-diagnose="${index}" ${!this._entry.controls_enabled || this._diagnosticBusy || profile.mode === "manual" ? "disabled" : ""}>${testing ? `<span class="diagnostic-spinner" aria-hidden="true"></span> Testing · <span id="active-diagnostic-timer">${this._diagnosticElapsed()}</span>` : "Test command"}</button><button type="button" data-edit="${index}">Edit</button><button type="button" class="danger" data-delete="${index}">Delete</button></div></div>`;
+      const testButton = showDebugTest ? `<button type="button" class="${testing ? "testing-command" : ""}" data-diagnose="${index}" ${!this._entry.controls_enabled || this._diagnosticBusy || profile.mode === "manual" ? "disabled" : ""}>${testing ? `<span class="diagnostic-spinner" aria-hidden="true"></span> Testing · <span id="active-diagnostic-timer">${this._diagnosticElapsed()}</span>` : "Test command"}</button>` : "";
+      return `<div class="profile-row"><div><strong>${escapeHtml(profile.name)}</strong><div class="muted">${escapeHtml(MODE_LABELS[profile.mode] || profile.mode)}${periods.length ? ` · ${escapeHtml(periods.join(" · "))}` : ""}</div></div><div class="row-actions">${testButton}<button type="button" data-edit="${index}">Edit</button><button type="button" class="danger" data-delete="${index}">Delete</button></div></div>`;
     }).join("") : '<div class="empty">No profiles yet. Create one to add an inverter button for automations.</div>';
     const modeOptions = inverter.modes.map((mode) => `<option value="${escapeHtml(mode)}" ${mode === this._selectedMode ? "selected" : ""}>${escapeHtml(MODE_LABELS[mode])}</option>`).join("");
     const editor = this._editing && this._form
@@ -534,8 +554,9 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
       : '<div class="empty">Choose a profile to edit, or select a mode and create a profile.</div>';
     const diagnostic = this._diagnostic
       ? `<p>One command was sent. The report shows its immediate reply and every later query, including any status changes after a failure. A status 3 means command issuance succeeded; it does not prove the settings were applied.</p><textarea id="diagnostic-report" readonly aria-label="Copyable work-mode diagnostic report">${escapeHtml(JSON.stringify(this._diagnostic, null, 2))}</textarea><div class="form-actions"><button type="button" id="copy-diagnostic">Copy report</button></div>`
-      : `<p class="muted">Use <strong>Test command</strong> on a saved profile. One press sends that profile once, checks promptly, then queries the same request at :15 past each minute through the six-minute mark. The test may take up to seven minutes. Pause automations that change work modes during the test, then check the inverter to confirm whether its mode and times actually changed.</p>`;
-    return `${controlsNotice}<div class="columns"><section class="card"><h2>Profiles</h2><label class="field"><span>Inverter</span><select id="inverter-choice" ${this._diagnosticBusy ? "disabled" : ""}>${inverters.map((item) => `<option value="${escapeHtml(item.serial)}" ${item.serial === inverter.serial ? "selected" : ""}>${escapeHtml(item.serial)} · ${item.family === "a1_hybrid_g2" ? "A1-Hybrid-G2" : "Standard"}</option>`).join("")}</select></label><div class="create-row"><select id="mode-choice" aria-label="Mode for new profile">${modeOptions}</select><button type="button" class="primary" id="create-profile" ${!this._entry.controls_enabled || this._diagnosticBusy ? "disabled" : ""}>+ Create profile</button></div><div class="profile-list">${rows}</div></section><section class="card editor">${editor}</section></div><section class="card diagnostic"><h2>Work-mode diagnostic</h2>${this._diagnosticBusy ? `<p role="status">Testing the inverter command… Keep this page open.</p><p class="muted">Elapsed <span id="diagnostic-elapsed">${this._diagnosticElapsed()}</span></p>` : ""}${this._diagnosticError ? `<div class="alert error" role="alert">${escapeHtml(this._diagnosticError)}</div>` : ""}${diagnostic}</section>`;
+      : `<p class="muted">Use <strong>Test command</strong> on a saved profile. One press sends that profile once, checks promptly, then queries the same request at :15 past each minute for up to two minutes. Pause automations that change work modes during the test, then check the inverter to confirm whether its mode and times actually changed.</p>`;
+    const diagnosticCard = showDebugTest ? `<section class="card diagnostic"><h2>Work-mode diagnostic</h2>${this._diagnosticBusy ? `<p role="status">Testing the inverter command… Keep this page open.</p><p class="muted">Elapsed <span id="diagnostic-elapsed">${this._diagnosticElapsed()}</span></p>` : ""}${this._diagnosticError ? `<div class="alert error" role="alert">${escapeHtml(this._diagnosticError)}</div>` : ""}${diagnostic}</section>` : "";
+    return `${controlsNotice}<div class="columns"><section class="card"><h2>Profiles</h2><label class="field"><span>Inverter</span><select id="inverter-choice" ${this._diagnosticBusy ? "disabled" : ""}>${inverters.map((item) => `<option value="${escapeHtml(item.serial)}" ${item.serial === inverter.serial ? "selected" : ""}>${escapeHtml(item.serial)} · ${item.family === "a1_hybrid_g2" ? "A1-Hybrid-G2" : "Standard"}</option>`).join("")}</select></label><div class="create-row"><select id="mode-choice" aria-label="Mode for new profile">${modeOptions}</select><button type="button" class="primary" id="create-profile" ${!this._entry.controls_enabled || this._diagnosticBusy ? "disabled" : ""}>+ Create profile</button></div><div class="profile-list">${rows}</div></section><section class="card editor">${editor}</section></div>${diagnosticCard}`;
   }
 
   _renderForm() {
@@ -556,7 +577,9 @@ class SolaxDeveloperSettingsPanel extends HTMLElement {
   _renderRiskDialog() {
     if (!this._pendingRiskData) return "";
     const controls = escapeHtml(this._riskControls.join(" and "));
-    return `<dialog id="risk-dialog" class="risk-dialog" aria-labelledby="risk-title" aria-describedby="risk-description"><h2 id="risk-title">Enable device controls?</h2><p id="risk-description">You are enabling ${controls}. These controls send real commands to your SolaX devices. Incorrect settings or automations can change charging and inverter operation. Use them at your own risk.</p><label class="risk-ack"><input id="risk-acknowledge" type="checkbox"><span>I understand the risks and want to enable these controls.</span></label><div class="dialog-actions"><button id="risk-cancel" type="button">Cancel</button><button id="risk-confirm" class="primary" type="button" disabled>Enable and save</button></div></dialog>`;
+    const controlWarning = this._riskControls.length ? `<p>You are enabling ${controls}. These controls send real commands to your SolaX devices. Incorrect settings or automations can change charging and inverter operation. Use them at your own risk.</p>` : "";
+    const confirmationWarning = this._riskConfirmationOptOut ? "<p>Only enable this after you have verified that your inverter changes work mode and saves every profile setting even when SolaX reports that execution failed. The integration will still query and record that failure, but the Home Assistant button press will not raise that specific later confirmation error. This does not verify that a command succeeded; the SolaX Developer API issue has no confirmed fix yet.</p>" : "";
+    return `<dialog id="risk-dialog" class="risk-dialog" aria-labelledby="risk-title" aria-describedby="risk-description"><h2 id="risk-title">Confirm advanced setting</h2><div id="risk-description">${controlWarning}${confirmationWarning}</div><label class="risk-ack"><input id="risk-acknowledge" type="checkbox"><span>I have verified my inverter behavior and understand the risks of this setting.</span></label><div class="dialog-actions"><button id="risk-cancel" type="button">Cancel</button><button id="risk-confirm" class="primary" type="button" disabled>Enable and save</button></div></dialog>`;
   }
 
   _render() {

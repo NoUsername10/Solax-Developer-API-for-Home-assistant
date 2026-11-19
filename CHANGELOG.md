@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.5] - 2026-11-19
+
+### Added
+- Add an off-by-default Advanced option to suppress the Home Assistant work-mode
+  button error when an initially accepted inverter command later reports status
+  5. The result query still runs, diagnostics retain the failure, and the
+  outcome is marked unconfirmed. Enabling the option requires acknowledgement
+  in GUI or Classic settings; initial API errors still fail normally.
+- Show the Developer API's nonempty `deviceModelName` as the inverter device
+  model, with the existing model-code fallback. Preserve battery `deviceType`
+  values 0 and 1 as Lead-acid and Lithium diagnostic chemistry values, including
+  batteries reported through an inverter.
+
+### Changed
+- Hide the work-mode Test command button behind an off-by-default Advanced
+  debug option. Keep its result query bounded to two minutes while retaining
+  the copyable, privacy-safe response timeline.
+- Link Classic inverter work-mode settings to the GUI Workmodes page, where
+  profiles and time periods are configured.
+
+### Validation
+- Local tests: 317 main-suite tests with 97.15% coverage; seven lifecycle
+  tests on each of Home Assistant 2026.1.0 and 2026.10.4; 14 GUI tests.
+  Strict typing, lint, and translation checks passed. SolaX hardware behavior
+  remains unverified; suppressing a status 5 error does not prove execution.
+
 ## [v0.5.4] - 2026-11-19
 
 ### Added

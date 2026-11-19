@@ -231,9 +231,9 @@ class SolaxInverterModeButton(
             )
         except ValueError as err:
             raise HomeAssistantError(str(err)) from err
-        if event.get("command_failed"):
+        if event.get("command_failed") and not event.get("confirmation_error_suppressed"):
             raise HomeAssistantError("SolaX reported that the inverter mode command failed")
-        if not event.get("accepted"):
+        if not event.get("accepted") and not event.get("confirmation_error_suppressed"):
             raise HomeAssistantError("SolaX did not confirm receipt of the inverter mode command")
 
 
