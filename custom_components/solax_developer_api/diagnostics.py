@@ -366,7 +366,7 @@ def _inverter_command_diagnostics(commands: Any) -> list[dict[str, Any]]:
         "timestamp", "action", "api_code",
         "api_error_type", "initial_result_shape", "initial_status_count",
         "request_id_present", "accepted",
-        "command_failed", "outcome", "confirmation_state",
+        "command_failed", "confirmation_error_suppressed", "outcome", "confirmation_state",
         "confirmation_attempts", "confirmation_api_code",
         "confirmation_result_shape", "confirmation_error_type", "status_count",
     )

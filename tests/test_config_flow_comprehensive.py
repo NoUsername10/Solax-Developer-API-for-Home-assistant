@@ -472,6 +472,9 @@ async def test_options_finish_and_simple_pages(monkeypatch):
     assert (await handler.async_step_credentials())["step_id"] == "credentials"
     assert (await handler.async_step_polling())["step_id"] == "polling"
     assert (await handler.async_step_advanced())["step_id"] == "advanced"
+    advanced_schema = (await handler.async_step_advanced())["data_schema"]
+    assert advanced_schema({})["inverter_mode_debug_test_enabled"] is False
+    assert advanced_schema({})["inverter_mode_confirmation_error_disabled"] is False
 
     polling = await handler.async_step_polling(
         {
@@ -493,11 +496,45 @@ async def test_options_finish_and_simple_pages(monkeypatch):
             "alarm_notifications": False,
             "alarm_scan_interval": 300,
             "ev_charger_controls_enabled": False,
+            "inverter_mode_debug_test_enabled": True,
         }
     )
     assert advanced["data"]["rate_limit_notifications"] is False
     assert advanced["data"]["alarm_notifications"] is False
     assert advanced["data"]["alarm_scan_interval"] == 300
+    assert advanced["data"]["inverter_mode_debug_test_enabled"] is True
+    assert advanced["data"]["inverter_mode_confirmation_error_disabled"] is False
+
+
+@pytest.mark.asyncio
+async def test_classic_advanced_confirmation_opt_out_requires_acknowledgement(monkeypatch):
+    monkeypatch.setattr(config_flow, "async_ensure_catalog_loaded", _loaded)
+    entry = _entry()
+    handler = _options_handler(entry)
+    values = {
+        "rate_limit_notifications": True,
+        "alarm_notifications": True,
+        "alarm_scan_interval": 120,
+        "ev_charger_controls_enabled": False,
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_debug_test_enabled": False,
+        "inverter_mode_confirmation_error_disabled": True,
+    }
+    confirmation = await handler.async_step_advanced(values)
+    assert confirmation["step_id"] == "advanced_confirmation"
+    assert "inverter_mode_confirmation_error_disabled" not in entry.options
+    rejected = await handler.async_step_advanced_confirmation({"confirm": False})
+    assert rejected["errors"] == {"base": "confirmation_required"}
+    assert not handler.hass.config_entries.reloads
+    saved = await handler.async_step_advanced_confirmation({"confirm": True})
+    assert saved["data"]["inverter_mode_confirmation_error_disabled"] is True
+    assert handler.hass.config_entries.reloads == ["entry-1"]
+    assert (await handler.async_step_advanced_confirmation())["reason"] == "confirmation_not_pending"
+
+    values["inverter_mode_confirmation_error_disabled"] = False
+    disabled = await handler.async_step_advanced(values)
+    assert disabled["type"] == "create_entry"
+    assert disabled["data"]["inverter_mode_confirmation_error_disabled"] is False
 
 
 @pytest.mark.asyncio
@@ -546,7 +583,18 @@ async def test_inverter_mode_options_require_opt_in_and_named_profile(monkeypatc
 
     entry.options["inverter_mode_controls_enabled"] = True
     assert "inverter_modes" in (await handler.async_step_classic())["menu_options"]
+    workmode_link = await handler.async_step_inverter_modes()
+    assert workmode_link["step_id"] == "inverter_modes"
+    assert "tab=inverter_modes" in workmode_link["description_placeholders"]["url"]
+    assert "entry-1" in workmode_link["description_placeholders"]["url"]
+    assert workmode_link["data_schema"]({"inverter_serial": "INV-1"}) == {
+        "inverter_serial": "INV-1"
+    }
+    assert (await handler.async_step_inverter_modes({}))["reason"] == "gui_opened"
+    original_devices = coordinator.data["devices"]
+    coordinator.data["devices"] = {}
     assert (await handler.async_step_inverter_modes())["step_id"] == "inverter_modes"
+    coordinator.data["devices"] = original_devices
     assert (await handler.async_step_inverter_modes(
         {"inverter_serial": "INV-1"}
     ))["step_id"] == "inverter_mode_choice"

@@ -303,6 +303,16 @@ async def test_reviewed_inverter_modes_create_device_actions_for_automations():
     with pytest.raises(HomeAssistantError, match="reported that"):
         await inverter_buttons[1].async_press()
 
+    async def suppressed(*, serial, action, profile_id):
+        return {
+            "accepted": False,
+            "command_failed": True,
+            "confirmation_error_suppressed": True,
+        }
+
+    coordinator.async_execute_inverter_mode = suppressed
+    await inverter_buttons[1].async_press()
+
     async def invalid(*, serial, action, profile_id):
         raise ValueError("inverter_mode_not_enabled")
 

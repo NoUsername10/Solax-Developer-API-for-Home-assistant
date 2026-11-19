@@ -475,6 +475,74 @@ async def test_inverter_diagnostics_trace_uses_issued_request_id(monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("opt_out", [False, True])
+async def test_inverter_later_status_five_opt_out_keeps_failed_evidence(monkeypatch, opt_out):
+    class _ModeClient(_FullClient):
+        async def execute_control(self, **kwargs):
+            return {"code": 10000, "requestId": "REQ-MODE",
+                    "result": {"INV-MODE": {"status": 3}}}
+
+        async def query_request_result(self, **kwargs):
+            assert kwargs["request_id"] == "REQ-MODE"
+            return {"code": 10000, "result": [{"sn": "INV-MODE", "status": 5}]}
+
+    async def _no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(coordinator_module.asyncio, "sleep", _no_sleep)
+    instance = _make(_ModeClient())
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_confirmation_error_disabled": opt_out,
+        "inverter_mode_profiles": {"INV-MODE": {"self_use": {
+            "family": "standard", "min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": False,
+        }}},
+    }
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="self_use"
+    )
+    assert event["command_failed"] is True
+    assert event["confirmation_state"] == "failed"
+    assert event["confirmation_error_suppressed"] is opt_out
+    assert event["outcome"] == ("unconfirmed" if opt_out else "failed")
+    assert event["target_status"]["status"] == 5
+    assert event["confirmation_history"][0]["target_status"]["status"] == 5
+
+
+@pytest.mark.asyncio
+async def test_inverter_initial_status_five_is_never_suppressed():
+    class _ModeClient(_FullClient):
+        async def execute_control(self, **kwargs):
+            return {"code": 10000, "requestId": "REQ-MODE",
+                    "result": {"INV-MODE": {"status": 5}}}
+
+    instance = _make(_ModeClient())
+    instance.data["devices"] = {
+        "INV-MODE": {"deviceSn": "INV-MODE", "deviceType": 1,
+                     "deviceModel": 33, "businessType": 1}
+    }
+    instance._inverter_mode_options = {
+        "inverter_mode_controls_enabled": True,
+        "inverter_mode_confirmation_error_disabled": True,
+        "inverter_mode_profiles": {"INV-MODE": {"self_use": {
+            "family": "standard", "min_soc": 20, "charge_upper_soc": 80,
+            "charge_from_grid_enable": False,
+        }}},
+    }
+    event = await instance.async_execute_inverter_mode(
+        serial="INV-MODE", action="self_use"
+    )
+    assert event["command_failed"] is True
+    assert event["confirmation_attempts"] == 0
+    assert event["confirmation_error_suppressed"] is False
+
+
+@pytest.mark.asyncio
 async def test_inverter_api_rejection_is_recorded_without_raw_response():
     class _ModeClient(_FullClient):
         async def execute_control(self, **kwargs):
@@ -2331,6 +2399,56 @@ class _ScopedInventoryClient(_FullClient):
         if key[:3] in self.empty_scopes:
             return {"code": 10000, "result": {"records": [], "pages": 1}}
         return await super().page_device_info(**kwargs)
+
+
+class _UpdatedDeviceInfoClient(_FullClient):
+    """The Developer API's updated inverter and battery inventory records."""
+
+    async def page_device_info(self, **kwargs):
+        response = await super().page_device_info(**kwargs)
+        if kwargs["business_type"] != 1 or kwargs["page_no"] != 1:
+            return response
+        records = response["result"]["records"]
+        if kwargs["device_type"] == 1:
+            records[0].update(
+                deviceModelName="X1-VAST", gwDeviceType=9,
+                gwDeviceModel=9018, gwDeviceModelName="WiFi+LAN 2.0",
+            )
+        elif kwargs["device_type"] == 2:
+            records[0].update(deviceModelName="Battery A", deviceType=0)
+            records.append({
+                "deviceSn": "", "plantId": "P1", "deviceModelName": "Battery B",
+                "deviceType": 1,
+            })
+        return response
+
+
+@pytest.mark.asyncio
+async def test_updated_device_info_keeps_inverter_fields_and_battery_chemistry():
+    instance = _make(_UpdatedDeviceInfoClient())
+    _, devices, inventory = await instance._refresh_inventory()
+
+    assert devices["D11"]["deviceModelName"] == "X1-VAST"
+    assert devices["D11"]["gwDeviceType"] == 9
+    assert devices["D11"]["gwDeviceModel"] == 9018
+    assert devices["D11"]["gwDeviceModelName"] == "WiFi+LAN 2.0"
+    assert devices["D12"]["deviceType"] == 2
+    assert devices["D12"]["batteryChemistry"] == 0
+    assert devices["D12"]["deviceModelName"] == "Battery A"
+    assert inventory["1:2"] == ["D12"]
+    attached = instance._serialless_battery_inventory["D11"]
+    assert len(attached) == 1
+    assert attached[0]["deviceType"] == 2
+    assert attached[0]["batteryChemistry"] == 1
+
+    realtime, _ = await instance._refresh_device_realtime(inventory)
+    assert realtime["D11"]["battery"]["deviceType"] == 2
+    assert realtime["D11"]["battery"]["batteryChemistry"] == 1
+    assert realtime["D12"]["deviceType"] == 2
+
+    legacy = _make(_FullClient())
+    _, old_devices, _ = await legacy._refresh_inventory()
+    assert "batteryChemistry" not in old_devices["D12"]
 
 
 def _inventory_api_error():

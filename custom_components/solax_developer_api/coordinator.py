@@ -37,6 +37,7 @@ from .const import (
     CONF_ALARM_SCAN_INTERVAL,
     CONF_EV_CHARGER_CONTROLS_ENABLED,
     CONF_INVERTER_MODE_CONTROLS_ENABLED,
+    CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED,
     CONF_MANUAL_EMS_SYSTEMS,
     CONF_MANUAL_METER_SERIALS,
     CONF_LIVE_VIEW_CALL_BUDGET_PER_MINUTE,
@@ -2096,6 +2097,9 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                 )
                                 if parent_sn is not None:
                                     normalized_battery = dict(device)
+                                    chemistry = self._coerce_int(device.get("deviceType"))
+                                    if chemistry in (0, 1):
+                                        normalized_battery["batteryChemistry"] = chemistry
                                     normalized_battery["deviceType"] = 2
                                     normalized_battery["businessType"] = business_type
                                     serialless_battery_inventory[parent_sn].append(
@@ -2109,6 +2113,10 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                                         inventory_by_type[key].append(parent_sn)
                             continue
                         normalized = dict(device)
+                        if device_type == 2:
+                            chemistry = self._coerce_int(device.get("deviceType"))
+                            if chemistry in (0, 1):
+                                normalized["batteryChemistry"] = chemistry
                         normalized["deviceType"] = device_type
                         normalized["businessType"] = business_type
                         devices[sn] = normalized
@@ -3135,8 +3143,22 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             None,
         )
         explicit_failure = bool(target_status and target_status["failed"])
+        confirmation_error_suppressed = bool(
+            explicit_failure
+            and target_status is not None
+            and target_status["status"] == 5
+            and not (initial_target_status and initial_target_status["failed"])
+            and confirmation["confirmation_attempts"] > 0
+            and self._inverter_mode_options.get(
+                CONF_INVERTER_MODE_CONFIRMATION_ERROR_DISABLED, False
+            )
+        )
         acknowledged = bool(target_status and target_status["device_acknowledged"])
-        outcome = "failed" if explicit_failure else "accepted" if acknowledged else "pending"
+        outcome = (
+            "unconfirmed" if confirmation_error_suppressed else
+            "failed" if explicit_failure else
+            "accepted" if acknowledged else "pending"
+        )
         confirmation_state = confirmation["confirmation_state"]
         if explicit_failure:
             confirmation_state = "failed"
@@ -3159,6 +3181,7 @@ class SolaxDeveloperCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "request_id_present": bool(request_id),
             "accepted": not explicit_failure,
             "command_failed": explicit_failure,
+            "confirmation_error_suppressed": confirmation_error_suppressed,
             "outcome": outcome,
             "confirmation_state": confirmation_state,
             "confirmation_attempts": confirmation["confirmation_attempts"],

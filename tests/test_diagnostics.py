@@ -97,6 +97,8 @@ def test_inverter_command_trace_keeps_times_with_stable_anonymous_labels():
             },
             "initial_target_status": {"status": 3, "message": "private message"},
             "target_status": {"status": 5},
+            "confirmation_error_suppressed": True,
+            "outcome": "unconfirmed",
             "confirmation_history": [{
                 "attempt": 1, "api_code": 10000,
                 "target_status": {"status": 5, "message": "private message"},
@@ -120,6 +122,8 @@ def test_inverter_command_trace_keeps_times_with_stable_anonymous_labels():
     assert projected[0]["sent_parameters"]["chargeStartTimePeriod1"] == "20:00"
     assert projected[0]["sent_parameters"]["chargeEndTimePeriod1"] == "21:00"
     assert projected[0]["confirmation_history"][0]["target_status"]["status"] == 5
+    assert projected[0]["confirmation_error_suppressed"] is True
+    assert projected[0]["outcome"] == "unconfirmed"
     serialized = json.dumps(projected)
     for private in (
         "INVERTER-ALICE-001", "INVERTER-BOB-002", "PRIVATE-PROFILE-A",

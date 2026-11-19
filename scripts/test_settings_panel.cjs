@@ -64,7 +64,7 @@ test("time validation catches incomplete periods and allows overlaps", () => {
 test("one profile test button sends one diagnostic request and keeps the copyable report", async () => {
   const panel = new Panel();
   panel._render = () => {};
-  panel._entry = { entry_id: "entry-1", controls_enabled: true };
+  panel._entry = { entry_id: "entry-1", controls_enabled: true, debug_test_enabled: true };
   panel._selectedSerial = "INV-1";
   const calls = [];
   panel._hass = { callWS: async (message) => {
@@ -87,7 +87,7 @@ test("one profile test button sends one diagnostic request and keeps the copyabl
 
 test("workmode page offers one test action and a copyable redacted report", () => {
   const panel = new Panel();
-  panel._entry = { controls_enabled: true, inverters: [{
+  panel._entry = { controls_enabled: true, debug_test_enabled: true, inverters: [{
     serial: "INV-1", family: "standard", modes: ["self_use"],
     profiles: [{ id: "p1", name: "Cloudy", mode: "self_use", settings: {} }],
   }] };
@@ -100,6 +100,23 @@ test("workmode page offers one test action and a copyable redacted report", () =
   assert.match(markup, /id="diagnostic-report"/);
   assert.match(markup, /Copy report/);
   assert.match(markup, /status.*5/);
+});
+
+test("debug test is hidden and cannot run when the Advanced option is off", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._entry = { entry_id: "entry-1", controls_enabled: true, debug_test_enabled: false, inverters: [{
+    serial: "INV-1", family: "standard", modes: ["self_use"],
+    profiles: [{ id: "p1", name: "Cloudy", mode: "self_use", settings: {} }],
+  }] };
+  panel._selectedSerial = "INV-1";
+  const markup = panel._renderWorkmodes();
+  assert.doesNotMatch(markup, /data-diagnose|Work-mode diagnostic|Test command/);
+  assert.match(markup, /data-edit="0"/);
+  let called = false;
+  panel._hass = { callWS: async () => { called = true; } };
+  await panel._runDiagnostic(panel._entry.inverters[0].profiles[0]);
+  assert.equal(called, false);
 });
 
 test("period 2 clocks stay disabled until enabled without clearing entered values", () => {
@@ -218,6 +235,30 @@ test("already-enabled controls save without another acknowledgement", async () =
   assert.equal(saved.ev_charger_controls_enabled, true);
 });
 
+test("confirmation opt-out requires GUI acknowledgement and completes Classic backend step", async () => {
+  const panel = new Panel();
+  panel._render = () => {};
+  panel._flow = "flow-1";
+  panel._tab = "advanced";
+  panel._form = { type: "form", step_id: "advanced", data_schema: [
+    { name: "inverter_mode_confirmation_error_disabled", default: false, selector: { boolean: {} } },
+  ] };
+  const calls = [];
+  panel._next = async (data) => {
+    calls.push(data);
+    return { type: "form", step_id: "advanced_confirmation", data_schema: [] };
+  };
+  const form = { elements: { namedItem: () => ({ checked: true }) } };
+  await panel._save(form);
+  assert.equal(calls.length, 0);
+  assert.match(panel._renderRiskDialog(), /saves every profile setting/);
+  panel._riskAccepted = true;
+  await panel._confirmRisk();
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].inverter_mode_confirmation_error_disabled, true);
+  assert.equal(calls[1].confirm, true);
+});
+
 test("time periods have separate headings and full-width switches", () => {
   const panel = new Panel();
   panel._form = { type: "form", step_id: "inverter_mode_settings", data_schema: [
@@ -283,6 +324,17 @@ test("profile editor follows the existing Home Assistant options flow", async ()
     { profile: "profile-1" },
   ]);
   assert.equal(panel._editing.profileId, "profile-1");
+});
+
+test("workmode link opens the Workmodes tab", async () => {
+  const panel = new Panel();
+  const opened = [];
+  context.window.location.search = "?entry_id=entry-1&tab=inverter_modes";
+  panel._refreshSnapshot = async () => { panel._entry = { entry_id: "entry-1" }; };
+  panel._openSection = async (tab) => { opened.push(tab); };
+  await panel._load();
+  assert.deepEqual(opened, ["inverter_modes"]);
+  context.window.location.search = "";
 });
 
 test("inverter selection resets unsupported mode", async () => {

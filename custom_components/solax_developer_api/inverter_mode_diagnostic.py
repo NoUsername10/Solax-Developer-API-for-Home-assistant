@@ -14,11 +14,11 @@ from .const import CONTROL_SERVICE_DEFINITIONS
 from .coordinator import SolaxDeveloperCoordinator
 from .inverter_modes import command_for_mode, inverter_family, mode_profiles
 
-# Check promptly, then align later checks with :15 past each UTC minute.
-# This covers a possible five-minute device/cloud refresh without assuming
-# that status 5 is final. Status 4 is the strongest documented acknowledgement.
+# Check promptly, then align any remaining checks with :15 past each UTC
+# minute. Keep the diagnostic bounded; status 4 is the strongest documented
+# acknowledgement, while status 5 may remain despite an observed mode change.
 EARLY_QUERY_DELAYS_SECONDS = (2, 4, 6, 12, 16)
-OBSERVATION_SECONDS = 360
+OBSERVATION_SECONDS = 120
 MINUTE_QUERY_SECOND = 15
 _PARAM_ERROR_FIELD = re.compile(r"PARAM_ERROR:\s*([A-Za-z][A-Za-z0-9_]*)")
 
@@ -161,6 +161,8 @@ async def run_inverter_mode_diagnostic(
     else:
         while monotonic() - started < OBSERVATION_SECONDS:
             aligned_delay = _seconds_until_minute_query(datetime.now(timezone.utc))
+            if monotonic() - started + aligned_delay > OBSERVATION_SECONDS:
+                break
             await asyncio.sleep(aligned_delay)
             if await query_once():
                 report["stop_reason"] = "device_acknowledged"

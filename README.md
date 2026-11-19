@@ -63,10 +63,10 @@ This custom integration is built and validated as a **💎 Platinum-standard ali
 
 - **Platinum-standard aligned:** https://developers.home-assistant.io/docs/core/integration-quality-scale/
 - **Strict typing:** CI checks all integration modules against the Home Assistant stable mypy interfaces.
-- **Test coverage:** `97.08%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
-- **Automated tests:** `253` credential-free tests plus `7` Home Assistant lifecycle fixture tests.
+- **Test coverage:** `97.15%`, enforced by CI with a minimum threshold of `96%` and more than `95%` coverage in every production module.
+- **Automated tests:** `317` credential-free tests plus `7` Home Assistant lifecycle fixture tests on each supported CI fixture version.
 - **Home Assistant versions tested for this version:** main suite on `2026.1.0` and `2026.11.0`; lifecycle suite on `2026.1.0` and `2026.10.4`.
-- **Config-flow coverage:** `99%` on the current stable test run.
+- **Config-flow coverage:** `98%` on the current local test run.
 
 > [!NOTE]
 > This is a community custom integration, installed through Marketplace (Home Assistant 2026.11+) or HACS (older versions), and is not included in Home Assistant Core.
@@ -252,6 +252,8 @@ Select **Open SolaX settings**. The page has General, Polling & Live View, Devic
 
 In **Advanced**, enable **EV Charger Controls** or **Inverter work-mode controls** separately, then select **Save settings**. Both are off by default. When enabling either control, read and acknowledge the risk dialog before the settings are saved. Monitoring works without enabling controls.
 
+If an inverter applies a profile and saves **all** its settings but Home Assistant reports a work-mode command failure, you can enable **Disable work-mode confirmation error** in Advanced. Read and acknowledge the warning first. The integration still queries and records SolaX's later status `5`, but the work-mode button will not raise that specific error. A successful button press with this option enabled does **not** prove that the inverter applied the command; check the inverter yourself. Initial API errors still raise an error. The option is off by default and is also available through Classic configuration.
+
 <img src="assets/settings/03-advanced-controls.png" alt="Advanced settings tab with separate EV charger and inverter work-mode control switches" width="100%">
 
 ### 4. Create an inverter work-mode profile
@@ -274,7 +276,7 @@ On the inverter device page, select **Press** on the profile button. Automations
 
 ### 7. Diagnose a work-mode command
 
-If a profile changes the inverter but Home Assistant reports an error, open **Workmodes** and select **Test command** beside that saved profile. Pause automations that change work modes while testing. The test sends the profile **once**, so it can change the inverter's mode or schedule. It checks the result promptly, then at :15 past each minute through the six-minute mark, even after a status 5 response. It stops early if SolaX reports status 4 (device received and started execution); otherwise it can take six to seven minutes. Keep the page open while the elapsed timer runs. Select **Copy report** to share the redacted settings, request-ID match result, and response timeline. Check the inverter afterward and tell us whether the mode and times were applied; the API does not provide a definitive applied-settings acknowledgement. The test is available for Self Use, Feed-in Priority, and Back Up profiles, not Manual.
+If a profile changes the inverter but Home Assistant reports an error, enable **Enable Debug Test button** under Advanced, then open **Workmodes** and select **Test command** beside that saved profile. Pause automations that change work modes while testing. The test sends the profile **once**, so it can change the inverter's mode or schedule. It checks the result promptly, then at :15 past each minute for up to two minutes, even after a status 5 response. It stops early if SolaX reports status 4 (device received and started execution). Keep the page open while the elapsed timer runs. Select **Copy report** to share the redacted settings, request-ID match result, and response timeline. Check the inverter afterward and tell us whether the mode and times were applied; the API does not provide a definitive applied-settings acknowledgement. The test is available for Self Use, Feed-in Priority, and Back Up profiles, not Manual. Turn the debug option off when finished.
 
 <details>
 <summary><strong>Control options and important limitations</strong></summary>
@@ -282,7 +284,7 @@ If a profile changes the inverter but Home Assistant reports an error, open **Wo
 
 - Standard inverters offer Self Use, Feed-in Priority, Back Up, and Manual (stop, force charge, or force discharge). Self Use and Back Up require a grid-charging choice. A1-Hybrid-G2 offers Self Use and Feed-in Priority without user settings, plus Back Up with its required grid choice and charge start/end times. A1 Manual mode and TOU configuration are not included. The integration reads `businessType` from the inverter; you do not enter it.
 - Standard profiles can include up to two charge and discharge periods. Overlaps are accepted; a user reports that charging takes priority, but verify this on your inverter. Unused time fields are omitted because SolaX rejected empty strings in a v0.5.2 user test. Set explicit periods for tariff profiles. Allowing grid charging does not force immediate charging. **Overnight periods such as 22:00–06:00 are not yet validated on a real inverter.** Classic configuration keeps period-2 clocks visible for compatibility with Home Assistant 2026.1.
-- A press sends a command, but the button has no selected state. SolaX can accept a request while device acknowledgement is still pending; redacted diagnostics include recent outcomes, status codes, and confirmation attempts. An explicit device failure raises an error. The inverter `deviceStatus` sensor may show Self Use (150), Back Up (152), Feed-in Priority (153), or Debug Mode (171), but `null` or other statuses cannot reliably identify the current work mode. EV charger `deviceWorkingMode` is a separate field.
+- A press sends a command, but the button has no selected state. SolaX can accept a request while device acknowledgement is still pending; redacted diagnostics include recent outcomes, status codes, and confirmation attempts. A reported device failure raises an error unless the Advanced work-mode confirmation error option is enabled for a later status 5; that result remains unconfirmed in diagnostics. The inverter `deviceStatus` sensor may show Self Use (150), Back Up (152), Feed-in Priority (153), or Debug Mode (171), but `null` or other statuses cannot reliably identify the current work mode. EV charger `deviceWorkingMode` is a separate field.
 - A compatible EV charger gains device buttons, selects, number fields, text fields, and reserve-charge time fields when **EV Charger Controls** is enabled. Its device controls use the same validated execution path as EV service actions. Existing direct non-EV control services remain dry-runs even when inverter mode buttons are enabled.
 
 </details>

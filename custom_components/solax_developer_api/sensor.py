@@ -39,6 +39,7 @@ PARALLEL_UPDATES = 0
 
 CORE_PLANT_INFO_KEYS = {"plantState", "plantTimeZone", "electricityPriceUnit"}
 CORE_DEVICE_INFO_KEYS = {"onlineStatus", "flag", "deviceModel"}
+BATTERY_CHEMISTRY_NAMES = {0: "Lead-acid", 1: "Lithium"}
 
 CONNECTIVITY_MIN_FRESHNESS_SECONDS = 15 * 60
 INVERTER_FAULT_STATUS_CODES = frozenset({103})
@@ -152,6 +153,15 @@ def _device_api_field_key(key: str) -> tuple[str, int | None]:
     if attached_battery is None:
         return key, None
     return attached_battery.group("field"), 2
+
+
+def _battery_chemistry_name(value: Any) -> str:
+    """Display the battery material code from device information."""
+    try:
+        code = int(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return BATTERY_CHEMISTRY_NAMES.get(code, str(value))
 
 
 def _device_field_slug(key: str) -> str:
@@ -432,6 +442,21 @@ def _device_model_text(
             fallback=fallback,
         )
     return _t(hass, f"runtime.device_model.code.{model_id}", fallback=fallback)
+
+
+def _inventory_model_text(
+    hass: HomeAssistant, device: Mapping[str, Any], device_type: int
+) -> str:
+    """Prefer the inverter model name supplied by the Developer API."""
+    reported_name = device.get("deviceModelName")
+    if device_type == 1 and isinstance(reported_name, str) and reported_name.strip():
+        return reported_name.strip()
+    return _device_model_text(
+        hass,
+        device.get("deviceModel"),
+        business_type=device.get("businessType"),
+        device_type=device_type,
+    )
 
 
 def _device_type_text(hass: HomeAssistant, value: Any) -> str:
@@ -2080,6 +2105,8 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         )
         if not enabled_by_default:
             self._attr_entity_registry_enabled_default = False
+        if api_field_key == "batteryChemistry":
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
         inventory = (coordinator.data.get("devices") or {}).get(device_sn) or {}
         self._business_type = int(inventory.get("businessType") or 1)
@@ -2117,6 +2144,8 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         if raw_value is None:
             return None
         api_field_key, semantic_device_type = _device_api_field_key(self._field_key)
+        if api_field_key == "batteryChemistry":
+            return _battery_chemistry_name(raw_value)
         if api_field_key in {"businessType", "deviceType"}:
             return _coded_type_text(
                 self.coordinator.hass,
@@ -2146,6 +2175,8 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         if raw_value is None:
             return {}
         api_field_key, semantic_device_type = _device_api_field_key(self._field_key)
+        if api_field_key == "batteryChemistry":
+            return {"raw_value": raw_value}
         if api_field_key in {"businessType", "deviceType"}:
             return {
                 "raw_value": raw_value,
@@ -2184,13 +2215,7 @@ class SolaxDeviceFieldSensor(SolaxBaseSensor):
         devices = self.coordinator.data.get("devices") or {}
         device = devices.get(self._device_sn) or {}
         device_type = int(device.get("deviceType") or 0)
-        model_id = device.get("deviceModel")
-        model_name = _device_model_text(
-            self.coordinator.hass,
-            model_id,
-            business_type=device.get("businessType"),
-            device_type=device_type,
-        )
+        model_name = _inventory_model_text(self.coordinator.hass, device, device_type)
         if model_name in (None, ""):
             model_name = _t(
                 self.coordinator.hass,
@@ -2263,6 +2288,8 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
                 key=self._key,
                 value=value,
             )
+        if self._key == "batteryChemistry" and value is not None:
+            return _battery_chemistry_name(value)
         business_type = int(device.get("businessType") or 1)
         if self._key == "deviceModel" and value is not None:
             return _device_model_text(
@@ -2280,6 +2307,10 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
     @property
     def extra_state_attributes(self) -> Mapping[str, Any]:
         """Return the raw SolaX code alongside its translated state."""
+        if self._key == "batteryChemistry":
+            device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
+            value = device.get(self._key)
+            return {"raw_value": value} if value is not None else {}
         if self._key not in {"businessType", "deviceType"}:
             return {}
         device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
@@ -2299,12 +2330,7 @@ class SolaxDeviceInfoSensor(SolaxBaseSensor):
     def device_info(self) -> DeviceInfo:
         device = (self.coordinator.data.get("devices") or {}).get(self._device_sn) or {}
         device_type = int(device.get("deviceType") or self._device_type or 0)
-        model_name = _device_model_text(
-            self.coordinator.hass,
-            device.get("deviceModel"),
-            business_type=device.get("businessType"),
-            device_type=device_type,
-        )
+        model_name = _inventory_model_text(self.coordinator.hass, device, device_type)
         if model_name in (None, "") and device_type == 100:
             model_name = _t(
                 self.coordinator.hass,

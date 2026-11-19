@@ -158,19 +158,30 @@
           "ev_charger_controls_enabled": "Controles del EV charger",
           "alarm_notifications": "Notificaciones de alarmas",
           "alarm_scan_interval": "Intervalo de consulta de alarmas",
-          "inverter_mode_controls_enabled": "Inverter work-mode controls"
+          "inverter_mode_controls_enabled": "Inverter work-mode controls",
+          "inverter_mode_debug_test_enabled": "Enable Debug Test button",
+          "inverter_mode_confirmation_error_disabled": "Disable work-mode confirmation error"
         },
         "data_description": {
           "rate_limit_notifications": "Mostrar notificaciones de Home Assistant cuando SolaX indique un límite de frecuencia o cuota.",
           "ev_charger_controls_enabled": "Permite solicitudes de escritura reales solo para los servicios de control del EV charger. Si se desactiva, estos servicios quedan bloqueados en modo de simulación, como los demás servicios de control.",
           "alarm_notifications": "Muestra notificaciones persistentes de Home Assistant cuando SolaX comunica alarmas activas.",
           "alarm_scan_interval": "Cada cuántos segundos se consulta SolaX para detectar alarmas activas.",
-          "inverter_mode_controls_enabled": "Allow configured inverter mode profiles to send real control commands. Off by default."
+          "inverter_mode_controls_enabled": "Allow configured inverter mode profiles to send real control commands. Off by default.",
+          "inverter_mode_debug_test_enabled": "Show the work-mode Test command button for troubleshooting. Off by default. Testing sends a real inverter command.",
+          "inverter_mode_confirmation_error_disabled": "Only for an inverter that applies the mode and all settings despite a later SolaX status 5. The status remains in diagnostics. Off by default."
+        }
+      },
+      "advanced_confirmation": {
+        "title": "Confirm work-mode confirmation opt-out",
+        "description": "Enable only after verifying that the inverter changes work mode and saves all profile settings despite a later SolaX execution-failed result. Home Assistant will stop raising that specific error, but the command remains unconfirmed and the result remains in diagnostics. This SolaX Developer API issue has no confirmed fix yet.",
+        "data": {
+          "confirm": "I have verified the inverter and understand that commands may fail without a Home Assistant error."
         }
       },
       "inverter_modes": {
         "title": "Inverter work-mode settings",
-        "description": "Choose an inverter. Only modes documented for its model are offered.",
+        "description": "[Open Workmodes in SolaX settings]({url}) to create, edit, or delete inverter work-mode profiles.",
         "data": {
           "inverter_serial": "Inverter"
         }
@@ -245,12 +256,14 @@
       "profile_enable_period2_or_clear_times": "Enable period 2 or clear its times.",
       "profile_period1_required": "Enter at least one charge or discharge window for period 1.",
       "profile_period2_required": "Enter at least one charge or discharge window for period 2.",
+      "confirmation_required": "Confirm that you understand the risk before enabling this option.",
       "inverter_mode_settings_invalid": "Check the required values and their allowed ranges."
     },
     "abort": {
       "inverter_mode_controls_disabled": "Enable inverter work-mode controls under Advanced and diagnostics first.",
       "inverter_mode_no_verified_inverter": "No inverter with a verified type, business type, and model is available.",
       "inverter_mode_selection_invalid": "The inverter or mode is no longer available.",
+      "confirmation_not_pending": "Open Advanced settings before confirming this option.",
       "gui_opened": "Open the GUI settings from the link above."
     }
   },
