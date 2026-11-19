@@ -151,17 +151,17 @@ async def run_inverter_mode_diagnostic(
         report["query_samples"].append(sample)
         return sample.get("target_present") is True and sample.get("status") == 4
 
-    for delay in EARLY_QUERY_DELAYS_SECONDS:
-        if monotonic() - started + delay > OBSERVATION_SECONDS:
+    for early_delay in EARLY_QUERY_DELAYS_SECONDS:
+        if monotonic() - started + early_delay > OBSERVATION_SECONDS:
             break
-        await asyncio.sleep(delay)
+        await asyncio.sleep(early_delay)
         if await query_once():
             report["stop_reason"] = "device_acknowledged"
             break
     else:
         while monotonic() - started < OBSERVATION_SECONDS:
-            delay = _seconds_until_minute_query(datetime.now(timezone.utc))
-            await asyncio.sleep(delay)
+            aligned_delay = _seconds_until_minute_query(datetime.now(timezone.utc))
+            await asyncio.sleep(aligned_delay)
             if await query_once():
                 report["stop_reason"] = "device_acknowledged"
                 break

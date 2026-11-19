@@ -75,6 +75,40 @@ def test_minute_query_delay_targets_next_second_fifteen():
 
 
 @pytest.mark.asyncio
+async def test_diagnostic_rejects_disabled_controls_and_unknown_inverter():
+    coordinator, calls = _coordinator()
+    coordinator.inverter_mode_controls_enabled = False
+    with pytest.raises(ValueError, match="inverter_mode_controls_disabled"):
+        await diagnostic.run_inverter_mode_diagnostic(
+            coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+        )
+    coordinator.inverter_mode_controls_enabled = True
+    with pytest.raises(ValueError, match="inverter_mode_target_unverified"):
+        await diagnostic.run_inverter_mode_diagnostic(
+            coordinator, serial="OTHER", mode="self_use", profile_id="profile-1"
+        )
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_stops_after_early_device_acknowledgement(monkeypatch):
+    async def no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(diagnostic, "EARLY_QUERY_DELAYS_SECONDS", (0, 0))
+    monkeypatch.setattr(diagnostic, "OBSERVATION_SECONDS", 0)
+    coordinator, calls = _coordinator(statuses=(4,))
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+    assert [call[0] for call in calls] == ["command", "query"]
+    assert report["stop_reason"] == "device_acknowledged"
+    assert [sample["status"] for sample in report["query_samples"]] == [4]
+
+
+@pytest.mark.asyncio
 async def test_diagnostic_continues_querying_after_status_five(monkeypatch):
     async def no_sleep(_seconds):
         return None
