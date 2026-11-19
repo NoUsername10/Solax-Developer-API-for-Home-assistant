@@ -57,6 +57,27 @@ def _client(session=None, region="eu"):
     )
 
 
+@pytest.mark.asyncio
+async def test_result_query_audits_the_outgoing_request_id():
+    class RecordingSession(_Session):
+        def request(self, *args, **kwargs):
+            self.sent_body = kwargs["json"]
+            return super().request(*args, **kwargs)
+
+    session = RecordingSession([_Response(200, {"code": 10000, "result": []})])
+    client = _client(session=session)
+    client._access_token = "token"
+    client._token_expires_at = datetime.now(timezone.utc) + timedelta(days=2)
+    outgoing_ids = []
+
+    await client.query_request_result(
+        request_id=" 123456 ", audit_request_id=outgoing_ids.append
+    )
+
+    assert outgoing_ids == ["123456"]
+    assert session.sent_body == {"requestId": "123456"}
+
+
 def test_api_helper_errors_properties_and_classifications():
     with pytest.raises(ValueError):
         chunked([1], 0)

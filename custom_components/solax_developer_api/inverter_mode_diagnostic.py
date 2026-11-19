@@ -14,10 +14,20 @@ from .const import CONTROL_SERVICE_DEFINITIONS
 from .coordinator import SolaxDeveloperCoordinator
 from .inverter_modes import command_for_mode, inverter_family, mode_profiles
 
-# Five fresh result queries over 40 seconds. Keep querying after status 5: the
-# purpose of this diagnostic is to observe whether SolaX later changes it.
-QUERY_DELAYS_SECONDS = (2, 4, 6, 12, 16)
+# Check promptly, then align later checks with :15 past each UTC minute.
+# This covers a possible five-minute device/cloud refresh without assuming
+# that status 5 is final. Status 4 is the strongest documented acknowledgement.
+EARLY_QUERY_DELAYS_SECONDS = (2, 4, 6, 12, 16)
+OBSERVATION_SECONDS = 360
+MINUTE_QUERY_SECOND = 15
 _PARAM_ERROR_FIELD = re.compile(r"PARAM_ERROR:\s*([A-Za-z][A-Za-z0-9_]*)")
+
+
+def _seconds_until_minute_query(now: datetime) -> float:
+    """Return the delay to the next :15 past the minute."""
+    second = now.second + now.microsecond / 1_000_000
+    delay = (MINUTE_QUERY_SECOND - second) % 60
+    return delay if delay > 0 else 60.0
 
 
 def _safe_error(error: SolaxApiError) -> dict[str, Any]:
@@ -113,18 +123,50 @@ async def run_inverter_mode_diagnostic(
         report["query_skipped_reason"] = "no_request_id"
         return report
 
-    for delay in QUERY_DELAYS_SECONDS:
-        await asyncio.sleep(delay)
+    if report["initial"]["status"] == 4:
+        report["stop_reason"] = "device_acknowledged"
+        report["finished_at"] = datetime.now(timezone.utc).isoformat()
+        return report
+
+    async def query_once() -> bool:
         sample: dict[str, Any] = {
             "elapsed_seconds": round(monotonic() - started, 1),
         }
+        query_request_id_match: bool | None = None
+
+        def audit_request_id(outgoing_request_id: str) -> None:
+            nonlocal query_request_id_match
+            query_request_id_match = outgoing_request_id == request_id
+
         try:
-            queried = await coordinator.client.query_request_result(request_id=request_id)
+            queried = await coordinator.client.query_request_result(
+                request_id=request_id,
+                audit_request_id=audit_request_id,
+            )
         except SolaxApiError as error:
             sample.update(_safe_error(error))
         else:
             sample.update(_response_sample(coordinator, queried, serial, request_id=request_id))
+        sample["query_request_id_match"] = query_request_id_match
         report["query_samples"].append(sample)
+        return sample.get("target_present") is True and sample.get("status") == 4
+
+    for early_delay in EARLY_QUERY_DELAYS_SECONDS:
+        if monotonic() - started + early_delay > OBSERVATION_SECONDS:
+            break
+        await asyncio.sleep(early_delay)
+        if await query_once():
+            report["stop_reason"] = "device_acknowledged"
+            break
+    else:
+        while monotonic() - started < OBSERVATION_SECONDS:
+            aligned_delay = _seconds_until_minute_query(datetime.now(timezone.utc))
+            await asyncio.sleep(aligned_delay)
+            if await query_once():
+                report["stop_reason"] = "device_acknowledged"
+                break
+
+    report.setdefault("stop_reason", "observation_window_ended")
 
     report["finished_at"] = datetime.now(timezone.utc).isoformat()
     return report

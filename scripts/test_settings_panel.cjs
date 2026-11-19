@@ -11,6 +11,8 @@ const source = fs.readFileSync(
   "utf8",
 );
 const elements = new Map();
+const activeTimers = new Map();
+let nextTimerId = 0;
 class Element {
   attachShadow() {
     this.shadowRoot = { querySelector: () => ({}) };
@@ -25,6 +27,12 @@ const context = {
   window: {
     confirm: () => true,
     location: { search: "" },
+    setInterval: (callback) => {
+      const id = ++nextTimerId;
+      activeTimers.set(id, callback);
+      return id;
+    },
+    clearInterval: (id) => activeTimers.delete(id),
   },
   URLSearchParams,
 };
@@ -74,6 +82,7 @@ test("one profile test button sends one diagnostic request and keeps the copyabl
   });
   assert.equal(panel._diagnostic.query_samples[1].status, 3);
   assert.equal(panel._diagnosticBusy, false);
+  assert.equal(activeTimers.size, 0);
 });
 
 test("workmode page offers one test action and a copyable redacted report", () => {

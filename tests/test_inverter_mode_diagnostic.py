@@ -1,5 +1,6 @@
 """The GUI diagnostic sends once and observes the same request after status 5."""
 
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -22,8 +23,10 @@ def _coordinator(*, response=None, statuses=(), error=None):
             "result": {"INV-1": {"status": 3}},
         }
 
-    async def query_request_result(*, request_id):
+    async def query_request_result(*, request_id, audit_request_id=None):
         calls.append(("query", request_id))
+        if audit_request_id is not None:
+            audit_request_id(request_id)
         status = statuses[len(calls) - 2]
         if isinstance(status, Exception):
             raise status
@@ -62,13 +65,58 @@ def _coordinator(*, response=None, statuses=(), error=None):
     return fake, calls
 
 
+def test_minute_query_delay_targets_next_second_fifteen():
+    assert diagnostic._seconds_until_minute_query(
+        datetime(2026, 11, 19, 8, 10, 41, tzinfo=timezone.utc)
+    ) == 34
+    assert diagnostic._seconds_until_minute_query(
+        datetime(2026, 11, 19, 8, 11, 15, tzinfo=timezone.utc)
+    ) == 60
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_rejects_disabled_controls_and_unknown_inverter():
+    coordinator, calls = _coordinator()
+    coordinator.inverter_mode_controls_enabled = False
+    with pytest.raises(ValueError, match="inverter_mode_controls_disabled"):
+        await diagnostic.run_inverter_mode_diagnostic(
+            coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+        )
+    coordinator.inverter_mode_controls_enabled = True
+    with pytest.raises(ValueError, match="inverter_mode_target_unverified"):
+        await diagnostic.run_inverter_mode_diagnostic(
+            coordinator, serial="OTHER", mode="self_use", profile_id="profile-1"
+        )
+    assert calls == []
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_stops_after_early_device_acknowledgement(monkeypatch):
+    async def no_sleep(_seconds):
+        return None
+
+    monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(diagnostic, "EARLY_QUERY_DELAYS_SECONDS", (0, 0))
+    monkeypatch.setattr(diagnostic, "OBSERVATION_SECONDS", 0)
+    coordinator, calls = _coordinator(statuses=(4,))
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+    assert [call[0] for call in calls] == ["command", "query"]
+    assert report["stop_reason"] == "device_acknowledged"
+    assert [sample["status"] for sample in report["query_samples"]] == [4]
+
+
 @pytest.mark.asyncio
 async def test_diagnostic_continues_querying_after_status_five(monkeypatch):
     async def no_sleep(_seconds):
         return None
 
     monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
-    monkeypatch.setattr(diagnostic, "QUERY_DELAYS_SECONDS", (0, 0, 0, 0))
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(diagnostic, "EARLY_QUERY_DELAYS_SECONDS", (0, 0, 0, 0))
+    monkeypatch.setattr(diagnostic, "OBSERVATION_SECONDS", 0)
     coordinator, calls = _coordinator(statuses=(3, 5, 5, 3))
     report = await diagnostic.run_inverter_mode_diagnostic(
         coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
@@ -76,6 +124,7 @@ async def test_diagnostic_continues_querying_after_status_five(monkeypatch):
     assert len([call for call in calls if call[0] == "command"]) == 1
     assert [call[1] for call in calls if call[0] == "query"] == ["private-request-id"] * 4
     assert [item["status"] for item in report["query_samples"]] == [3, 5, 5, 3]
+    assert [item["query_request_id_match"] for item in report["query_samples"]] == [True] * 4
     assert report["initial"]["status"] == 3
     assert report["inverter"] == "Inverter 1"
     assert report["profile"] == "Profile 1"
@@ -84,6 +133,89 @@ async def test_diagnostic_continues_querying_after_status_five(monkeypatch):
     }
     assert "INV-1" not in str(report)
     assert "private-request-id" not in str(report)
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_queries_at_minute_fifteen_and_stops_on_ack(monkeypatch):
+    delays = []
+    elapsed = 0.0
+    wall_start = datetime(2026, 11, 19, 8, 10, 1, tzinfo=timezone.utc)
+
+    class FakeDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return (wall_start + timedelta(seconds=elapsed)).astimezone(tz)
+
+    async def no_sleep(seconds):
+        nonlocal elapsed
+        delays.append(seconds)
+        elapsed += seconds
+
+    monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: elapsed)
+    monkeypatch.setattr(diagnostic, "datetime", FakeDateTime)
+    coordinator, calls = _coordinator(statuses=(3, 5, 5, 5, 5, 5, 5, 5, 5, 4))
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+
+    assert delays[:5] == [2, 4, 6, 12, 16]
+    assert delays[5:] == [34, 60, 60, 60, 60]
+    assert [call[1] for call in calls if call[0] == "query"] == ["private-request-id"] * 10
+    assert [sample["status"] for sample in report["query_samples"]] == [3] + [5] * 8 + [4]
+    assert report["stop_reason"] == "device_acknowledged"
+    assert report["query_samples"][-1]["elapsed_seconds"] == 314.0
+    assert all(sample["query_request_id_match"] is True for sample in report["query_samples"])
+    assert "private-request-id" not in str(report)
+
+    elapsed = 0.0
+    delays.clear()
+    coordinator, _calls = _coordinator(statuses=(3,) + (5,) * 10)
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+    assert report["stop_reason"] == "observation_window_ended"
+    assert len(report["query_samples"]) == 11
+    assert report["query_samples"][-1]["elapsed_seconds"] == 374.0
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_stops_after_initial_device_acknowledgement():
+    coordinator, calls = _coordinator(response={
+        "code": 10000,
+        "requestId": "private-request-id",
+        "result": {"INV-1": {"status": 4}},
+    })
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+    assert len(calls) == 1
+    assert report["stop_reason"] == "device_acknowledged"
+    assert report["query_samples"] == []
+
+
+@pytest.mark.asyncio
+async def test_diagnostic_reports_outgoing_request_id_mismatch(monkeypatch):
+    async def no_sleep(_seconds):
+        return None
+
+    async def query_wrong_request(*, request_id, audit_request_id):
+        audit_request_id("different-request-id")
+        return {"code": 10000, "result": [{"deviceSn": "INV-1", "status": 5}]}
+
+    monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(diagnostic, "EARLY_QUERY_DELAYS_SECONDS", (0,))
+    monkeypatch.setattr(diagnostic, "OBSERVATION_SECONDS", 0)
+    coordinator, _calls = _coordinator()
+    coordinator.client.query_request_result = query_wrong_request
+    report = await diagnostic.run_inverter_mode_diagnostic(
+        coordinator, serial="INV-1", mode="self_use", profile_id="profile-1"
+    )
+
+    assert report["query_samples"][0]["query_request_id_match"] is False
+    assert "private-request-id" not in str(report)
+    assert "different-request-id" not in str(report)
 
 
 @pytest.mark.asyncio
@@ -111,7 +243,9 @@ async def test_diagnostic_continues_after_query_error(monkeypatch):
         return None
 
     monkeypatch.setattr(diagnostic.asyncio, "sleep", no_sleep)
-    monkeypatch.setattr(diagnostic, "QUERY_DELAYS_SECONDS", (0, 0, 0))
+    monkeypatch.setattr(diagnostic, "monotonic", lambda: 0.0)
+    monkeypatch.setattr(diagnostic, "EARLY_QUERY_DELAYS_SECONDS", (0, 0, 0))
+    monkeypatch.setattr(diagnostic, "OBSERVATION_SECONDS", 0)
     coordinator, calls = _coordinator(statuses=(
         5,
         SolaxApiError(code=10004, message="private request ID", classification="api_error"),
@@ -123,6 +257,7 @@ async def test_diagnostic_continues_after_query_error(monkeypatch):
     assert len([call for call in calls if call[0] == "query"]) == 3
     assert [sample.get("status") for sample in report["query_samples"]] == [5, None, 3]
     assert report["query_samples"][1]["api_code"] == 10004
+    assert report["query_samples"][1]["query_request_id_match"] is True
     assert "private request ID" not in str(report)
 
 
