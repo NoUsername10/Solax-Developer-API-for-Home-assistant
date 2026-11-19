@@ -285,6 +285,7 @@ class SolaxDeveloperApiClient:
         success_code: int | Iterable[int] | None = SUCCESS_CODE_API,
         authenticated: bool = True,
         retry_auth: bool = True,
+        audit_json_body: Callable[[dict[str, Any] | None], None] | None = None,
     ) -> dict[str, Any]:
         if authenticated:
             await self.ensure_token()
@@ -300,6 +301,8 @@ class SolaxDeveloperApiClient:
 
         try:
             async with asyncio.timeout(self._timeout_seconds):
+                if audit_json_body is not None:
+                    audit_json_body(json_body)
                 async with self._session.request(
                     method,
                     url,
@@ -361,6 +364,7 @@ class SolaxDeveloperApiClient:
                 success_code=success_code,
                 authenticated=authenticated,
                 retry_auth=False,
+                audit_json_body=audit_json_body,
             )
 
         raise SolaxApiError(
@@ -674,15 +678,27 @@ class SolaxDeveloperApiClient:
             },
         }
 
-    async def query_request_result(self, *, request_id: str | int) -> dict[str, Any]:
+    async def query_request_result(
+        self,
+        *,
+        request_id: str | int,
+        audit_request_id: Callable[[str], None] | None = None,
+    ) -> dict[str, Any]:
         normalized_request_id = str(request_id).strip()
         if not normalized_request_id:
             raise ValueError("request_id must not be empty")
+        body = {"requestId": normalized_request_id}
+
+        def audit_outgoing_body(outgoing_body: dict[str, Any] | None) -> None:
+            if audit_request_id is not None and outgoing_body is not None:
+                audit_request_id(str(outgoing_body.get("requestId") or ""))
+
         return await self._request_json(
             method="POST",
             path="/openapi/apiRequestLog/listByCondition",
-            json_body={"requestId": normalized_request_id},
+            json_body=body,
             success_code=(SUCCESS_CODE_TOKEN, SUCCESS_CODE_API),
+            audit_json_body=audit_outgoing_body if audit_request_id is not None else None,
         )
 
     async def execute_control(

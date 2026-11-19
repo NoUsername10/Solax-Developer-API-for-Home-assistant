@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [v0.5.4] - 2026-11-19
+
+### Added
+- Show a privacy-safe match result for the `requestId` in each diagnostic
+  result query. The ID itself is never included in the report.
+- Continue the inverter work-mode diagnostic at :15 past each minute through
+  the six-minute mark to test whether SolaX changes a reported status 5 after
+  its possible five-minute refresh cycle. Stop early if the inverter reports
+  status 4 (received and started execution). Show an elapsed timer and an
+  animated Test button while the diagnostic runs.
+
+### Validation
+- A status 4 acknowledgement does not prove that all mode settings were
+  applied. The cause of status 5 after a user-observed mode change remains
+  under investigation.
+
 ## [v0.5.3] - 2026-11-17
 
 ### Fixed
